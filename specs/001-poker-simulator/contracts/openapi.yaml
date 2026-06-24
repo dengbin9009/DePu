@@ -1,0 +1,316 @@
+openapi: 3.1.0
+info:
+  title: DePu 德州扑克模拟器 API
+  version: 0.1.0
+  description: 本地单机德州扑克完整牌局模拟器的 HTTP JSON API。正式说明使用中文，路径和字段使用英文标识。
+servers:
+  - url: http://localhost:8080
+paths:
+  /api/rulesets:
+    get:
+      summary: 获取可用规则集
+      responses:
+        "200":
+          description: 返回长牌和短牌规则集
+  /api/games:
+    post:
+      summary: 创建牌局
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGameRequest"
+      responses:
+        "201":
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameSnapshot"
+        "400":
+          description: 请求无效
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/games/{gameId}:
+    get:
+      summary: 获取牌局快照
+      parameters:
+        - $ref: "#/components/parameters/GameId"
+      responses:
+        "200":
+          description: 返回牌局快照
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameSnapshot"
+        "404":
+          description: 牌局不存在
+  /api/games/{gameId}/actions:
+    post:
+      summary: 提交玩家动作
+      parameters:
+        - $ref: "#/components/parameters/GameId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitActionRequest"
+      responses:
+        "200":
+          description: 动作成功，返回新快照
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameSnapshot"
+        "409":
+          description: 动作不合法或状态版本冲突
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/games/{gameId}/debug/cards:
+    post:
+      summary: 调试模式指定手牌或公共牌
+      parameters:
+        - $ref: "#/components/parameters/GameId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DebugCardsRequest"
+      responses:
+        "200":
+          description: 指定成功，返回新快照
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameSnapshot"
+        "400":
+          description: 指定牌无效
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /api/games/{gameId}/history:
+    get:
+      summary: 获取行动历史
+      parameters:
+        - $ref: "#/components/parameters/GameId"
+      responses:
+        "200":
+          description: 返回行动历史
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActionLog"
+  /api/games/{gameId}/replay:
+    post:
+      summary: 回放到指定动作序号
+      parameters:
+        - $ref: "#/components/parameters/GameId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [toSeq]
+              properties:
+                toSeq:
+                  type: integer
+                  minimum: 0
+                  description: 目标动作序号，0 表示初始状态
+      responses:
+        "200":
+          description: 返回目标节点的牌局快照
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameSnapshot"
+
+components:
+  parameters:
+    GameId:
+      name: gameId
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    CreateGameRequest:
+      type: object
+      required: [rulesetId, seats, buttonSeat, smallBlind, bigBlind, dealMode]
+      properties:
+        rulesetId:
+          type: string
+          enum: [long-holdem, short-deck]
+        seats:
+          type: array
+          minItems: 2
+          maxItems: 10
+          items:
+            type: object
+            required: [seatNo, name, stack]
+            properties:
+              seatNo:
+                type: integer
+              name:
+                type: string
+              stack:
+                type: integer
+                minimum: 1
+        buttonSeat:
+          type: integer
+        smallBlind:
+          type: integer
+          minimum: 1
+        bigBlind:
+          type: integer
+          minimum: 1
+        dealMode:
+          type: string
+          enum: [random, debug]
+    SubmitActionRequest:
+      type: object
+      required: [seatNo, type, version]
+      properties:
+        seatNo:
+          type: integer
+        type:
+          type: string
+          enum: [fold, check, call, bet, raise, all_in]
+        amount:
+          type: integer
+          minimum: 0
+        version:
+          type: integer
+    DebugCardsRequest:
+      type: object
+      required: [version]
+      properties:
+        version:
+          type: integer
+        holeCards:
+          type: object
+          additionalProperties:
+            type: array
+            minItems: 2
+            maxItems: 2
+            items:
+              type: string
+              example: As
+        board:
+          type: array
+          maxItems: 5
+          items:
+            type: string
+            example: Kh
+    GameSnapshot:
+      type: object
+      required: [id, rulesetId, stage, seats, board, pots, legalActions, version]
+      properties:
+        id:
+          type: string
+        rulesetId:
+          type: string
+        stage:
+          type: string
+        buttonSeat:
+          type: integer
+        currentSeat:
+          type: integer
+          nullable: true
+        board:
+          type: array
+          items:
+            type: string
+        seats:
+          type: array
+          items:
+            $ref: "#/components/schemas/SeatState"
+        pots:
+          type: array
+          items:
+            $ref: "#/components/schemas/PotState"
+        legalActions:
+          type: array
+          items:
+            type: string
+        version:
+          type: integer
+    SeatState:
+      type: object
+      properties:
+        seatNo:
+          type: integer
+        name:
+          type: string
+        stack:
+          type: integer
+        holeCards:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+        streetCommitted:
+          type: integer
+        handCommitted:
+          type: integer
+    PotState:
+      type: object
+      properties:
+        id:
+          type: string
+        amount:
+          type: integer
+        eligibleSeats:
+          type: array
+          items:
+            type: integer
+        winners:
+          type: array
+          items:
+            type: object
+            properties:
+              seatNo:
+                type: integer
+              amount:
+                type: integer
+    ActionLog:
+      type: object
+      properties:
+        seq:
+          type: integer
+        stage:
+          type: string
+        seatNo:
+          type: integer
+          nullable: true
+        type:
+          type: string
+        amount:
+          type: integer
+        summary:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        field:
+          type: string
+          nullable: true
