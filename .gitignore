@@ -9,10 +9,16 @@ coverage.out
 node_modules/
 dist/
 .vite/
+frontend/node_modules/
+frontend/dist/
 
 # Local runtime data
 data/*.db
 data/*.db-shm
 data/*.db-wal
+backend/internal/data/
+**/*.db
+**/*.db-shm
+**/*.db-wal
 .env
 .env.local

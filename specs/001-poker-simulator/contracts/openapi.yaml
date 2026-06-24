@@ -239,6 +239,11 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PotState"
+        showdown:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/ShowdownResult"
         legalActions:
           type: array
           items:
@@ -284,6 +289,25 @@ components:
                 type: integer
               amount:
                 type: integer
+    ShowdownResult:
+      type: object
+      properties:
+        seatNo:
+          type: integer
+        bestCards:
+          type: array
+          items:
+            type: string
+        handClass:
+          type: string
+        rankVector:
+          type: array
+          items:
+            type: integer
+        awards:
+          type: object
+          additionalProperties:
+            type: integer
     ActionLog:
       type: object
       properties:

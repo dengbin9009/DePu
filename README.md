@@ -25,3 +25,28 @@ specs/001-poker-simulator/
 ├── contracts/openapi.yaml
 └── tasks.md
 ```
+
+## 本地启动
+
+后端：
+
+```bash
+cd backend
+go test ./...
+go run ./cmd/depu-server
+```
+
+前端：
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+如果本机同时存在旧 Homebrew Node，建议显式使用 Node 20：
+
+```bash
+cd frontend
+env PATH="$HOME/.nvm/versions/node/v20.19.4/bin:$PATH" npm run dev
+```
