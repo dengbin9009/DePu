@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { createGame, createRoom, fetchCurrentRoomHand, fetchHistory, fetchMe, fetchRechargeOptions, fetchRoom, fetchRoomHands, fetchRuleSets, fetchUserHands, fetchWallet, joinRoom, leaveSeat, login, recharge, register, replayTo, setDebugCards, startRoomHand, submitAction, submitRoomAction, takeSeat, updateProfile } from './api/client';
 import { calculateBetAmountBounds, clampBetAmount, presetBetAmount, type BetPreset } from './bettingControls';
 import { cardAltText, cardBackAltText, cardBackImagePath, cardImagePath } from './cardAssets';
@@ -48,6 +48,7 @@ const roomBuyIn = ref(1000);
 const roomHistory = ref<UserHandRecord[]>([]);
 const recentRoomHands = ref<RoomHandHistoryRecord[]>([]);
 const currentRoomHand = ref<RoomHandState | null>(null);
+let roomPollTimer: number | null = null;
 const faceDownBoardCards = [0, 1, 2];
 const betAmountBounds = computed(() => calculateBetAmountBounds(game.value));
 const myRoomSeat = computed(() => room.value?.seats.find((seat) => seat.userId && seat.userId === me.value?.id) ?? null);
@@ -61,6 +62,47 @@ onMounted(async () => {
   } catch (err) {
     error.value = err instanceof Error ? err.message : String(err);
   }
+});
+
+onBeforeUnmount(() => {
+	stopRoomPolling();
+});
+
+async function pollRoomState() {
+	if (!token.value || !room.value) return;
+	try {
+		const latestRoom = await fetchRoom(token.value, room.value.id);
+		room.value = latestRoom;
+		recentRoomHands.value = (await fetchRoomHands(token.value, latestRoom.id)).items;
+		if (latestRoom.status === 'playing') {
+			currentRoomHand.value = await fetchCurrentRoomHand(token.value, latestRoom.id);
+		}
+	} catch {
+	}
+}
+
+function stopRoomPolling() {
+	if (roomPollTimer !== null) {
+		window.clearInterval(roomPollTimer);
+		roomPollTimer = null;
+	}
+}
+
+function startRoomPolling() {
+	stopRoomPolling();
+	if (!token.value || !room.value) return;
+	roomPollTimer = window.setInterval(() => {
+		void pollRoomState();
+	}, 2000);
+}
+
+watch([room, token], ([nextRoom, nextToken]) => {
+	if (nextRoom && nextToken) {
+		startRoomPolling();
+		void pollRoomState();
+		return;
+	}
+	stopRoomPolling();
 });
 
 async function startGame() {
