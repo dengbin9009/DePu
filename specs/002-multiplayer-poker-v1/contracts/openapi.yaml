@@ -1,0 +1,846 @@
+openapi: 3.1.0
+info:
+  title: DePu Multiplayer Poker API v1
+  version: 0.1.0
+  description: |
+    多人德州扑克对战 v1 的文档契约草案。
+    本契约用于定义账号、钱包、房间、正式多人牌局和战绩接口；
+    独立规则测试页相关接口继续保留，但其正式定义仍可沿用既有测试页契约。
+servers:
+  - url: http://localhost:8080
+
+tags:
+  - name: Auth
+  - name: Profile
+  - name: Wallet
+  - name: Room
+  - name: Multiplayer Game
+  - name: History
+  - name: Test Page
+
+paths:
+  /api/auth/register:
+    post:
+      tags: [Auth]
+      summary: 注册账号
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: 注册成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthUserResponse'
+        '409':
+          description: 用户名重复
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: 用户登录
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthUserResponse'
+        '401':
+          description: 用户名或密码错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/me:
+    get:
+      tags: [Profile]
+      summary: 获取当前用户资料
+      responses:
+        '200':
+          description: 当前用户资料
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+        '401':
+          description: 未登录
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/me/profile:
+    patch:
+      tags: [Profile]
+      summary: 更新当前用户昵称
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileResponse'
+        '401':
+          description: 未登录
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: 昵称重复
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/me/wallet:
+    get:
+      tags: [Wallet]
+      summary: 获取当前用户钱包余额与最近流水
+      responses:
+        '200':
+          description: 钱包信息
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletResponse'
+        '401':
+          description: 未登录
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/recharge/options:
+    get:
+      tags: [Wallet]
+      summary: 获取模拟充值档位
+      responses:
+        '200':
+          description: 充值档位列表
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [options]
+                properties:
+                  options:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RechargeOption'
+
+  /api/recharge:
+    post:
+      tags: [Wallet]
+      summary: 执行模拟充值
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RechargeRequest'
+      responses:
+        '200':
+          description: 模拟充值成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RechargeResponse'
+        '401':
+          description: 未登录
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/rooms:
+    post:
+      tags: [Room]
+      summary: 创建房间
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRoomRequest'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomResponse'
+        '401':
+          description: 未登录
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 金币不足或不允许建房
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/rooms/join:
+    post:
+      tags: [Room]
+      summary: 通过邀请码加入房间
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JoinRoomRequest'
+      responses:
+        '200':
+          description: 加入成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomResponse'
+        '400':
+          description: 邀请码无效
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未登录
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/rooms/{roomId}:
+    get:
+      tags: [Room]
+      summary: 获取房间详情
+      parameters:
+        - $ref: '#/components/parameters/RoomId'
+      responses:
+        '200':
+          description: 房间详情
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomResponse'
+        '401':
+          description: 未登录
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 房间不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/rooms/{roomId}/seats/{seatNo}:
+    post:
+      tags: [Room]
+      summary: 占座
+      parameters:
+        - $ref: '#/components/parameters/RoomId'
+        - $ref: '#/components/parameters/SeatNo'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TakeSeatRequest'
+      responses:
+        '200':
+          description: 占座成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomResponse'
+        '401':
+          description: 未登录
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: 座位已占用
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags: [Room]
+      summary: 离座
+      parameters:
+        - $ref: '#/components/parameters/RoomId'
+        - $ref: '#/components/parameters/SeatNo'
+      responses:
+        '200':
+          description: 离座成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomResponse'
+        '401':
+          description: 未登录
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/rooms/{roomId}/start:
+    post:
+      tags: [Multiplayer Game]
+      summary: 房主发起开局
+      parameters:
+        - $ref: '#/components/parameters/RoomId'
+      responses:
+        '200':
+          description: 开局成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HandStateResponse'
+        '401':
+          description: 未登录
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 非房主或金币不足
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/rooms/{roomId}/current-hand:
+    get:
+      tags: [Multiplayer Game]
+      summary: 获取当前正式牌局状态
+      parameters:
+        - $ref: '#/components/parameters/RoomId'
+      responses:
+        '200':
+          description: 当前牌局状态
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HandStateResponse'
+        '401':
+          description: 未登录
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 房间或当前手牌不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/rooms/{roomId}/actions:
+    post:
+      tags: [Multiplayer Game]
+      summary: 当前行动玩家提交正式牌局动作
+      parameters:
+        - $ref: '#/components/parameters/RoomId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitActionRequest'
+      responses:
+        '200':
+          description: 动作成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HandStateResponse'
+        '401':
+          description: 未登录
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 非当前行动玩家或无权限
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/rooms/{roomId}/hands/recent:
+    get:
+      tags: [History]
+      summary: 获取房间最近牌局结果
+      parameters:
+        - $ref: '#/components/parameters/RoomId'
+      responses:
+        '200':
+          description: 最近牌局结果列表
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/HandResult'
+        '401':
+          description: 未登录
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/me/hands:
+    get:
+      tags: [History]
+      summary: 获取当前用户个人每手牌战绩
+      responses:
+        '200':
+          description: 个人战绩列表
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [items]
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserHandRecord'
+        '401':
+          description: 未登录
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/test/games:
+    get:
+      tags: [Test Page]
+      summary: 现有规则测试页接口边界说明
+      description: |
+        本 feature 保留现有规则测试/回放页面和相关接口。
+        正式多人流程不得直接复用测试页的调试特权。
+      responses:
+        '200':
+          description: 说明性占位响应
+
+components:
+  parameters:
+    RoomId:
+      name: roomId
+      in: path
+      required: true
+      schema:
+        type: string
+    SeatNo:
+      name: seatNo
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+
+  schemas:
+    RegisterRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+
+    UpdateProfileRequest:
+      type: object
+      required: [nickname]
+      properties:
+        nickname:
+          type: string
+
+    AuthUserResponse:
+      type: object
+      required: [user, token]
+      properties:
+        user:
+          $ref: '#/components/schemas/UserSummary'
+        token:
+          type: string
+
+    UserSummary:
+      type: object
+      required: [id, username, nickname]
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        nickname:
+          type: string
+
+    ProfileResponse:
+      type: object
+      required: [id, username, nickname, walletBalance]
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        nickname:
+          type: string
+        walletBalance:
+          type: integer
+        handsPlayed:
+          type: integer
+        totalProfit:
+          type: integer
+        lastPlayedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    RechargeOption:
+      type: object
+      required: [code, label, amount]
+      properties:
+        code:
+          type: string
+        label:
+          type: string
+        amount:
+          type: integer
+
+    RechargeRequest:
+      type: object
+      required: [optionCode, confirm]
+      properties:
+        optionCode:
+          type: string
+        confirm:
+          type: boolean
+
+    RechargeResponse:
+      type: object
+      required: [status, walletBalance, transaction]
+      properties:
+        status:
+          type: string
+          enum: [simulated_success]
+        walletBalance:
+          type: integer
+        transaction:
+          $ref: '#/components/schemas/WalletTransaction'
+
+    WalletResponse:
+      type: object
+      required: [balance, transactions]
+      properties:
+        balance:
+          type: integer
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/WalletTransaction'
+
+    WalletTransaction:
+      type: object
+      required: [id, type, amount, balanceAfter, createdAt]
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [recharge_simulated, hand_settlement_credit, hand_settlement_debit]
+        amount:
+          type: integer
+        balanceAfter:
+          type: integer
+        referenceType:
+          type: string
+          nullable: true
+        referenceId:
+          type: string
+          nullable: true
+        note:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateRoomRequest:
+      type: object
+      required: [ruleSetId, seatCount, minPlayersToStart]
+      properties:
+        ruleSetId:
+          type: string
+        seatCount:
+          type: integer
+          minimum: 2
+          maximum: 10
+        minPlayersToStart:
+          type: integer
+          minimum: 2
+          maximum: 10
+
+    JoinRoomRequest:
+      type: object
+      required: [inviteCode]
+      properties:
+        inviteCode:
+          type: string
+
+    TakeSeatRequest:
+      type: object
+      properties:
+        buyInChips:
+          type: integer
+          minimum: 1
+
+    RoomResponse:
+      type: object
+      required: [id, inviteCode, ownerUserId, status, members, seats]
+      properties:
+        id:
+          type: string
+        inviteCode:
+          type: string
+        ownerUserId:
+          type: string
+        status:
+          type: string
+          enum: [waiting, playing, closed]
+        ruleSetId:
+          type: string
+        seatCount:
+          type: integer
+        minPlayersToStart:
+          type: integer
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoomMember'
+        seats:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoomSeat'
+
+    RoomMember:
+      type: object
+      required: [userId, nickname, role, joinedAt]
+      properties:
+        userId:
+          type: string
+        nickname:
+          type: string
+        role:
+          type: string
+          enum: [owner, player]
+        joinedAt:
+          type: string
+          format: date-time
+
+    RoomSeat:
+      type: object
+      required: [seatNo, seatStatus]
+      properties:
+        seatNo:
+          type: integer
+        seatStatus:
+          type: string
+          enum: [empty, occupied, sitting_out]
+        userId:
+          type: string
+          nullable: true
+        nickname:
+          type: string
+          nullable: true
+        buyInChips:
+          type: integer
+          nullable: true
+
+    SubmitActionRequest:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [fold, check, call, bet, raise, all_in]
+        amount:
+          type: integer
+          nullable: true
+
+    HandStateResponse:
+      type: object
+      required: [roomId, handId, status, currentSeat, players]
+      properties:
+        roomId:
+          type: string
+        handId:
+          type: string
+        status:
+          type: string
+        currentSeat:
+          type: integer
+          nullable: true
+        pot:
+          type: integer
+        boardCards:
+          type: array
+          items:
+            type: string
+        players:
+          type: array
+          items:
+            $ref: '#/components/schemas/HandPlayerState'
+        availableActions:
+          type: array
+          items:
+            type: string
+
+    HandPlayerState:
+      type: object
+      required: [userId, nickname, seatNo, stack, folded, allIn]
+      properties:
+        userId:
+          type: string
+        nickname:
+          type: string
+        seatNo:
+          type: integer
+        stack:
+          type: integer
+        folded:
+          type: boolean
+        allIn:
+          type: boolean
+
+    HandResult:
+      type: object
+      required: [handId, roomId, completedAt, participants]
+      properties:
+        handId:
+          type: string
+        roomId:
+          type: string
+        handNo:
+          type: integer
+        completedAt:
+          type: string
+          format: date-time
+        winnerSummary:
+          type: string
+        potSummary:
+          type: string
+        boardCards:
+          type: array
+          items:
+            type: string
+        participants:
+          type: array
+          items:
+            $ref: '#/components/schemas/HandParticipantResult'
+
+    HandParticipantResult:
+      type: object
+      required: [userId, nickname, seatNo, profit]
+      properties:
+        userId:
+          type: string
+        nickname:
+          type: string
+        seatNo:
+          type: integer
+        profit:
+          type: integer
+        resultType:
+          type: string
+
+    UserHandRecord:
+      type: object
+      required: [handId, roomId, completedAt, nickname, profit]
+      properties:
+        handId:
+          type: string
+        roomId:
+          type: string
+        handNo:
+          type: integer
+        completedAt:
+          type: string
+          format: date-time
+        nickname:
+          type: string
+        profit:
+          type: integer
+        winnerSummary:
+          type: string
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              enum:
+                - unauthorized
+                - forbidden
+                - duplicate_username
+                - duplicate_nickname
+                - insufficient_coins
+                - room_not_found
+                - invalid_invite_code
+                - seat_taken
+                - not_room_owner
+                - not_your_turn
+            message:
+              type: string
