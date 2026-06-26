@@ -474,7 +474,7 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil { writeError(w, http.StatusBadRequest, "bad_json", err.Error(), ""); return }
 	if len(req.Password) < 8 { writeError(w, http.StatusBadRequest, "invalid_password", "password must be at least 8 characters", "password"); return }
 	if _, err := s.store.FindUserByUsername(req.Username); err == nil { writeError(w, http.StatusConflict, "duplicate_username", "username already exists", "username"); return }
-	if _, _, err := s.store.CreateUser(req.Username, s.hashPassword(req.Password), req.Nickname, 0); err != nil {
+	if _, _, err := s.store.CreateUser(req.Username, s.hashPassword(req.Password), req.Nickname, 5000); err != nil {
 		msg := err.Error()
 		if strings.Contains(msg, "nickname") || strings.Contains(msg, "UNIQUE") { writeError(w, http.StatusConflict, "duplicate_nickname", "nickname already exists", "nickname"); return }
 		writeError(w, http.StatusInternalServerError, "storage_error", msg, "")
@@ -640,8 +640,12 @@ func (s *Server) roomByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(parts) == 3 && parts[1] == "hands" && parts[2] == "recent" && r.Method == http.MethodGet {
+		if _, err := s.store.RoomByID(roomID); err != nil {
+			writeError(w, http.StatusNotFound, "room_not_found", "room not found", "")
+			return
+		}
 		items, err := s.store.RecentHandResultsByRoom(roomID, 10)
-		if err != nil { writeError(w, http.StatusNotFound, "room_not_found", "room not found", ""); return }
+		if err != nil { writeError(w, http.StatusInternalServerError, "storage_error", err.Error(), ""); return }
 		writeJSON(w, http.StatusOK, map[string]any{"items": items})
 		return
 	}
@@ -663,6 +667,7 @@ func (s *Server) roomByID(w http.ResponseWriter, r *http.Request) {
 		room, err := s.store.TakeSeat(roomID, currentUser.ID, seatNo, req.BuyInChips)
 		if err != nil {
 			if strings.Contains(err.Error(), "taken") { writeError(w, http.StatusConflict, "seat_taken", "seat already taken", "seatNo"); return }
+			if strings.Contains(err.Error(), "insufficient") { writeError(w, http.StatusConflict, "insufficient_coins", "insufficient coins", "buyInChips"); return }
 			writeError(w, http.StatusInternalServerError, "storage_error", err.Error(), "")
 			return
 		}

@@ -314,10 +314,19 @@ func (s *Store) TakeSeat(roomID, userID string, seatNo, buyInChips int) (*RoomRe
 	tx, err := s.db.Begin()
 	if err != nil { return nil, err }
 	defer func() { if err != nil { _ = tx.Rollback() } }()
+	var balance int
+	if err = tx.QueryRow(`select balance from wallets where user_id = ?`, userID).Scan(&balance); err != nil { return nil, err }
+	if buyInChips <= 0 { return nil, errors.New("invalid buy-in") }
+	if balance < buyInChips { return nil, errors.New("insufficient coins") }
 	var existing sql.NullString
 	if err = tx.QueryRow(`select user_id from room_seats where room_id = ? and seat_no = ?`, roomID, seatNo).Scan(&existing); err != nil { return nil, err }
 	if existing.Valid { return nil, errors.New("seat already taken") }
 	now := time.Now().UTC().Format(time.RFC3339Nano)
+	balance -= buyInChips
+	if _, err = tx.Exec(`update wallets set balance = ?, updated_at = ? where user_id = ?`, balance, now, userID); err != nil { return nil, err }
+	txnID := fmt.Sprintf("txn_%d", time.Now().UTC().UnixNano())
+	note := fmt.Sprintf("room buy-in %s seat %d", roomID, seatNo)
+	if _, err = tx.Exec(`insert into wallet_transactions(id, user_id, type, amount, balance_after, reference_type, reference_id, note, created_at) values(?, ?, ?, ?, ?, ?, ?, ?, ?)`, txnID, userID, "buy_in", -buyInChips, balance, "room", roomID, note, now); err != nil { return nil, err }
 	if _, err = tx.Exec(`update room_seats set user_id = ?, buy_in_chips = ?, seat_status = ?, updated_at = ? where room_id = ? and seat_no = ?`, userID, buyInChips, "occupied", now, roomID, seatNo); err != nil { return nil, err }
 	if err = tx.Commit(); err != nil { return nil, err }
 	return s.RoomByID(roomID)
@@ -330,7 +339,18 @@ func (s *Store) LeaveSeat(roomID, userID string, seatNo int) (*RoomRecord, error
 	var currentUser sql.NullString
 	if err = tx.QueryRow(`select user_id from room_seats where room_id = ? and seat_no = ?`, roomID, seatNo).Scan(&currentUser); err != nil { return nil, err }
 	if !currentUser.Valid || currentUser.String != userID { return nil, errors.New("seat not owned by user") }
+	var buyIn sql.NullInt64
+	if err = tx.QueryRow(`select buy_in_chips from room_seats where room_id = ? and seat_no = ?`, roomID, seatNo).Scan(&buyIn); err != nil { return nil, err }
 	now := time.Now().UTC().Format(time.RFC3339Nano)
+	if buyIn.Valid && buyIn.Int64 > 0 {
+		var balance int
+		if err = tx.QueryRow(`select balance from wallets where user_id = ?`, userID).Scan(&balance); err != nil { return nil, err }
+		balance += int(buyIn.Int64)
+		if _, err = tx.Exec(`update wallets set balance = ?, updated_at = ? where user_id = ?`, balance, now, userID); err != nil { return nil, err }
+		txnID := fmt.Sprintf("txn_%d", time.Now().UTC().UnixNano())
+		note := fmt.Sprintf("room leave refund %s seat %d", roomID, seatNo)
+		if _, err = tx.Exec(`insert into wallet_transactions(id, user_id, type, amount, balance_after, reference_type, reference_id, note, created_at) values(?, ?, ?, ?, ?, ?, ?, ?, ?)`, txnID, userID, "leave_refund", int(buyIn.Int64), balance, "room", roomID, note, now); err != nil { return nil, err }
+	}
 	if _, err = tx.Exec(`update room_seats set user_id = null, buy_in_chips = null, seat_status = ?, updated_at = ? where room_id = ? and seat_no = ?`, "empty", now, roomID, seatNo); err != nil { return nil, err }
 	if _, err = tx.Exec(`delete from room_members where room_id = ? and user_id = ?`, roomID, userID); err != nil { return nil, err }
 	var ownerUserID string
@@ -593,21 +613,24 @@ func (s *Store) SnapshotAt(id string, seq int) (*game.Game, error) {
 }
 
 func (s *Store) migrate() error {
-	_, err := s.db.Exec(`
-		create table if not exists games (id varchar(64) primary key, ruleset_id varchar(64) not null, stage varchar(32) not null, version integer not null, snapshot longtext not null, updated_at varchar(64) not null);
-		create table if not exists actions (game_id varchar(64) not null, seq integer not null, stage varchar(32) not null, seat_no integer null, type varchar(32) not null, amount integer not null, payload longtext not null, summary longtext not null, created_at varchar(64) not null, primary key(game_id, seq));
-		create table if not exists snapshots (game_id varchar(64) not null, seq integer not null, snapshot longtext not null, created_at varchar(64) not null, primary key(game_id, seq));
-		create table if not exists users (id varchar(64) primary key, username varchar(128) not null unique, password_hash varchar(255) not null, status varchar(32) not null, created_at varchar(64) not null, updated_at varchar(64) not null);
-		create table if not exists user_profiles (user_id varchar(64) primary key, nickname varchar(128) not null unique, hands_played integer not null default 0, total_profit integer not null default 0, last_played_at varchar(64) null, updated_at varchar(64) not null);
-		create table if not exists wallets (user_id varchar(64) primary key, balance integer not null, updated_at varchar(64) not null);
-		create table if not exists wallet_transactions (id varchar(64) primary key, user_id varchar(64) not null, type varchar(64) not null, amount integer not null, balance_after integer not null, reference_type varchar(64), reference_id varchar(64), note varchar(255), created_at varchar(64) not null);
-		create table if not exists rooms (id varchar(64) primary key, invite_code varchar(32) not null unique, owner_user_id varchar(64) not null, status varchar(32) not null, rule_set_id varchar(64) not null, seat_count integer not null, min_players_to_start integer not null, current_game_id varchar(64) null, created_at varchar(64) not null, updated_at varchar(64) not null);
-		create table if not exists room_members (room_id varchar(64) not null, user_id varchar(64) not null, role varchar(32) not null, joined_at varchar(64) not null, primary key(room_id, user_id));
-		create table if not exists room_seats (room_id varchar(64) not null, seat_no integer not null, user_id varchar(64) null, buy_in_chips integer null, seat_status varchar(32) not null, updated_at varchar(64) not null, primary key(room_id, seat_no));
-		create table if not exists hand_results (id varchar(64) primary key, room_id varchar(64) not null, game_id varchar(64) not null, hand_no integer not null, rule_set_id varchar(64) not null, completed_at varchar(64) not null, winner_summary varchar(255) not null, pot_summary varchar(255) not null, board_cards_json longtext not null, total_pot integer not null);
-		create table if not exists hand_participants (hand_id varchar(64) not null, room_id varchar(64) not null, game_id varchar(64) not null, user_id varchar(64) not null, nickname_snapshot varchar(128) not null, seat_no integer not null, profit integer not null, result_type varchar(32) not null, hole_cards_json longtext not null, best_cards_json longtext not null, hand_class varchar(64) not null, hand_committed integer not null, award_amount integer not null, completed_at varchar(64) not null, primary key(hand_id, seat_no));
-	`)
-	return err
+	stmts := []string{
+		`create table if not exists games (id varchar(64) primary key, ruleset_id varchar(64) not null, stage varchar(32) not null, version integer not null, snapshot longtext not null, updated_at varchar(64) not null)`,
+		`create table if not exists actions (game_id varchar(64) not null, seq integer not null, stage varchar(32) not null, seat_no integer null, type varchar(32) not null, amount integer not null, payload longtext not null, summary longtext not null, created_at varchar(64) not null, primary key(game_id, seq))`,
+		`create table if not exists snapshots (game_id varchar(64) not null, seq integer not null, snapshot longtext not null, created_at varchar(64) not null, primary key(game_id, seq))`,
+		`create table if not exists users (id varchar(64) primary key, username varchar(128) not null unique, password_hash varchar(255) not null, status varchar(32) not null, created_at varchar(64) not null, updated_at varchar(64) not null)`,
+		`create table if not exists user_profiles (user_id varchar(64) primary key, nickname varchar(128) not null unique, hands_played integer not null default 0, total_profit integer not null default 0, last_played_at varchar(64) null, updated_at varchar(64) not null)`,
+		`create table if not exists wallets (user_id varchar(64) primary key, balance integer not null, updated_at varchar(64) not null)`,
+		`create table if not exists wallet_transactions (id varchar(64) primary key, user_id varchar(64) not null, type varchar(64) not null, amount integer not null, balance_after integer not null, reference_type varchar(64), reference_id varchar(64), note varchar(255), created_at varchar(64) not null)`,
+		`create table if not exists rooms (id varchar(64) primary key, invite_code varchar(32) not null unique, owner_user_id varchar(64) not null, status varchar(32) not null, rule_set_id varchar(64) not null, seat_count integer not null, min_players_to_start integer not null, current_game_id varchar(64) null, created_at varchar(64) not null, updated_at varchar(64) not null)`,
+		`create table if not exists room_members (room_id varchar(64) not null, user_id varchar(64) not null, role varchar(32) not null, joined_at varchar(64) not null, primary key(room_id, user_id))`,
+		`create table if not exists room_seats (room_id varchar(64) not null, seat_no integer not null, user_id varchar(64) null, buy_in_chips integer null, seat_status varchar(32) not null, updated_at varchar(64) not null, primary key(room_id, seat_no))`,
+		`create table if not exists hand_results (id varchar(64) primary key, room_id varchar(64) not null, game_id varchar(64) not null, hand_no integer not null, rule_set_id varchar(64) not null, completed_at varchar(64) not null, winner_summary varchar(255) not null, pot_summary varchar(255) not null, board_cards_json longtext not null, total_pot integer not null)`,
+		`create table if not exists hand_participants (hand_id varchar(64) not null, room_id varchar(64) not null, game_id varchar(64) not null, user_id varchar(64) not null, nickname_snapshot varchar(128) not null, seat_no integer not null, profit integer not null, result_type varchar(32) not null, hole_cards_json longtext not null, best_cards_json longtext not null, hand_class varchar(64) not null, hand_committed integer not null, award_amount integer not null, completed_at varchar(64) not null, primary key(hand_id, seat_no))`,
+	}
+	for _, stmt := range stmts {
+		if _, err := s.db.Exec(stmt); err != nil { return err }
+	}
+	return nil
 }
 
 func nullableSeat(seatNo int) any { if seatNo == 0 { return nil }; return seatNo }

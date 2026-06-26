@@ -3,16 +3,18 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/dengbin9009/DePu/backend/internal/storage"
 )
 
 func testServer(t *testing.T) *Server {
 	t.Helper()
-	store, err := storage.Open(":memory:")
+	store, err := storage.Open(fmt.Sprintf("file:depu_test_%d?mode=memory&cache=shared", time.Now().UnixNano()))
 	if err != nil {
 		t.Fatal(err)
 	}

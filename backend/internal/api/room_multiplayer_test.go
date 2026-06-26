@@ -89,3 +89,30 @@ func TestJoinRejectsInvalidInviteCodeAndSeatTaken(t *testing.T) {
 	server.Routes().ServeHTTP(res2, take2)
 	if res2.Code != http.StatusConflict { t.Fatalf("take2 status=%d body=%s", res2.Code, res2.Body.String()) }
 }
+
+func TestTakeSeatRejectsInsufficientCoins(t *testing.T) {
+	server := testServer(t)
+	ownerToken := registerUser(t, server, "owner03", "房主C")
+	playerToken := registerUser(t, server, "player03", "玩家C")
+
+	createReq := httptest.NewRequest(http.MethodPost, "/api/rooms", bytes.NewReader([]byte(`{"ruleSetId":"long-holdem","seatCount":6,"minPlayersToStart":2}`)))
+	createReq.Header.Set("Authorization", "Bearer "+ownerToken)
+	createRes := httptest.NewRecorder()
+	server.Routes().ServeHTTP(createRes, createReq)
+	var room map[string]any
+	_ = json.Unmarshal(createRes.Body.Bytes(), &room)
+	inviteCode, _ := room["inviteCode"].(string)
+	roomID, _ := room["id"].(string)
+
+	joinReq := httptest.NewRequest(http.MethodPost, "/api/rooms/join", bytes.NewReader([]byte(`{"inviteCode":"`+inviteCode+`"}`)))
+	joinReq.Header.Set("Authorization", "Bearer "+playerToken)
+	joinRes := httptest.NewRecorder()
+	server.Routes().ServeHTTP(joinRes, joinReq)
+	if joinRes.Code != http.StatusOK { t.Fatalf("join room status=%d body=%s", joinRes.Code, joinRes.Body.String()) }
+
+	takeReq := httptest.NewRequest(http.MethodPost, "/api/rooms/"+roomID+"/seats/2", bytes.NewReader([]byte(`{"buyInChips":999999}`)))
+	takeReq.Header.Set("Authorization", "Bearer "+playerToken)
+	takeRes := httptest.NewRecorder()
+	server.Routes().ServeHTTP(takeRes, takeReq)
+	if takeRes.Code != http.StatusConflict { t.Fatalf("take seat status=%d body=%s", takeRes.Code, takeRes.Body.String()) }
+}
