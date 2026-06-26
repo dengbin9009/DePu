@@ -142,7 +142,7 @@
 - [ ] T044 [P] [US4] 编写余额不足导致建房失败的测试于 `backend/internal/api/multiplayer_balance_test.go`
 - [x] T045 [P] [US4] 编写余额不足导致占座买入失败且不改变座位状态的测试于 `backend/internal/api/multiplayer_balance_test.go`
 - [ ] T046 [P] [US4] 编写余额不足导致开局失败且不创建正式牌桌状态的测试于 `backend/internal/api/multiplayer_balance_test.go`
-- [ ] T047 [P] [US4] 编写前端正式牌桌交互测试于 `frontend/src/multiplayerTable.test.ts`
+- [x] T047 [P] [US4] 编写前端正式牌桌交互测试于 `frontend/src/multiplayerTable.test.ts`
 
 ### Implementation for User Story 4
 
@@ -169,7 +169,7 @@
 - [x] T055 [P] [US5] 编写手牌结果归档与事务一致性测试于 `backend/internal/storage/storage_test.go`
 - [x] T056 [P] [US5] 编写房间最近牌局结果接口测试于 `backend/internal/api/hand_history_test.go`
 - [x] T057 [P] [US5] 编写个人战绩接口测试，覆盖昵称快照展示于 `backend/internal/api/user_history_test.go`
-- [ ] T058 [P] [US5] 编写前端战绩页展示测试于 `frontend/src/historyPage.test.ts`
+- [x] T058 [P] [US5] 编写前端战绩页展示测试于 `frontend/src/historyPage.test.ts`
 
 ### Implementation for User Story 5
 

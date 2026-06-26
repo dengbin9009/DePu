@@ -115,4 +115,50 @@ func TestTakeSeatRejectsInsufficientCoins(t *testing.T) {
 	takeRes := httptest.NewRecorder()
 	server.Routes().ServeHTTP(takeRes, takeReq)
 	if takeRes.Code != http.StatusConflict { t.Fatalf("take seat status=%d body=%s", takeRes.Code, takeRes.Body.String()) }
+
+	roomReq := httptest.NewRequest(http.MethodGet, "/api/rooms/"+roomID, nil)
+	roomReq.Header.Set("Authorization", "Bearer "+playerToken)
+	roomRes := httptest.NewRecorder()
+	server.Routes().ServeHTTP(roomRes, roomReq)
+	if roomRes.Code != http.StatusOK { t.Fatalf("room status=%d body=%s", roomRes.Code, roomRes.Body.String()) }
+	var roomState struct {
+		Seats []struct {
+			SeatNo int `json:"seatNo"`
+			UserID *string `json:"userId"`
+		} `json:"seats"`
+	}
+	if err := json.Unmarshal(roomRes.Body.Bytes(), &roomState); err != nil { t.Fatal(err) }
+	for _, seat := range roomState.Seats {
+		if seat.SeatNo == 2 && seat.UserID != nil {
+			t.Fatal("seat 2 should remain empty after insufficient coins failure")
+		}
+	}
+}
+
+func TestStartFailsWithoutEnoughSeatedPlayersAndDoesNotCreateCurrentHand(t *testing.T) {
+	server := testServer(t)
+	ownerToken := registerUser(t, server, "owner04", "房主D")
+
+	createReq := httptest.NewRequest(http.MethodPost, "/api/rooms", bytes.NewReader([]byte(`{"ruleSetId":"long-holdem","seatCount":6,"minPlayersToStart":2}`)))
+	createReq.Header.Set("Authorization", "Bearer "+ownerToken)
+	createRes := httptest.NewRecorder()
+	server.Routes().ServeHTTP(createRes, createReq)
+	if createRes.Code != http.StatusCreated { t.Fatalf("create room status=%d body=%s", createRes.Code, createRes.Body.String()) }
+	var room map[string]any
+	if err := json.Unmarshal(createRes.Body.Bytes(), &room); err != nil { t.Fatal(err) }
+	roomID, _ := room["id"].(string)
+
+	startReq := httptest.NewRequest(http.MethodPost, "/api/rooms/"+roomID+"/start", nil)
+	startReq.Header.Set("Authorization", "Bearer "+ownerToken)
+	startRes := httptest.NewRecorder()
+	server.Routes().ServeHTTP(startRes, startReq)
+	if startRes.Code != http.StatusForbidden { t.Fatalf("start status=%d body=%s", startRes.Code, startRes.Body.String()) }
+
+	currentReq := httptest.NewRequest(http.MethodGet, "/api/rooms/"+roomID+"/current-hand", nil)
+	currentReq.Header.Set("Authorization", "Bearer "+ownerToken)
+	currentRes := httptest.NewRecorder()
+	server.Routes().ServeHTTP(currentRes, currentReq)
+	if currentRes.Code != http.StatusNotFound {
+		t.Fatalf("current hand status=%d body=%s", currentRes.Code, currentRes.Body.String())
+	}
 }
