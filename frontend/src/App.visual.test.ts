@@ -96,4 +96,25 @@ describe('App visual contract', () => {
 		expect(opponents.some((seat) => seat.x > 65)).toBe(true);
 		expect(opponents.some((seat) => seat.x >= 42 && seat.x <= 58 && seat.y <= 20)).toBe(true);
 	});
+
+	it('keeps multiplayer profile, wallet, room history, and player perspective sections in the component', () => {
+		for (const token of [
+			'钱包流水',
+			'walletTransactionLabel',
+			'formatDateTime',
+			'房间最近牌局',
+			'个人战绩',
+			'recentRoomHands',
+			'myRoomSeat',
+			'isMyTurn',
+			'myRoomHandPlayer',
+			'现在轮到我操作',
+			'我当前还未入座',
+			'投入 {{ participant.handCommitted }}',
+			'返奖 {{ participant.awardAmount }}',
+			'净输赢'
+		]) {
+			expect(appSource).toContain(token);
+		}
+	});
 });
