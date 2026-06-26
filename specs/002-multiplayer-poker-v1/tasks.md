@@ -26,8 +26,8 @@
 
 - [ ] T001 复核 `specs/002-multiplayer-poker-v1/plan.md` 与 `AGENTS.md` 中的 feature 引用一致
 - [ ] T002 [P] 盘点现有规则引擎与测试页可复用边界，记录到 `specs/002-multiplayer-poker-v1/research.md`
-- [ ] T003 [P] 规划 MySQL/SQLite 运行配置入口并映射到 `backend/cmd/depu-server/main.go`
-- [ ] T004 规划正式多人 API 与测试页 API 的路由分组边界，落地到 `backend/internal/api/server.go`
+- [x] T003 [P] 规划 MySQL/SQLite 运行配置入口并映射到 `backend/cmd/depu-server/main.go`
+- [x] T004 规划正式多人 API 与测试页 API 的路由分组边界，落地到 `backend/internal/api/server.go`
 
 ---
 
@@ -37,11 +37,11 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T005 [P] 编写数据库模式切换测试于 `backend/internal/storage/storage_test.go`
-- [ ] T006 [P] 规划认证中间件与会话注入接口于 `backend/internal/api/server.go`
-- [ ] T007 [P] 规划统一错误响应扩展，覆盖 `unauthorized`、`forbidden`、`duplicate_username`、`duplicate_nickname`、`insufficient_coins`、`room_not_found`、`invalid_invite_code`、`seat_taken`、`not_room_owner`、`not_your_turn` 于 `backend/internal/api/server.go`
-- [ ] T008 定义多人正式流程基础存储抽象于 `backend/internal/storage/storage.go`
-- [ ] T009 规划前端正式多人 API client 扩展入口于 `frontend/src/api/client.ts`
+- [x] T005 [P] 编写数据库模式切换测试于 `backend/internal/storage/storage_test.go`
+- [x] T006 [P] 规划认证中间件与会话注入接口于 `backend/internal/api/server.go`
+- [x] T007 [P] 规划统一错误响应扩展，覆盖 `unauthorized`、`forbidden`、`duplicate_username`、`duplicate_nickname`、`insufficient_coins`、`room_not_found`、`invalid_invite_code`、`seat_taken`、`not_room_owner`、`not_your_turn` 于 `backend/internal/api/server.go`
+- [x] T008 定义多人正式流程基础存储抽象于 `backend/internal/storage/storage.go`
+- [x] T009 规划前端正式多人 API client 扩展入口于 `frontend/src/api/client.ts`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -57,21 +57,21 @@
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T010 [P] [US1] 编写注册与登录契约测试于 `backend/internal/api/auth_contract_test.go`
-- [ ] T011 [P] [US1] 编写重复用户名与重复昵称测试于 `backend/internal/api/auth_uniqueness_test.go`
-- [ ] T012 [P] [US1] 编写未登录访问资料接口测试于 `backend/internal/api/auth_guard_test.go`
+- [x] T010 [P] [US1] 编写注册与登录契约测试于 `backend/internal/api/auth_contract_test.go`
+- [x] T011 [P] [US1] 编写重复用户名与重复昵称测试于 `backend/internal/api/auth_uniqueness_test.go`
+- [x] T012 [P] [US1] 编写未登录访问资料接口测试于 `backend/internal/api/auth_guard_test.go`
 - [ ] T013 [P] [US1] 编写资料页昵称修改前端交互测试于 `frontend/src/profilePage.test.ts`
-- [ ] T014 [P] [US1] 编写密码最小长度校验与响应不返回密码字段测试于 `backend/internal/api/auth_security_test.go`
+- [x] T014 [P] [US1] 编写密码最小长度校验与响应不返回密码字段测试于 `backend/internal/api/auth_security_test.go`
 
 ### Implementation for User Story 1
 
-- [ ] T015 [P] [US1] 定义 `User` 与 `UserProfile` 存储模型于 `backend/internal/storage/storage.go`
-- [ ] T016 [P] [US1] 实现密码散列、最小长度校验与响应字段过滤逻辑于 `backend/internal/api/server.go`
-- [ ] T017 [US1] 实现注册、登录和当前用户接口于 `backend/internal/api/server.go`
-- [ ] T018 [US1] 实现昵称更新接口与唯一性校验于 `backend/internal/api/server.go`
-- [ ] T019 [P] [US1] 扩展前端认证与资料 API 类型于 `frontend/src/api/client.ts`
-- [ ] T020 [US1] 实现资料页与昵称修改交互于 `frontend/src/App.vue`
-- [ ] T021 [US1] 在 `backend/internal/api/server.go` 统一返回 `duplicate_username`、`duplicate_nickname` 与 `unauthorized`
+- [x] T015 [P] [US1] 定义 `User` 与 `UserProfile` 存储模型于 `backend/internal/storage/storage.go`
+- [x] T016 [P] [US1] 实现密码散列、最小长度校验与响应字段过滤逻辑于 `backend/internal/api/server.go`
+- [x] T017 [US1] 实现注册、登录和当前用户接口于 `backend/internal/api/server.go`
+- [x] T018 [US1] 实现昵称更新接口与唯一性校验于 `backend/internal/api/server.go`
+- [x] T019 [P] [US1] 扩展前端认证与资料 API 类型于 `frontend/src/api/client.ts`
+- [x] T020 [US1] 实现资料页与昵称修改交互于 `frontend/src/App.vue`
+- [x] T021 [US1] 在 `backend/internal/api/server.go` 统一返回 `duplicate_username`、`duplicate_nickname` 与 `unauthorized`
 
 **Checkpoint**: User Story 1 should be fully functional and independently testable
 
@@ -85,18 +85,18 @@
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T022 [P] [US2] 编写至少 3 个服务端充值档位与模拟充值契约测试于 `backend/internal/api/wallet_contract_test.go`
-- [ ] T023 [P] [US2] 编写钱包余额累加与流水写入测试于 `backend/internal/storage/storage_test.go`
-- [ ] T024 [P] [US2] 编写未登录访问钱包接口测试于 `backend/internal/api/wallet_auth_test.go`
+- [x] T022 [P] [US2] 编写至少 3 个服务端充值档位与模拟充值契约测试于 `backend/internal/api/wallet_contract_test.go`
+- [x] T023 [P] [US2] 编写钱包余额累加与流水写入测试于 `backend/internal/storage/storage_test.go`
+- [x] T024 [P] [US2] 编写未登录访问钱包接口测试于 `backend/internal/api/wallet_auth_test.go`
 - [ ] T025 [P] [US2] 编写前端钱包页交互测试于 `frontend/src/walletPage.test.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T026 [P] [US2] 定义 `Wallet` 与 `WalletTransaction` 存储模型于 `backend/internal/storage/storage.go`
+- [x] T026 [P] [US2] 定义 `Wallet` 与 `WalletTransaction` 存储模型于 `backend/internal/storage/storage.go`
 - [ ] T027 [US2] 实现充值档位、钱包余额和流水查询接口于 `backend/internal/api/server.go`
 - [ ] T028 [US2] 实现模拟充值成功与余额累加逻辑于 `backend/internal/storage/storage.go`
 - [ ] T029 [P] [US2] 扩展前端钱包 API 类型于 `frontend/src/api/client.ts`
-- [ ] T030 [US2] 实现充值确认、余额展示和流水列表于 `frontend/src/App.vue`
+- [x] T030 [US2] 实现充值确认、余额展示和流水列表于 `frontend/src/App.vue`
 - [ ] T031 [US2] 在 `backend/internal/api/server.go` 统一返回钱包相关 `unauthorized` 错误
 
 **Checkpoint**: User Stories 1 and 2 should both work independently
@@ -137,16 +137,16 @@
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T042 [P] [US4] 编写房主开局权限测试于 `backend/internal/api/multiplayer_start_test.go`
-- [ ] T043 [P] [US4] 编写“仅当前行动玩家可操作”测试于 `backend/internal/api/multiplayer_turn_test.go`
+- [x] T042 [P] [US4] 编写房主开局权限测试于 `backend/internal/api/multiplayer_start_test.go`
+- [x] T043 [P] [US4] 编写“仅当前行动玩家可操作”测试于 `backend/internal/api/multiplayer_turn_test.go`
 - [ ] T044 [P] [US4] 编写余额不足导致建房失败的测试于 `backend/internal/api/multiplayer_balance_test.go`
-- [ ] T045 [P] [US4] 编写余额不足导致占座买入失败且不改变座位状态的测试于 `backend/internal/api/multiplayer_balance_test.go`
+- [x] T045 [P] [US4] 编写余额不足导致占座买入失败且不改变座位状态的测试于 `backend/internal/api/multiplayer_balance_test.go`
 - [ ] T046 [P] [US4] 编写余额不足导致开局失败且不创建正式牌桌状态的测试于 `backend/internal/api/multiplayer_balance_test.go`
 - [ ] T047 [P] [US4] 编写前端正式牌桌交互测试于 `frontend/src/multiplayerTable.test.ts`
 
 ### Implementation for User Story 4
 
-- [ ] T048 [P] [US4] 定义 `GameTable`、`Hand`、`HandParticipant` 存储模型于 `backend/internal/storage/storage.go`
+- [x] T048 [P] [US4] 定义 `GameTable`、`Hand`、`HandParticipant` 存储模型于 `backend/internal/storage/storage.go`
 - [x] T049 [US4] 在 `backend/internal/game/game.go` 复用现有规则引擎创建正式多人手牌状态
 - [x] T050 [US4] 实现房主开局、当前牌局读取和动作提交接口于 `backend/internal/api/server.go`
 - [x] T051 [US4] 实现“当前用户必须匹配当前行动席位”的权限校验于 `backend/internal/api/server.go`
@@ -192,15 +192,15 @@
 
 ### Tests for User Story 6 ⚠️
 
-- [ ] T065 [P] [US6] 编写规则测试页回归测试于 `backend/internal/api/replay_history_v03_test.go`
-- [ ] T066 [P] [US6] 编写测试页与正式多人边界测试于 `backend/internal/api/testpage_boundary_test.go`
-- [ ] T067 [P] [US6] 编写前端测试页入口回归测试于 `frontend/src/App.visual.test.ts`
+- [x] T065 [P] [US6] 编写规则测试页回归测试于 `backend/internal/api/replay_history_v03_test.go`
+- [x] T066 [P] [US6] 编写测试页与正式多人边界测试于 `backend/internal/api/testpage_boundary_test.go`
+- [x] T067 [P] [US6] 编写前端测试页入口回归测试于 `frontend/src/App.visual.test.ts`
 
 ### Implementation for User Story 6
 
 - [x] T068 [US6] 在 `backend/internal/api/server.go` 审查并保持测试页 API 分组独立
 - [x] T069 [US6] 在 `frontend/src/App.vue` 保留独立规则测试页入口与状态隔离
-- [ ] T070 [US6] 更新测试页与正式多人流程用途说明于 `README.md`
+- [x] T070 [US6] 更新测试页与正式多人流程用途说明于 `README.md`
 
 **Checkpoint**: User Story 6 preserves regression and debugging value independently of formal multiplayer
 
@@ -211,7 +211,7 @@
 **Purpose**: 全局一致性、手动验收和收尾说明。
 
 - [ ] T071 [P] 对照 `specs/002-multiplayer-poker-v1/spec.md`、`specs/002-multiplayer-poker-v1/data-model.md`、`specs/002-multiplayer-poker-v1/contracts/openapi.yaml` 与 `specs/002-multiplayer-poker-v1/tasks.md` 校验关键名词一致
-- [ ] T072 [P] 补充多人模式运行说明与数据库模式说明于 `README.md`
+- [x] T072 [P] 补充多人模式运行说明与数据库模式说明于 `README.md`
 - [ ] T073 执行 `specs/002-multiplayer-poker-v1/quickstart.md` 中的主流程手动验收
 - [ ] T074 审查 MySQL 与 SQLite 模式下的行为一致性说明于 `specs/002-multiplayer-poker-v1/quickstart.md`
 
