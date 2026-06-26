@@ -94,9 +94,11 @@ func TestRoomRecentHandsAndUserHands(t *testing.T) {
 			WinnerSummary string `json:"winnerSummary"`
 			PotSummary    string `json:"potSummary"`
 			Participants  []struct {
-				UserID   string `json:"userId"`
-				Nickname string `json:"nickname"`
-				Profit   int    `json:"profit"`
+				UserID        string `json:"userId"`
+				Nickname      string `json:"nickname"`
+				Profit        int    `json:"profit"`
+				AwardAmount   int    `json:"awardAmount"`
+				HandCommitted int    `json:"handCommitted"`
 			} `json:"participants"`
 		} `json:"items"`
 	}
@@ -111,6 +113,14 @@ func TestRoomRecentHandsAndUserHands(t *testing.T) {
 	}
 	if len(handsPayload.Items[0].Participants) != 2 {
 		t.Fatalf("participants=%d want 2", len(handsPayload.Items[0].Participants))
+	}
+	for _, participant := range handsPayload.Items[0].Participants {
+		if participant.HandCommitted <= 0 {
+			t.Fatalf("expected handCommitted > 0, got=%d", participant.HandCommitted)
+		}
+		if participant.AwardAmount < 0 {
+			t.Fatalf("expected non-negative awardAmount, got=%d", participant.AwardAmount)
+		}
 	}
 
 	myReq := httptest.NewRequest(http.MethodGet, "/api/me/hands", nil)

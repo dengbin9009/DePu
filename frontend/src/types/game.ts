@@ -183,6 +183,8 @@ export interface RoomHandHistoryParticipant {
   nickname: string;
   seatNo: number;
   profit: number;
+  awardAmount: number;
+  handCommitted: number;
   resultType: string;
   holeCards?: string[] | null;
   bestCards?: string[] | null;

@@ -86,6 +86,8 @@ type HandParticipantRecord struct {
 	Nickname   string   `json:"nickname"`
 	SeatNo     int      `json:"seatNo"`
 	Profit     int      `json:"profit"`
+	AwardAmount int     `json:"awardAmount"`
+	HandCommitted int   `json:"handCommitted"`
 	ResultType string   `json:"resultType"`
 	HoleCards  []string `json:"holeCards,omitempty"`
 	BestCards  []string `json:"bestCards,omitempty"`
@@ -520,14 +522,14 @@ func (s *Store) UserHands(userID string, limit int) ([]UserHandRecord, error) {
 }
 
 func (s *Store) handParticipants(handID string) ([]HandParticipantRecord, error) {
-	rows, err := s.db.Query(`select user_id, nickname_snapshot, seat_no, profit, result_type, hole_cards_json, best_cards_json, hand_class from hand_participants where hand_id = ? order by seat_no asc`, handID)
+	rows, err := s.db.Query(`select user_id, nickname_snapshot, seat_no, profit, award_amount, hand_committed, result_type, hole_cards_json, best_cards_json, hand_class from hand_participants where hand_id = ? order by seat_no asc`, handID)
 	if err != nil { return nil, err }
 	defer rows.Close()
 	items := []HandParticipantRecord{}
 	for rows.Next() {
 		var rec HandParticipantRecord
 		var holeCardsJSON, bestCardsJSON, handClass string
-		if err := rows.Scan(&rec.UserID, &rec.Nickname, &rec.SeatNo, &rec.Profit, &rec.ResultType, &holeCardsJSON, &bestCardsJSON, &handClass); err != nil { return nil, err }
+		if err := rows.Scan(&rec.UserID, &rec.Nickname, &rec.SeatNo, &rec.Profit, &rec.AwardAmount, &rec.HandCommitted, &rec.ResultType, &holeCardsJSON, &bestCardsJSON, &handClass); err != nil { return nil, err }
 		rec.HandClass = handClass
 		_ = json.Unmarshal([]byte(holeCardsJSON), &rec.HoleCards)
 		_ = json.Unmarshal([]byte(bestCardsJSON), &rec.BestCards)

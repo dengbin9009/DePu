@@ -426,7 +426,10 @@ watch(
             <div>
               参与者：
               <span v-for="participant in hand.participants" :key="`${hand.handId}-${participant.seatNo}`">
-                #{{ participant.seatNo }} {{ participant.nickname }} {{ participant.resultType }} {{ participant.profit >= 0 ? '+' : '' }}{{ participant.profit }}
+                #{{ participant.seatNo }} {{ participant.nickname }} {{ participant.resultType }}
+                投入 {{ participant.handCommitted }}
+                返奖 {{ participant.awardAmount }}
+                净输赢 {{ participant.profit >= 0 ? '+' : '' }}{{ participant.profit }}
               </span>
             </div>
           </li>
