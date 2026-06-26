@@ -20,6 +20,20 @@ func TestEvaluateLongDeckWheelStraight(t *testing.T) {
 	}
 }
 
+func TestEvaluateChoosesBestFiveOfSeven(t *testing.T) {
+	rs, _ := rules.Get("long-holdem")
+	hand, err := Evaluate(rs, []string{"As", "Ah", "Ad", "Ac", "Kd", "Qd", "Jd"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if hand.Class != rules.FourOfAKind {
+		t.Fatalf("class = %v, want four of a kind", hand.Class)
+	}
+	if len(hand.RankVector) != 2 || hand.RankVector[0] != 14 || hand.RankVector[1] != 13 {
+		t.Fatalf("rank vector = %v, want aces with king kicker", hand.RankVector)
+	}
+}
+
 func TestEvaluateShortDeckWheelStraight(t *testing.T) {
 	rs, _ := rules.Get("short-deck")
 	hand, err := Evaluate(rs, []string{"As", "6d", "7c", "8h", "9s", "Kd", "Qh"})

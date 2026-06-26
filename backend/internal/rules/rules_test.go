@@ -31,3 +31,27 @@ func TestRuleSetsExposeLongAndShortDecks(t *testing.T) {
 		t.Fatal("short deck should rank flush above full house")
 	}
 }
+
+func TestRuleSetsExposeBettingStructures(t *testing.T) {
+	long, ok := Get("long-holdem")
+	if !ok {
+		t.Fatal("expected long-holdem ruleset")
+	}
+	if got := long.BettingStructures; len(got) != 1 || got[0] != BettingBlinds {
+		t.Fatalf("long betting structures = %#v, want blinds only", got)
+	}
+	if long.DefaultBettingStructure != BettingBlinds {
+		t.Fatalf("long default betting structure = %s, want blinds", long.DefaultBettingStructure)
+	}
+
+	short, ok := Get("short-deck")
+	if !ok {
+		t.Fatal("expected short-deck ruleset")
+	}
+	if len(short.BettingStructures) != 2 {
+		t.Fatalf("short betting structures = %#v, want blinds and ante", short.BettingStructures)
+	}
+	if !short.AllowsBettingStructure(BettingBlinds) || !short.AllowsBettingStructure(BettingAnte) {
+		t.Fatalf("short deck should allow blinds and ante: %#v", short.BettingStructures)
+	}
+}

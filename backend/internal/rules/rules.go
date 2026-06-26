@@ -16,38 +16,54 @@ const (
 	HighCard      HandClass = "high_card"
 )
 
+type BettingStructureType string
+
+const (
+	BettingBlinds BettingStructureType = "blinds"
+	BettingAnte   BettingStructureType = "ante"
+)
+
 type RuleSet struct {
-	ID          string      `json:"id"`
-	Name        string      `json:"name"`
-	Ranks       []string    `json:"ranks"`
-	Ranking     []HandClass `json:"handRanking"`
-	Wheel       []int       `json:"wheel"`
-	SmallBlind  int         `json:"smallBlind"`
-	BigBlind    int         `json:"bigBlind"`
-	Description string      `json:"description"`
+	ID                      string                 `json:"id"`
+	Name                    string                 `json:"name"`
+	Ranks                   []string               `json:"ranks"`
+	DeckSize                int                    `json:"deckSize"`
+	Ranking                 []HandClass            `json:"handRanking"`
+	Wheel                   []int                  `json:"wheel"`
+	BettingStructures       []BettingStructureType `json:"bettingStructures"`
+	DefaultBettingStructure BettingStructureType   `json:"defaultBettingStructure"`
+	SmallBlind              int                    `json:"smallBlind"`
+	BigBlind                int                    `json:"bigBlind"`
+	Description             string                 `json:"description"`
 }
 
 var suitCodes = []string{"s", "h", "d", "c"}
 
 var ruleSets = map[string]RuleSet{
 	"long-holdem": {
-		ID:         "long-holdem",
-		Name:       "长牌德州扑克",
-		Ranks:      []string{"2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K", "A"},
-		Wheel:      []int{14, 5, 4, 3, 2},
-		SmallBlind: 50,
-		BigBlind:   100,
-		Ranking:    []HandClass{StraightFlush, FourOfAKind, FullHouse, Flush, Straight, ThreeOfAKind, TwoPair, OnePair, HighCard},
+		ID:                      "long-holdem",
+		Name:                    "长牌德州扑克",
+		Ranks:                   []string{"2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K", "A"},
+		DeckSize:                52,
+		Wheel:                   []int{14, 5, 4, 3, 2},
+		BettingStructures:       []BettingStructureType{BettingBlinds},
+		DefaultBettingStructure: BettingBlinds,
+		SmallBlind:              50,
+		BigBlind:                100,
+		Ranking:                 []HandClass{StraightFlush, FourOfAKind, FullHouse, Flush, Straight, ThreeOfAKind, TwoPair, OnePair, HighCard},
 	},
 	"short-deck": {
-		ID:          "short-deck",
-		Name:        "短牌德州扑克",
-		Ranks:       []string{"6", "7", "8", "9", "T", "J", "Q", "K", "A"},
-		Wheel:       []int{14, 9, 8, 7, 6},
-		SmallBlind:  50,
-		BigBlind:    100,
-		Ranking:     []HandClass{StraightFlush, FourOfAKind, Flush, FullHouse, Straight, ThreeOfAKind, TwoPair, OnePair, HighCard},
-		Description: "v1 使用小盲/大盲结构；短牌 ante + button blind 作为后续规则集扩展。",
+		ID:                      "short-deck",
+		Name:                    "短牌德州扑克",
+		Ranks:                   []string{"6", "7", "8", "9", "T", "J", "Q", "K", "A"},
+		DeckSize:                36,
+		Wheel:                   []int{14, 9, 8, 7, 6},
+		BettingStructures:       []BettingStructureType{BettingBlinds, BettingAnte},
+		DefaultBettingStructure: BettingBlinds,
+		SmallBlind:              50,
+		BigBlind:                100,
+		Ranking:                 []HandClass{StraightFlush, FourOfAKind, Flush, FullHouse, Straight, ThreeOfAKind, TwoPair, OnePair, HighCard},
+		Description:             "短牌使用 36 张牌，默认同花大于葫芦，并可选择 blinds 或 ante + buttonBlind 下注结构。",
 	},
 }
 
@@ -68,6 +84,15 @@ func (r RuleSet) Deck() []string {
 		}
 	}
 	return deck
+}
+
+func (r RuleSet) AllowsBettingStructure(structure BettingStructureType) bool {
+	for _, candidate := range r.BettingStructures {
+		if candidate == structure {
+			return true
+		}
+	}
+	return false
 }
 
 func (r RuleSet) ContainsCard(card string) bool {

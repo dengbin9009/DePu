@@ -3,3 +3,7 @@
 本项目使用 Spec Kit 进行规格驱动开发。正式产品文档使用中文；代码标识、API 路径、目录名和必要技术名词可以保留英文。
 
 第一版目标是 Vue 前端 + Go 后端的本地单机德州扑克完整牌局模拟器，支持长牌和短牌、随机发牌与调试指定牌、SQLite 保存行动历史和回放。
+
+<!-- SPECKIT START -->
+当前功能计划：`specs/001-poker-simulator/plan.md`
+<!-- SPECKIT END -->

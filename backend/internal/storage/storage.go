@@ -35,10 +35,6 @@ func (s *Store) Save(g *game.Game) error {
 	if g == nil {
 		return errors.New("nil game")
 	}
-	body, err := json.Marshal(g)
-	if err != nil {
-		return err
-	}
 	tx, err := s.db.Begin()
 	if err != nil {
 		return err
@@ -48,6 +44,20 @@ func (s *Store) Save(g *game.Game) error {
 			_ = tx.Rollback()
 		}
 	}()
+
+	body, err := json.Marshal(g)
+	if err != nil {
+		return err
+	}
+	initialSnapshot := g.InitialSnapshotJSON
+	if initialSnapshot == "" {
+		if err = tx.QueryRow(`select snapshot from snapshots where game_id = ? and seq = 0`, g.ID).Scan(&initialSnapshot); err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return err
+		}
+	}
+	if initialSnapshot == "" {
+		initialSnapshot = string(body)
+	}
 
 	_, err = tx.Exec(`
 		insert into games(id, ruleset_id, stage, version, snapshot, updated_at)
@@ -66,25 +76,43 @@ func (s *Store) Save(g *game.Game) error {
 	if err != nil {
 		return err
 	}
+	_, err = tx.Exec(`delete from snapshots where game_id = ?`, g.ID)
+	if err != nil {
+		return err
+	}
+	_, err = tx.Exec(`
+		insert into snapshots(game_id, seq, snapshot, created_at)
+		values(?, ?, ?, ?)
+	`, g.ID, 0, initialSnapshot, time.Now().UTC().Format(time.RFC3339Nano))
+	if err != nil {
+		return err
+	}
 	for _, action := range g.Actions {
 		payload, marshalErr := json.Marshal(action.Payload)
+		if marshalErr != nil {
+			return marshalErr
+		}
+		summary, marshalErr := json.Marshal(action.StateSummary)
 		if marshalErr != nil {
 			return marshalErr
 		}
 		_, err = tx.Exec(`
 			insert into actions(game_id, seq, stage, seat_no, type, amount, payload, summary, created_at)
 			values(?, ?, ?, ?, ?, ?, ?, ?, ?)
-		`, g.ID, action.Seq, string(action.Stage), nullableSeat(action.SeatNo), string(action.Type), action.Amount, string(payload), action.StateSummary, action.CreatedAt.Format(time.RFC3339Nano))
+		`, g.ID, action.Seq, string(action.Stage), nullableSeat(action.SeatNo), string(action.Type), action.Amount, string(payload), string(summary), action.CreatedAt.Format(time.RFC3339Nano))
 		if err != nil {
 			return err
 		}
 	}
 	for _, action := range g.Actions {
+		snapshotJSON := action.SnapshotJSON
+		if snapshotJSON == "" {
+			snapshotJSON = string(body)
+		}
 		_, err = tx.Exec(`
 			insert into snapshots(game_id, seq, snapshot, created_at)
 			values(?, ?, ?, ?)
-			on conflict(game_id, seq) do update set snapshot=excluded.snapshot, created_at=excluded.created_at
-		`, g.ID, action.Seq, string(body), time.Now().UTC().Format(time.RFC3339Nano))
+		`, g.ID, action.Seq, snapshotJSON, time.Now().UTC().Format(time.RFC3339Nano))
 		if err != nil {
 			return err
 		}
@@ -101,6 +129,7 @@ func (s *Store) Load(id string) (*game.Game, error) {
 	if err := json.Unmarshal([]byte(snapshot), &g); err != nil {
 		return nil, err
 	}
+	_ = s.db.QueryRow(`select snapshot from snapshots where game_id = ? and seq = 0`, id).Scan(&g.InitialSnapshotJSON)
 	return &g, nil
 }
 
@@ -119,13 +148,14 @@ func (s *Store) History(id string) ([]game.Action, error) {
 	var actions []game.Action
 	for rows.Next() {
 		var action game.Action
-		var stage, typ, payload, created string
-		if err := rows.Scan(&action.Seq, &stage, &action.SeatNo, &typ, &action.Amount, &payload, &action.StateSummary, &created); err != nil {
+		var stage, typ, payload, summary, created string
+		if err := rows.Scan(&action.Seq, &stage, &action.SeatNo, &typ, &action.Amount, &payload, &summary, &created); err != nil {
 			return nil, err
 		}
 		action.Stage = game.Stage(stage)
 		action.Type = game.ActionType(typ)
 		_ = json.Unmarshal([]byte(payload), &action.Payload)
+		_ = json.Unmarshal([]byte(summary), &action.StateSummary)
 		action.CreatedAt, _ = time.Parse(time.RFC3339Nano, created)
 		actions = append(actions, action)
 	}
@@ -134,16 +164,29 @@ func (s *Store) History(id string) ([]game.Action, error) {
 
 func (s *Store) SnapshotAt(id string, seq int) (*game.Game, error) {
 	var snapshot string
-	if seq <= 0 {
-		if err := s.db.QueryRow(`select snapshot from games where id = ?`, id).Scan(&snapshot); err != nil {
+	if seq < 0 {
+		return nil, errors.New("replay sequence out of range")
+	}
+	if seq == 0 {
+		if err := s.db.QueryRow(`
+			select snapshot from snapshots
+			where game_id = ?
+			order by seq asc
+			limit 1
+		`, id).Scan(&snapshot); err != nil {
 			return nil, err
 		}
 	} else {
+		var latest int
+		if err := s.db.QueryRow(`select coalesce(max(seq), 0) from actions where game_id = ?`, id).Scan(&latest); err != nil {
+			return nil, err
+		}
+		if seq > latest {
+			return nil, errors.New("replay sequence out of range")
+		}
 		err := s.db.QueryRow(`
 			select snapshot from snapshots
-			where game_id = ? and seq <= ?
-			order by seq desc
-			limit 1
+			where game_id = ? and seq = ?
 		`, id, seq).Scan(&snapshot)
 		if err != nil {
 			return nil, err
@@ -153,6 +196,7 @@ func (s *Store) SnapshotAt(id string, seq int) (*game.Game, error) {
 	if err := json.Unmarshal([]byte(snapshot), &g); err != nil {
 		return nil, err
 	}
+	_ = s.db.QueryRow(`select snapshot from snapshots where game_id = ? and seq = 0`, id).Scan(&g.InitialSnapshotJSON)
 	return &g, nil
 }
 

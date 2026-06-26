@@ -1,4 +1,4 @@
-import type { ActionLog, GameSnapshot, RuleSet } from '../types/game';
+import type { ActionLog, CreateGameRequest, GameSnapshot, RuleSet } from '../types/game';
 
 const jsonHeaders = { 'Content-Type': 'application/json' };
 
@@ -7,29 +7,16 @@ export async function fetchRuleSets(): Promise<RuleSet[]> {
   return readJSON(res);
 }
 
-export async function createGame(rulesetId: string): Promise<GameSnapshot> {
+export async function createGame(request: CreateGameRequest): Promise<GameSnapshot> {
   const res = await fetch('/api/games', {
     method: 'POST',
     headers: jsonHeaders,
-    body: JSON.stringify({
-      rulesetId,
-      buttonSeat: 1,
-      smallBlind: 50,
-      bigBlind: 100,
-      dealMode: 'random',
-      seats: [
-        { seatNo: 1, name: 'BTN', stack: 1000 },
-        { seatNo: 2, name: 'SB', stack: 1000 },
-        { seatNo: 3, name: 'BB', stack: 1000 },
-        { seatNo: 4, name: 'UTG', stack: 1000 }
-      ]
-    })
+    body: JSON.stringify(request)
   });
   return readJSON(res);
 }
 
-export async function submitAction(game: GameSnapshot, type: string): Promise<GameSnapshot> {
-  const amount = type === 'raise' ? Math.max(...game.seats.map((seat) => seat.streetCommitted)) + 100 : 0;
+export async function submitAction(game: GameSnapshot, type: string, amount = 0): Promise<GameSnapshot> {
   const res = await fetch(`/api/games/${game.id}/actions`, {
     method: 'POST',
     headers: jsonHeaders,

@@ -44,9 +44,43 @@ npm install
 npm run dev
 ```
 
+如果需要显式指定后端地址或数据库路径：
+
+```bash
+cd backend
+DEPU_ADDR=:18080 DEPU_DB_PATH=/tmp/depu.sqlite go run ./cmd/depu-server
+```
+
+如果前端需要指向非默认后端地址：
+
+```bash
+cd frontend
+DEPU_API_TARGET=http://localhost:18080 npm run dev
+```
+
 如果本机同时存在旧 Homebrew Node，建议显式使用 Node 20：
 
 ```bash
 cd frontend
 env PATH="$HOME/.nvm/versions/node/v20.19.4/bin:$PATH" npm run dev
+```
+
+## OpenAPI 创建请求示例
+
+```json
+{
+  "rulesetId": "short-deck",
+  "buttonSeat": 1,
+  "bettingStructure": {
+    "type": "ante",
+    "ante": 10,
+    "buttonBlind": 50
+  },
+  "dealMode": "random",
+  "seats": [
+    { "seatNo": 1, "name": "BTN", "stack": 1000 },
+    { "seatNo": 2, "name": "A", "stack": 1000 },
+    { "seatNo": 3, "name": "B", "stack": 1000 }
+  ]
+}
 ```
