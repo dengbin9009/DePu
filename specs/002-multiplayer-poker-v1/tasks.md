@@ -141,7 +141,7 @@
 - [x] T043 [P] [US4] 编写“仅当前行动玩家可操作”测试于 `backend/internal/api/multiplayer_turn_test.go`
 - [ ] T044 [P] [US4] 编写余额不足导致建房失败的测试于 `backend/internal/api/multiplayer_balance_test.go`
 - [x] T045 [P] [US4] 编写余额不足导致占座买入失败且不改变座位状态的测试于 `backend/internal/api/multiplayer_balance_test.go`
-- [ ] T046 [P] [US4] 编写余额不足导致开局失败且不创建正式牌桌状态的测试于 `backend/internal/api/multiplayer_balance_test.go`
+- [x] T046 [P] [US4] 编写余额不足导致开局失败且不创建正式牌桌状态的测试于 `backend/internal/api/multiplayer_balance_test.go`
 - [x] T047 [P] [US4] 编写前端正式牌桌交互测试于 `frontend/src/multiplayerTable.test.ts`
 
 ### Implementation for User Story 4
