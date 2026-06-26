@@ -10,7 +10,8 @@ import {
   handClassLabel,
   potLabel,
   stageLabel,
-  statusLabel
+  statusLabel,
+  walletTransactionLabel
 } from './displayLabels';
 import { isRedCard, tableVisualState, visibleOpponentSeats } from './pokerVisuals';
 import type { ActionLog, BettingStructure, GameSnapshot, ProfileResponse, RechargeOption, RoomHandHistoryRecord, RoomHandState, RoomResponse, RuleSet, UserHandRecord, WalletResponse } from './types/game';
@@ -280,6 +281,20 @@ function normalizeBetAmount() {
   selectedBetAmount.value = clampBetAmount(game.value, selectedBetAmount.value);
 }
 
+function formatDateTime(value?: string | null) {
+	if (!value) return '暂无';
+	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return value;
+	return date.toLocaleString('zh-CN', {
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit',
+		hour: '2-digit',
+		minute: '2-digit',
+		second: '2-digit'
+	});
+}
+
 function hasCardImage(card: string) {
   return Boolean(cardImagePath(card));
 }
@@ -380,8 +395,23 @@ watch(
     <section v-if="me" class="rules-strip">
       <span>当前用户：{{ me.nickname }}（{{ me.username }}）</span>
       <span>金币：{{ wallet?.balance ?? me.walletBalance }}</span>
+      <span>总手数：{{ me.handsPlayed }}</span>
+      <span>总收益：{{ me.totalProfit >= 0 ? '+' : '' }}{{ me.totalProfit }}</span>
+      <span>最近对局：{{ formatDateTime(me.lastPlayedAt) }}</span>
       <button type="button" :disabled="loading" @click="refreshWallet">刷新钱包</button>
       <button v-for="option in rechargeOptions" :key="option.code" type="button" :disabled="loading || !token" @click="doRecharge(option.code)">充值 {{ option.label }} +{{ option.amount }}</button>
+    </section>
+
+    <section v-if="wallet?.transactions?.length" class="panel">
+      <h2>钱包流水</h2>
+      <ol class="history">
+        <li v-for="txn in wallet.transactions" :key="txn.id">
+          {{ walletTransactionLabel(txn.type) }}
+          · {{ txn.amount >= 0 ? '+' : '' }}{{ txn.amount }}
+          · 余额 {{ txn.balanceAfter }}
+          · {{ formatDateTime(txn.createdAt) }}
+        </li>
+      </ol>
     </section>
 
     <section class="setup-strip">
@@ -427,7 +457,7 @@ watch(
         <ol class="history" v-else>
           <li v-for="hand in recentRoomHands" :key="hand.handId">
             <strong>#{{ hand.handNo }}</strong>
-            · {{ hand.completedAt }}
+            · {{ formatDateTime(hand.completedAt) }}
             · 赢家 {{ hand.winnerSummary || '未结算' }}
             · {{ hand.potSummary }}
             <div>公共牌：{{ hand.boardCards?.join(' ') || '无' }}</div>
@@ -446,7 +476,7 @@ watch(
 
       <section class="panel">
         <h2>个人战绩</h2>
-        <p v-if="me">总手数 {{ me.handsPlayed }} · 总收益 {{ me.totalProfit }} · 最近对局 {{ me.lastPlayedAt || '暂无' }}</p>
+        <p v-if="me">总手数 {{ me.handsPlayed }} · 总收益 {{ me.totalProfit >= 0 ? '+' : '' }}{{ me.totalProfit }} · 最近对局 {{ formatDateTime(me.lastPlayedAt) }}</p>
         <ol class="history" v-if="roomHistory.length">
           <li v-for="item in roomHistory" :key="`${item.handId}-${item.nickname}`">
             <strong>#{{ item.handNo }}</strong>
