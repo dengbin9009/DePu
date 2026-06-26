@@ -137,6 +137,9 @@ paths:
     get:
       tags: [Wallet]
       summary: 获取模拟充值档位
+      description: |
+        返回 v1 使用的服务端固定充值档位配置。
+        该版本不依赖后台运营系统或第三方支付配置动态下发档位。
       responses:
         '200':
           description: 充值档位列表

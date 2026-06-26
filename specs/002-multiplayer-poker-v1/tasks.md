@@ -84,7 +84,7 @@
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T021 [P] [US2] 编写充值档位与模拟充值契约测试于 `backend/internal/api/wallet_contract_test.go`
+- [ ] T021 [P] [US2] 编写至少 3 个服务端充值档位与模拟充值契约测试于 `backend/internal/api/wallet_contract_test.go`
 - [ ] T022 [P] [US2] 编写钱包余额累加与流水写入测试于 `backend/internal/storage/storage_test.go`
 - [ ] T023 [P] [US2] 编写未登录访问钱包接口测试于 `backend/internal/api/wallet_auth_test.go`
 - [ ] T024 [P] [US2] 编写前端钱包页交互测试于 `frontend/src/walletPage.test.ts`
@@ -110,7 +110,7 @@
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T031 [P] [US3] 编写建房与邀请码唯一性测试于 `backend/internal/api/room_create_test.go`
+- [ ] T031 [P] [US3] 编写建房默认 6 人桌、最少 2 人开局与邀请码唯一性测试于 `backend/internal/api/room_create_test.go`
 - [ ] T032 [P] [US3] 编写通过邀请码加入房间测试于 `backend/internal/api/room_join_test.go`
 - [ ] T033 [P] [US3] 编写入座/离座与重复占座测试于 `backend/internal/api/room_seat_test.go`
 - [ ] T034 [P] [US3] 编写房间页前端交互测试于 `frontend/src/roomPage.test.ts`
@@ -138,18 +138,20 @@
 
 - [ ] T041 [P] [US4] 编写房主开局权限测试于 `backend/internal/api/multiplayer_start_test.go`
 - [ ] T042 [P] [US4] 编写“仅当前行动玩家可操作”测试于 `backend/internal/api/multiplayer_turn_test.go`
-- [ ] T043 [P] [US4] 编写余额不足无法进入正式流程测试于 `backend/internal/api/multiplayer_balance_test.go`
-- [ ] T044 [P] [US4] 编写前端正式牌桌交互测试于 `frontend/src/multiplayerTable.test.ts`
+- [ ] T043 [P] [US4] 编写余额不足导致建房失败的测试于 `backend/internal/api/multiplayer_balance_test.go`
+- [ ] T044 [P] [US4] 编写余额不足导致占座买入失败且不改变座位状态的测试于 `backend/internal/api/multiplayer_balance_test.go`
+- [ ] T045 [P] [US4] 编写余额不足导致开局失败且不创建正式牌桌状态的测试于 `backend/internal/api/multiplayer_balance_test.go`
+- [ ] T046 [P] [US4] 编写前端正式牌桌交互测试于 `frontend/src/multiplayerTable.test.ts`
 
 ### Implementation for User Story 4
 
-- [ ] T045 [P] [US4] 定义 `GameTable`、`Hand`、`HandParticipant` 存储模型于 `backend/internal/storage/storage.go`
-- [ ] T046 [US4] 在 `backend/internal/game/game.go` 复用现有规则引擎创建正式多人手牌状态
-- [ ] T047 [US4] 实现房主开局、当前牌局读取和动作提交接口于 `backend/internal/api/server.go`
-- [ ] T048 [US4] 实现“当前用户必须匹配当前行动席位”的权限校验于 `backend/internal/api/server.go`
-- [ ] T049 [US4] 在 `backend/internal/api/server.go` 统一返回 `not_room_owner`、`not_your_turn`、`insufficient_coins`、`forbidden`
-- [ ] T050 [P] [US4] 扩展前端正式牌局 API 类型于 `frontend/src/api/client.ts`
-- [ ] T051 [US4] 实现正式牌桌状态展示与动作提交通路于 `frontend/src/App.vue`
+- [ ] T047 [P] [US4] 定义 `GameTable`、`Hand`、`HandParticipant` 存储模型于 `backend/internal/storage/storage.go`
+- [ ] T048 [US4] 在 `backend/internal/game/game.go` 复用现有规则引擎创建正式多人手牌状态
+- [ ] T049 [US4] 实现房主开局、当前牌局读取和动作提交接口于 `backend/internal/api/server.go`
+- [ ] T050 [US4] 实现“当前用户必须匹配当前行动席位”的权限校验于 `backend/internal/api/server.go`
+- [ ] T051 [US4] 在 `backend/internal/api/server.go` 统一返回 `not_room_owner`、`not_your_turn`、`insufficient_coins`、`forbidden`
+- [ ] T052 [P] [US4] 扩展前端正式牌局 API 类型于 `frontend/src/api/client.ts`
+- [ ] T053 [US4] 实现正式牌桌状态展示与动作提交通路于 `frontend/src/App.vue`
 
 **Checkpoint**: User Story 4 should be fully functional and independently testable with prior foundations
 
@@ -163,19 +165,19 @@
 
 ### Tests for User Story 5 ⚠️
 
-- [ ] T052 [P] [US5] 编写手牌结果归档与事务一致性测试于 `backend/internal/storage/storage_test.go`
-- [ ] T053 [P] [US5] 编写房间最近牌局结果接口测试于 `backend/internal/api/hand_history_test.go`
-- [ ] T054 [P] [US5] 编写个人战绩接口测试于 `backend/internal/api/user_history_test.go`
-- [ ] T055 [P] [US5] 编写前端战绩页展示测试于 `frontend/src/historyPage.test.ts`
+- [ ] T054 [P] [US5] 编写手牌结果归档与事务一致性测试于 `backend/internal/storage/storage_test.go`
+- [ ] T055 [P] [US5] 编写房间最近牌局结果接口测试于 `backend/internal/api/hand_history_test.go`
+- [ ] T056 [P] [US5] 编写个人战绩接口测试，覆盖昵称快照展示于 `backend/internal/api/user_history_test.go`
+- [ ] T057 [P] [US5] 编写前端战绩页展示测试于 `frontend/src/historyPage.test.ts`
 
 ### Implementation for User Story 5
 
-- [ ] T056 [P] [US5] 定义 `HandResult` 聚合读取结构于 `backend/internal/storage/storage.go`
-- [ ] T057 [US5] 实现手牌结算归档、钱包更新和流水写入原子事务于 `backend/internal/storage/storage.go`
-- [ ] T058 [US5] 实现房间最近牌局结果与个人战绩接口于 `backend/internal/api/server.go`
-- [ ] T059 [US5] 刷新 `handsPlayed`、`totalProfit`、`lastPlayedAt` 等统计于 `backend/internal/storage/storage.go`
-- [ ] T060 [P] [US5] 扩展前端历史与战绩 API 类型于 `frontend/src/api/client.ts`
-- [ ] T061 [US5] 实现房间历史与个人战绩展示于 `frontend/src/App.vue`
+- [ ] T058 [P] [US5] 定义包含昵称快照的 `HandResult` 聚合读取结构于 `backend/internal/storage/storage.go`
+- [ ] T059 [US5] 实现手牌结算归档、钱包更新和流水写入原子事务于 `backend/internal/storage/storage.go`
+- [ ] T060 [US5] 实现房间最近牌局结果与个人战绩接口于 `backend/internal/api/server.go`
+- [ ] T061 [US5] 刷新 `handsPlayed`、`totalProfit`、`lastPlayedAt` 等统计于 `backend/internal/storage/storage.go`
+- [ ] T062 [P] [US5] 扩展前端历史与战绩 API 类型于 `frontend/src/api/client.ts`
+- [ ] T063 [US5] 在 `frontend/src/App.vue` 实现使用昵称快照的房间历史与个人战绩展示
 
 **Checkpoint**: User Stories 1-5 should all remain independently verifiable
 
@@ -189,15 +191,15 @@
 
 ### Tests for User Story 6 ⚠️
 
-- [ ] T062 [P] [US6] 编写规则测试页回归测试于 `backend/internal/api/replay_history_v03_test.go`
-- [ ] T063 [P] [US6] 编写测试页与正式多人边界测试于 `backend/internal/api/testpage_boundary_test.go`
-- [ ] T064 [P] [US6] 编写前端测试页入口回归测试于 `frontend/src/App.visual.test.ts`
+- [ ] T064 [P] [US6] 编写规则测试页回归测试于 `backend/internal/api/replay_history_v03_test.go`
+- [ ] T065 [P] [US6] 编写测试页与正式多人边界测试于 `backend/internal/api/testpage_boundary_test.go`
+- [ ] T066 [P] [US6] 编写前端测试页入口回归测试于 `frontend/src/App.visual.test.ts`
 
 ### Implementation for User Story 6
 
-- [ ] T065 [US6] 在 `backend/internal/api/server.go` 审查并保持测试页 API 分组独立
-- [ ] T066 [US6] 在 `frontend/src/App.vue` 保留独立规则测试页入口与状态隔离
-- [ ] T067 [US6] 更新测试页与正式多人流程用途说明于 `README.md`
+- [ ] T067 [US6] 在 `backend/internal/api/server.go` 审查并保持测试页 API 分组独立
+- [ ] T068 [US6] 在 `frontend/src/App.vue` 保留独立规则测试页入口与状态隔离
+- [ ] T069 [US6] 更新测试页与正式多人流程用途说明于 `README.md`
 
 **Checkpoint**: User Story 6 preserves regression and debugging value independently of formal multiplayer
 
@@ -207,10 +209,10 @@
 
 **Purpose**: 全局一致性、手动验收和收尾说明。
 
-- [ ] T068 [P] 对照 `specs/002-multiplayer-poker-v1/spec.md`、`specs/002-multiplayer-poker-v1/data-model.md`、`specs/002-multiplayer-poker-v1/contracts/openapi.yaml` 与 `specs/002-multiplayer-poker-v1/tasks.md` 校验关键名词一致
-- [ ] T069 [P] 补充多人模式运行说明与数据库模式说明于 `README.md`
-- [ ] T070 执行 `specs/002-multiplayer-poker-v1/quickstart.md` 中的主流程手动验收
-- [ ] T071 审查 MySQL 与 SQLite 模式下的行为一致性说明于 `specs/002-multiplayer-poker-v1/quickstart.md`
+- [ ] T070 [P] 对照 `specs/002-multiplayer-poker-v1/spec.md`、`specs/002-multiplayer-poker-v1/data-model.md`、`specs/002-multiplayer-poker-v1/contracts/openapi.yaml` 与 `specs/002-multiplayer-poker-v1/tasks.md` 校验关键名词一致
+- [ ] T071 [P] 补充多人模式运行说明与数据库模式说明于 `README.md`
+- [ ] T072 执行 `specs/002-multiplayer-poker-v1/quickstart.md` 中的主流程手动验收
+- [ ] T073 审查 MySQL 与 SQLite 模式下的行为一致性说明于 `specs/002-multiplayer-poker-v1/quickstart.md`
 
 ---
 
@@ -256,7 +258,7 @@
 ```bash
 Task: "T041 [US4] 编写房主开局权限测试于 backend/internal/api/multiplayer_start_test.go"
 Task: "T042 [US4] 编写仅当前行动玩家可操作测试于 backend/internal/api/multiplayer_turn_test.go"
-Task: "T044 [US4] 编写前端正式牌桌交互测试于 frontend/src/multiplayerTable.test.ts"
+Task: "T046 [US4] 编写前端正式牌桌交互测试于 frontend/src/multiplayerTable.test.ts"
 ```
 
 ## Implementation Strategy
