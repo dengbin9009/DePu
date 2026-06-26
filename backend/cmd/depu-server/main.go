@@ -11,7 +11,7 @@ import (
 func main() {
 	addr := os.Getenv("DEPU_ADDR")
 	if addr == "" {
-		addr = ":8080"
+		addr = ":5174"
 	}
 	server := api.NewServer()
 	log.Println("DePu API listening on " + addr)
