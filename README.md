@@ -63,6 +63,12 @@ go test ./...
 go run ./cmd/depu-server
 ```
 
+当前默认启动策略为：
+
+- 优先尝试本机 MySQL：`root@tcp(127.0.0.1:3306)/depu_multiplayer?parseTime=true&multiStatements=true`
+- 如果你显式设置了 `DEPU_DB_DRIVER` 和 `DEPU_DSN`，则使用你的配置
+- 如果 MySQL 启动失败且你显式设置了 `DEPU_DB_PATH`，则回退到该 SQLite 路径
+
 前端：
 
 ```bash
@@ -135,6 +141,18 @@ go run ./cmd/depu-server
 ```sql
 CREATE DATABASE depu_multiplayer CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
+
+### 测试环境优先使用 MySQL
+
+如果希望后端测试优先跑在 MySQL 上，可在执行测试前设置：
+
+```bash
+export DEPU_TEST_MYSQL_DSN='root@tcp(127.0.0.1:3306)/depu_multiplayer?parseTime=true&multiStatements=true'
+cd backend
+go test ./internal/api ./internal/storage ./internal/game -count=1
+```
+
+如果该环境变量未设置，或 MySQL 不可用，测试会自动回退到 SQLite 内存库。
 
 ## 002 手动验收提要
 

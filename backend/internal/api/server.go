@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -51,14 +50,23 @@ type Server struct {
 }
 
 func NewServer() *Server {
-	dbPath := os.Getenv("DEPU_DB_PATH")
-	if dbPath == "" {
-		dbPath = filepath.Join("data", "depu.db")
+	driver := strings.TrimSpace(os.Getenv("DEPU_DB_DRIVER"))
+	dsn := strings.TrimSpace(os.Getenv("DEPU_DSN"))
+	if driver == "" {
+		driver = string(storage.DriverMySQL)
 	}
-	_ = os.MkdirAll(filepath.Dir(dbPath), 0755)
-	store, err := storage.Open(dbPath)
+	if dsn == "" && driver == string(storage.DriverMySQL) {
+		dsn = "root@tcp(127.0.0.1:3306)/depu_multiplayer?parseTime=true&multiStatements=true"
+	}
+	store, err := storage.OpenWithConfig(storage.Config{Driver: storage.Driver(driver), DSN: dsn})
 	if err != nil {
-		panic(err)
+		// fallback for existing local setups that still rely on sqlite path
+		if dbPath := strings.TrimSpace(os.Getenv("DEPU_DB_PATH")); dbPath != "" {
+			store, err = storage.Open(dbPath)
+		}
+		if err != nil {
+			panic(err)
+		}
 	}
 	return &Server{store: store, sessions: map[string]string{}}
 }
