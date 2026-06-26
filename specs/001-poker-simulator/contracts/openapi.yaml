@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: DePu 德州扑克模拟器 API
-  version: 0.1.0
+  version: 0.3.0
   description: 本地单机德州扑克完整牌局模拟器的 HTTP JSON API。正式说明使用中文，路径和字段使用英文标识。
 servers:
   - url: http://localhost:8080
@@ -12,9 +12,16 @@ paths:
       responses:
         "200":
           description: 返回长牌和短牌规则集
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RuleSet"
   /api/games:
     post:
       summary: 创建牌局
+      description: 后端校验连续座位、按钮位、唯一非空玩家名、下注结构和金额边界；非法输入不得被静默修正。
       requestBody:
         required: true
         content:
@@ -36,18 +43,22 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
   /api/games/{gameId}:
     get:
-      summary: 获取牌局快照
+      summary: 获取牌局权威快照
       parameters:
         - $ref: "#/components/parameters/GameId"
       responses:
         "200":
-          description: 返回牌局快照
+          description: 返回牌局权威快照
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/GameSnapshot"
         "404":
           description: 牌局不存在
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /api/games/{gameId}/actions:
     post:
       summary: 提交玩家动作
@@ -61,13 +72,13 @@ paths:
               $ref: "#/components/schemas/SubmitActionRequest"
       responses:
         "200":
-          description: 动作成功，返回新快照
+          description: 动作成功，返回新权威快照
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/GameSnapshot"
         "409":
-          description: 动作不合法或状态版本冲突
+          description: 动作不合法、状态版本冲突或试图基于只读回放提交动作
           content:
             application/json:
               schema:
@@ -75,6 +86,7 @@ paths:
   /api/games/{gameId}/debug/cards:
     post:
       summary: 调试模式指定手牌或公共牌
+      description: 仅允许在首个玩家动作前调用；已指定牌保持固定，未指定手牌和后续公共牌由后端从剩余合法牌堆随机补足。
       parameters:
         - $ref: "#/components/parameters/GameId"
       requestBody:
@@ -91,7 +103,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/GameSnapshot"
         "400":
-          description: 指定牌无效
+          description: 指定牌无效、重复、超过阶段约束或调试牌已锁定
           content:
             application/json:
               schema:
@@ -113,6 +125,7 @@ paths:
   /api/games/{gameId}/replay:
     post:
       summary: 回放到指定动作序号
+      description: 返回只读快照，不改变当前牌局权威状态，也不能作为继续提交动作的状态版本；toSeq=0 返回初始发牌后的快照；toSeq 指向已存在的结算或已结束动作节点时返回最终只读快照。
       parameters:
         - $ref: "#/components/parameters/GameId"
       requestBody:
@@ -126,14 +139,26 @@ paths:
                 toSeq:
                   type: integer
                   minimum: 0
-                  description: 目标动作序号，0 表示初始状态
+                  description: 目标动作序号；0 表示初始发牌后的只读快照，大于最新动作序号时返回错误，指向已存在的结算或已结束动作节点时返回最终只读快照。
       responses:
         "200":
-          description: 返回目标节点的牌局快照
+          description: 返回目标节点的只读牌局快照
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/GameSnapshot"
+        "400":
+          description: toSeq 超出历史范围或请求无效
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: 牌局不存在
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
 components:
   parameters:
@@ -144,9 +169,68 @@ components:
       schema:
         type: string
   schemas:
+    RuleSet:
+      type: object
+      required: [id, name, ranks, deckSize, bettingStructures, defaultBettingStructure]
+      properties:
+        id:
+          type: string
+          enum: [long-holdem, short-deck]
+        name:
+          type: string
+        ranks:
+          type: array
+          items:
+            type: string
+        deckSize:
+          type: integer
+          enum: [36, 52]
+        bettingStructures:
+          type: array
+          items:
+            type: string
+            enum: [blinds, ante]
+          description: long-holdem 仅包含 blinds；short-deck 包含 blinds 和 ante。
+        defaultBettingStructure:
+          type: string
+          enum: [blinds, ante]
+    BettingStructure:
+      type: object
+      required: [type]
+      oneOf:
+        - $ref: "#/components/schemas/BlindsStructure"
+        - $ref: "#/components/schemas/AnteStructure"
+    BlindsStructure:
+      type: object
+      required: [type, smallBlind, bigBlind]
+      properties:
+        type:
+          const: blinds
+        smallBlind:
+          type: integer
+          minimum: 1
+          description: 小盲，必须小于 bigBlind。
+        bigBlind:
+          type: integer
+          minimum: 1
+          description: 大盲，必须大于 smallBlind。
+    AnteStructure:
+      type: object
+      required: [type, ante, buttonBlind]
+      properties:
+        type:
+          const: ante
+        ante:
+          type: integer
+          minimum: 1
+          description: 计入每名玩家翻牌前本轮已投入额。
+        buttonBlind:
+          type: integer
+          minimum: 1
+          description: 按钮位额外盲注，形成 ante + buttonBlind 的当前最高投入；与 ante 不要求固定倍数或大小关系。
     CreateGameRequest:
       type: object
-      required: [rulesetId, seats, buttonSeat, smallBlind, bigBlind, dealMode]
+      required: [rulesetId, seats, buttonSeat, bettingStructure, dealMode]
       properties:
         rulesetId:
           type: string
@@ -155,31 +239,36 @@ components:
           type: array
           minItems: 2
           maxItems: 10
+          description: seatNo 必须是 1..N 连续整数；name 必须非空且本局唯一；stack 为正整数。
           items:
-            type: object
-            required: [seatNo, name, stack]
-            properties:
-              seatNo:
-                type: integer
-              name:
-                type: string
-              stack:
-                type: integer
-                minimum: 1
+            $ref: "#/components/schemas/CreateSeat"
         buttonSeat:
           type: integer
-        smallBlind:
-          type: integer
           minimum: 1
-        bigBlind:
-          type: integer
-          minimum: 1
+          description: 必须对应 seats 中已有 seatNo。
+        bettingStructure:
+          $ref: "#/components/schemas/BettingStructure"
         dealMode:
           type: string
           enum: [random, debug]
+    CreateSeat:
+      type: object
+      required: [seatNo, name, stack]
+      properties:
+        seatNo:
+          type: integer
+          minimum: 1
+        name:
+          type: string
+          minLength: 1
+        stack:
+          type: integer
+          minimum: 1
+          description: 若不足以完整支付强制投入，后端按剩余筹码全下处理。
     SubmitActionRequest:
       type: object
       required: [seatNo, type, version]
+      description: 提交玩家动作；`bet` 和 `raise` 必须携带操作者选择的目标金额，其他动作可省略或传 0。
       properties:
         seatNo:
           type: integer
@@ -189,6 +278,7 @@ components:
         amount:
           type: integer
           minimum: 0
+          description: 下注时表示本次下注额；加注时表示当前街道加注到的总投入目标。后端仍按 `currentBet`、`minRaise`、玩家剩余筹码和不足额全下规则校验。
         version:
           type: integer
     DebugCardsRequest:
@@ -199,6 +289,7 @@ components:
           type: integer
         holeCards:
           type: object
+          description: 可只指定部分座位；每个座位必须提供 2 张手牌，未指定座位由后端随机补足。
           additionalProperties:
             type: array
             minItems: 2
@@ -208,18 +299,24 @@ components:
               example: As
         board:
           type: array
+          description: 可指定 0 到 5 张公共牌；后续公共牌由后端从剩余合法牌堆随机补足。
           maxItems: 5
           items:
             type: string
             example: Kh
     GameSnapshot:
       type: object
-      required: [id, rulesetId, stage, seats, board, pots, legalActions, version]
+      required: [id, rulesetId, bettingStructure, stage, currentBet, minRaise, seats, board, pots, legalActions, isReplay, version]
       properties:
         id:
           type: string
         rulesetId:
           type: string
+        bettingStructure:
+          $ref: "#/components/schemas/BettingStructure"
+        dealMode:
+          type: string
+          enum: [random, debug]
         stage:
           type: string
         buttonSeat:
@@ -227,6 +324,14 @@ components:
         currentSeat:
           type: integer
           nullable: true
+        currentBet:
+          type: integer
+          minimum: 0
+          description: 当前街道最高已投入金额，前端下注滑轨用它计算跟注和加注边界，但不得替代后端校验。
+        minRaise:
+          type: integer
+          minimum: 1
+          description: 当前最小加注增量或开口下注下限，前端下注滑轨用它计算最小目标金额。
         board:
           type: array
           items:
@@ -239,10 +344,21 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/PotState"
+        showdown:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/ShowdownResult"
         legalActions:
           type: array
           items:
             type: string
+        isReplay:
+          type: boolean
+          description: true 表示只读回放快照，不可用于提交动作。
+        debugLocked:
+          type: boolean
+          description: true 表示调试牌已不可修改。
         version:
           type: integer
     SeatState:
@@ -260,10 +376,31 @@ components:
             type: string
         status:
           type: string
+          enum: [active, folded, all_in, out]
         streetCommitted:
           type: integer
+          description: 当前街道已投入；短牌 ante 结构下包含实际支付的 ante。
         handCommitted:
           type: integer
+          description: 本手总投入，包含实际支付的强制投入。
+        currentHand:
+          nullable: true
+          description: 翻牌圈及之后用于可视化辅助的当前最佳牌型；翻牌前、弃牌或牌数不足时为 null。
+          $ref: "#/components/schemas/CurrentHand"
+    CurrentHand:
+      type: object
+      properties:
+        handClass:
+          type: string
+          description: 当前公共牌和该玩家手牌组成的最佳牌型。
+        bestCards:
+          type: array
+          items:
+            type: string
+        rankVector:
+          type: array
+          items:
+            type: integer
     PotState:
       type: object
       properties:
@@ -284,6 +421,25 @@ components:
                 type: integer
               amount:
                 type: integer
+    ShowdownResult:
+      type: object
+      properties:
+        seatNo:
+          type: integer
+        bestCards:
+          type: array
+          items:
+            type: string
+        handClass:
+          type: string
+        rankVector:
+          type: array
+          items:
+            type: integer
+        potAwards:
+          type: object
+          additionalProperties:
+            type: integer
     ActionLog:
       type: object
       properties:
@@ -296,19 +452,69 @@ components:
           nullable: true
         type:
           type: string
+          enum: [fold, check, call, bet, raise, all_in, deal, debug_set_cards, forced_bet, settle]
         amount:
           type: integer
-        summary:
-          type: string
+        payload:
+          type: object
+          additionalProperties: true
+        stateSummary:
+          $ref: "#/components/schemas/StateSummary"
         createdAt:
           type: string
           format: date-time
+    StateSummary:
+      type: object
+      required: [stage, currentBet, potTotal, board, activeSeats, allInSeats, foldedSeats, isReplay]
+      description: 动作后的紧凑状态摘要，用于历史列表和回放节点解释；不替代完整 GameSnapshot。
+      properties:
+        stage:
+          type: string
+        currentSeat:
+          type: integer
+          nullable: true
+        currentBet:
+          type: integer
+        potTotal:
+          type: integer
+        board:
+          type: array
+          items:
+            type: string
+        activeSeats:
+          type: array
+          items:
+            type: integer
+        allInSeats:
+          type: array
+          items:
+            type: integer
+        foldedSeats:
+          type: array
+          items:
+            type: integer
+        isReplay:
+          type: boolean
     ErrorResponse:
       type: object
       required: [code, message]
       properties:
         code:
           type: string
+          enum:
+            - invalid_seat
+            - invalid_button
+            - invalid_player_name
+            - invalid_betting_structure
+            - invalid_action
+            - version_conflict
+            - replay_out_of_range
+            - debug_locked
+            - invalid_card
+            - duplicate_card
+            - storage_error
+            - not_found
+          description: 稳定错误码；message 为中文可读说明，field 指向请求字段或为空。
         message:
           type: string
         field:
