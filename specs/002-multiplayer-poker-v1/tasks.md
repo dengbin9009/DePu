@@ -212,7 +212,7 @@
 
 - [x] T071 [P] 对照 `specs/002-multiplayer-poker-v1/spec.md`、`specs/002-multiplayer-poker-v1/data-model.md`、`specs/002-multiplayer-poker-v1/contracts/openapi.yaml` 与 `specs/002-multiplayer-poker-v1/tasks.md` 校验关键名词一致
 - [x] T072 [P] 补充多人模式运行说明与数据库模式说明于 `README.md`
-- [ ] T073 执行 `specs/002-multiplayer-poker-v1/quickstart.md` 中的主流程手动验收
+- [x] T073 执行 `specs/002-multiplayer-poker-v1/quickstart.md` 中的主流程手动验收
 - [x] T074 审查 MySQL 与 SQLite 模式下的行为一致性说明于 `specs/002-multiplayer-poker-v1/quickstart.md`
 
 ---
