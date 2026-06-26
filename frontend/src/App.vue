@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
-import { createGame, createRoom, fetchCurrentRoomHand, fetchHistory, fetchMe, fetchRechargeOptions, fetchRoom, fetchRuleSets, fetchUserHands, fetchWallet, joinRoom, leaveSeat, login, recharge, register, replayTo, setDebugCards, startRoomHand, submitAction, submitRoomAction, takeSeat, updateProfile } from './api/client';
+import { createGame, createRoom, fetchCurrentRoomHand, fetchHistory, fetchMe, fetchRechargeOptions, fetchRoom, fetchRoomHands, fetchRuleSets, fetchUserHands, fetchWallet, joinRoom, leaveSeat, login, recharge, register, replayTo, setDebugCards, startRoomHand, submitAction, submitRoomAction, takeSeat, updateProfile } from './api/client';
 import { calculateBetAmountBounds, clampBetAmount, presetBetAmount, type BetPreset } from './bettingControls';
 import { cardAltText, cardBackAltText, cardBackImagePath, cardImagePath } from './cardAssets';
 import {
@@ -13,7 +13,7 @@ import {
   statusLabel
 } from './displayLabels';
 import { isRedCard, tableVisualState, visibleOpponentSeats } from './pokerVisuals';
-import type { ActionLog, BettingStructure, GameSnapshot, ProfileResponse, RechargeOption, RoomHandState, RoomResponse, RuleSet, UserHandRecord, WalletResponse } from './types/game';
+import type { ActionLog, BettingStructure, GameSnapshot, ProfileResponse, RechargeOption, RoomHandHistoryRecord, RoomHandState, RoomResponse, RuleSet, UserHandRecord, WalletResponse } from './types/game';
 
 const ruleSets = ref<RuleSet[]>([]);
 const selectedRuleSet = ref('long-holdem');
@@ -45,6 +45,7 @@ const roomSeatCount = ref(6);
 const roomMinPlayers = ref(2);
 const roomBuyIn = ref(1000);
 const roomHistory = ref<UserHandRecord[]>([]);
+const recentRoomHands = ref<RoomHandHistoryRecord[]>([]);
 const currentRoomHand = ref<RoomHandState | null>(null);
 const faceDownBoardCards = [0, 1, 2];
 const betAmountBounds = computed(() => calculateBetAmountBounds(game.value));
@@ -170,6 +171,7 @@ async function doCreateRoom() {
   await run(async () => {
     room.value = await createRoom(token.value, { ruleSetId: selectedRuleSet.value, seatCount: roomSeatCount.value, minPlayersToStart: roomMinPlayers.value });
     inviteCode.value = room.value.inviteCode;
+    recentRoomHands.value = [];
   });
 }
 
@@ -177,6 +179,7 @@ async function doJoinRoom() {
   if (!token.value || !inviteCode.value.trim()) return;
   await run(async () => {
     room.value = await joinRoom(token.value, inviteCode.value.trim());
+    recentRoomHands.value = (await fetchRoomHands(token.value, room.value.id)).items;
   });
 }
 
@@ -198,6 +201,7 @@ async function refreshRoom() {
   if (!token.value || !room.value) return;
   await run(async () => {
     room.value = await fetchRoom(token.value, room.value!.id);
+    recentRoomHands.value = (await fetchRoomHands(token.value, room.value!.id)).items;
   });
 }
 
@@ -207,6 +211,7 @@ async function doStartRoomHand() {
   if (!token.value || !room.value) return;
   await run(async () => {
     currentRoomHand.value = await startRoomHand(token.value, room.value!.id);
+    recentRoomHands.value = (await fetchRoomHands(token.value, room.value!.id)).items;
   });
 }
 
@@ -214,6 +219,7 @@ async function refreshCurrentRoomHand() {
   if (!token.value || !room.value) return;
   await run(async () => {
     currentRoomHand.value = await fetchCurrentRoomHand(token.value, room.value!.id);
+    recentRoomHands.value = (await fetchRoomHands(token.value, room.value!.id)).items;
   });
 }
 
@@ -221,6 +227,9 @@ async function doRoomAction(action: string) {
   if (!token.value || !room.value) return;
   await run(async () => {
     currentRoomHand.value = await submitRoomAction(token.value, room.value!.id, action, 0);
+    recentRoomHands.value = (await fetchRoomHands(token.value, room.value!.id)).items;
+    roomHistory.value = (await fetchUserHands(token.value)).items;
+    wallet.value = await fetchWallet(token.value);
   });
 }
 
@@ -401,6 +410,43 @@ watch(
       <span>底池 {{ currentRoomHand.pot }}</span>
       <span v-for="player in currentRoomHand.players" :key="player.seatNo">#{{ player.seatNo }} {{ player.name }} {{ player.status }} {{ player.stack }}</span>
       <button v-for="action in currentRoomHand.availableActions" :key="action" type="button" :disabled="loading" @click="doRoomAction(action)">{{ actionLabel(action) }}</button>
+    </section>
+
+    <section v-if="room || roomHistory.length" class="layout">
+      <section class="panel">
+        <h2>房间最近牌局</h2>
+        <p v-if="!recentRoomHands.length">当前房间还没有已归档牌局。</p>
+        <ol class="history" v-else>
+          <li v-for="hand in recentRoomHands" :key="hand.handId">
+            <strong>#{{ hand.handNo }}</strong>
+            · {{ hand.completedAt }}
+            · 赢家 {{ hand.winnerSummary || '未结算' }}
+            · {{ hand.potSummary }}
+            <div>公共牌：{{ hand.boardCards?.join(' ') || '无' }}</div>
+            <div>
+              参与者：
+              <span v-for="participant in hand.participants" :key="`${hand.handId}-${participant.seatNo}`">
+                #{{ participant.seatNo }} {{ participant.nickname }} {{ participant.resultType }} {{ participant.profit >= 0 ? '+' : '' }}{{ participant.profit }}
+              </span>
+            </div>
+          </li>
+        </ol>
+      </section>
+
+      <section class="panel">
+        <h2>个人战绩</h2>
+        <p v-if="me">总手数 {{ me.handsPlayed }} · 总收益 {{ me.totalProfit }} · 最近对局 {{ me.lastPlayedAt || '暂无' }}</p>
+        <ol class="history" v-if="roomHistory.length">
+          <li v-for="item in roomHistory" :key="`${item.handId}-${item.nickname}`">
+            <strong>#{{ item.handNo }}</strong>
+            · 房间 {{ item.roomId }}
+            · 昵称 {{ item.nickname }}
+            · 收益 {{ item.profit >= 0 ? '+' : '' }}{{ item.profit }}
+            · 赢家 {{ item.winnerSummary || '无' }}
+          </li>
+        </ol>
+        <p v-else>当前用户还没有正式多人战绩。</p>
+      </section>
     </section>
 
     <section class="layout">

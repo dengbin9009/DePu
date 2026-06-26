@@ -5,6 +5,7 @@ import type {
   ProfileResponse,
   RechargeOption,
   RechargeResponse,
+  RoomHandHistoryRecord,
   RoomHandState,
   RoomResponse,
   RuleSet,
@@ -106,6 +107,11 @@ export async function submitRoomAction(token: string, roomId: string, action: st
 
 export async function fetchUserHands(token: string): Promise<{ items: UserHandRecord[] }> {
   const res = await fetch('/api/me/hands', { headers: authHeaders(token) });
+  return readJSON(res);
+}
+
+export async function fetchRoomHands(token: string, roomId: string): Promise<{ items: RoomHandHistoryRecord[] }> {
+  const res = await fetch(`/api/rooms/${roomId}/hands/recent`, { headers: authHeaders(token) });
   return readJSON(res);
 }
 

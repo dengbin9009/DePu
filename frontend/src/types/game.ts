@@ -178,6 +178,30 @@ export interface UserHandRecord {
   winnerSummary: string;
 }
 
+export interface RoomHandHistoryParticipant {
+  userId: string;
+  nickname: string;
+  seatNo: number;
+  profit: number;
+  resultType: string;
+  holeCards?: string[] | null;
+  bestCards?: string[] | null;
+  handClass?: string;
+}
+
+export interface RoomHandHistoryRecord {
+  handId: string;
+  roomId: string;
+  handNo: number;
+  ruleSetId: string;
+  completedAt: string;
+  winnerSummary: string;
+  potSummary: string;
+  totalPot: number;
+  boardCards: string[];
+  participants: RoomHandHistoryParticipant[];
+}
+
 
 export interface RoomHandPlayer {
   seatNo: number;
