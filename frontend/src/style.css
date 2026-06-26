@@ -112,6 +112,35 @@ input[type="range"] {
 
 .ghost {
   background: transparent;
+  color: #dff8ff;
+  border-color: rgba(143, 204, 224, 0.28);
+}
+
+.auth-page {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+}
+
+.auth-card {
+  display: grid;
+  gap: 14px;
+  width: min(100%, 420px);
+}
+
+.auth-card label {
+  display: grid;
+  gap: 6px;
+  color: #dff8ff;
+}
+
+.auth-subtitle {
+  margin: -2px 0 4px;
+  color: #9fc6d2;
+}
+
+.auth-switch {
+  color: #f2c55c;
 }
 
 .bottom-tabs {
