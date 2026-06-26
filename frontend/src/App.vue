@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
-import { createGame, fetchHistory, fetchRuleSets, replayTo, setDebugCards, submitAction } from './api/client';
+import { createGame, createRoom, fetchCurrentRoomHand, fetchHistory, fetchMe, fetchRechargeOptions, fetchRoom, fetchRuleSets, fetchUserHands, fetchWallet, joinRoom, leaveSeat, login, recharge, register, replayTo, setDebugCards, startRoomHand, submitAction, submitRoomAction, takeSeat, updateProfile } from './api/client';
 import { calculateBetAmountBounds, clampBetAmount, presetBetAmount, type BetPreset } from './bettingControls';
 import { cardAltText, cardBackAltText, cardBackImagePath, cardImagePath } from './cardAssets';
 import {
@@ -13,7 +13,7 @@ import {
   statusLabel
 } from './displayLabels';
 import { isRedCard, tableVisualState, visibleOpponentSeats } from './pokerVisuals';
-import type { ActionLog, BettingStructure, GameSnapshot, RuleSet } from './types/game';
+import type { ActionLog, BettingStructure, GameSnapshot, ProfileResponse, RechargeOption, RoomHandState, RoomResponse, RuleSet, UserHandRecord, WalletResponse } from './types/game';
 
 const ruleSets = ref<RuleSet[]>([]);
 const selectedRuleSet = ref('long-holdem');
@@ -32,12 +32,27 @@ const debugHoleCards = ref('1:As Ah\n2:Ks Kh');
 const debugBoard = ref('Qs Js Ts 9s 8s');
 const replayTransition = ref(false);
 const selectedBetAmount = ref(0);
+const username = ref('owner01');
+const password = ref('password1');
+const nickname = ref('房主A');
+const token = ref('');
+const me = ref<ProfileResponse | null>(null);
+const wallet = ref<WalletResponse | null>(null);
+const rechargeOptions = ref<RechargeOption[]>([]);
+const room = ref<RoomResponse | null>(null);
+const inviteCode = ref('');
+const roomSeatCount = ref(6);
+const roomMinPlayers = ref(2);
+const roomBuyIn = ref(1000);
+const roomHistory = ref<UserHandRecord[]>([]);
+const currentRoomHand = ref<RoomHandState | null>(null);
 const faceDownBoardCards = [0, 1, 2];
 const betAmountBounds = computed(() => calculateBetAmountBounds(game.value));
 
 onMounted(async () => {
   try {
     ruleSets.value = await fetchRuleSets();
+    rechargeOptions.value = (await fetchRechargeOptions()).options;
   } catch (err) {
     error.value = err instanceof Error ? err.message : String(err);
   }
@@ -105,6 +120,108 @@ function currentBettingStructure(): BettingStructure {
     return { type: 'ante', ante: ante.value, buttonBlind: buttonBlind.value };
   }
   return { type: 'blinds', smallBlind: smallBlind.value, bigBlind: bigBlind.value };
+}
+
+
+
+async function doRegister() {
+  await run(async () => {
+    const payload = await register(username.value, password.value, nickname.value);
+    token.value = payload.token;
+    me.value = await fetchMe(token.value);
+    wallet.value = await fetchWallet(token.value);
+  });
+}
+
+async function doLogin() {
+  await run(async () => {
+    const payload = await login(username.value, password.value);
+    token.value = payload.token;
+    me.value = await fetchMe(token.value);
+    wallet.value = await fetchWallet(token.value);
+    roomHistory.value = (await fetchUserHands(token.value)).items;
+  });
+}
+
+async function saveNickname() {
+  if (!token.value) return;
+  await run(async () => {
+    me.value = await updateProfile(token.value, nickname.value);
+  });
+}
+
+async function refreshWallet() {
+  if (!token.value) return;
+  await run(async () => {
+    wallet.value = await fetchWallet(token.value);
+  });
+}
+
+async function doRecharge(code: string) {
+  if (!token.value) return;
+  await run(async () => {
+    await recharge(token.value, code);
+    wallet.value = await fetchWallet(token.value);
+  });
+}
+
+async function doCreateRoom() {
+  if (!token.value) return;
+  await run(async () => {
+    room.value = await createRoom(token.value, { ruleSetId: selectedRuleSet.value, seatCount: roomSeatCount.value, minPlayersToStart: roomMinPlayers.value });
+    inviteCode.value = room.value.inviteCode;
+  });
+}
+
+async function doJoinRoom() {
+  if (!token.value || !inviteCode.value.trim()) return;
+  await run(async () => {
+    room.value = await joinRoom(token.value, inviteCode.value.trim());
+  });
+}
+
+async function doTakeSeat(seatNo: number) {
+  if (!token.value || !room.value) return;
+  await run(async () => {
+    room.value = await takeSeat(token.value, room.value!.id, seatNo, roomBuyIn.value);
+  });
+}
+
+async function doLeaveSeat(seatNo: number) {
+  if (!token.value || !room.value) return;
+  await run(async () => {
+    room.value = await leaveSeat(token.value, room.value!.id, seatNo);
+  });
+}
+
+async function refreshRoom() {
+  if (!token.value || !room.value) return;
+  await run(async () => {
+    room.value = await fetchRoom(token.value, room.value!.id);
+  });
+}
+
+
+
+async function doStartRoomHand() {
+  if (!token.value || !room.value) return;
+  await run(async () => {
+    currentRoomHand.value = await startRoomHand(token.value, room.value!.id);
+  });
+}
+
+async function refreshCurrentRoomHand() {
+  if (!token.value || !room.value) return;
+  await run(async () => {
+    currentRoomHand.value = await fetchCurrentRoomHand(token.value, room.value!.id);
+  });
+}
+
+async function doRoomAction(action: string) {
+  if (!token.value || !room.value) return;
+  await run(async () => {
+    currentRoomHand.value = await submitRoomAction(token.value, room.value!.id, action, 0);
+  });
 }
 
 function defaultName(seatNo: number) {
@@ -238,6 +355,53 @@ watch(
     </section>
 
     <p v-if="error" class="error">{{ error }}</p>
+
+    <section class="setup-strip">
+      <label>账号 <input v-model="username" type="text" /></label>
+      <label>密码 <input v-model="password" type="password" /></label>
+      <label>昵称 <input v-model="nickname" type="text" /></label>
+      <button type="button" :disabled="loading" @click="doRegister">注册</button>
+      <button type="button" :disabled="loading" @click="doLogin">登录</button>
+      <button type="button" :disabled="loading || !token" @click="saveNickname">保存昵称</button>
+    </section>
+
+    <section v-if="me" class="rules-strip">
+      <span>当前用户：{{ me.nickname }}（{{ me.username }}）</span>
+      <span>金币：{{ wallet?.balance ?? me.walletBalance }}</span>
+      <button type="button" :disabled="loading" @click="refreshWallet">刷新钱包</button>
+      <button v-for="option in rechargeOptions" :key="option.code" type="button" :disabled="loading || !token" @click="doRecharge(option.code)">充值 {{ option.label }} +{{ option.amount }}</button>
+    </section>
+
+    <section class="setup-strip">
+      <label>邀请码 <input v-model="inviteCode" type="text" /></label>
+      <label>房间人数 <input v-model.number="roomSeatCount" min="2" max="10" type="number" /></label>
+      <label>最少开局 <input v-model.number="roomMinPlayers" min="2" max="10" type="number" /></label>
+      <label>买入 <input v-model.number="roomBuyIn" min="1" type="number" /></label>
+      <button type="button" :disabled="loading || !token" @click="doCreateRoom">建房</button>
+      <button type="button" :disabled="loading || !token" @click="doJoinRoom">加入房间</button>
+      <button type="button" :disabled="loading || !token || !room" @click="refreshRoom">刷新房间</button>
+      <button type="button" :disabled="loading || !token || !room" @click="doStartRoomHand">房主开局</button>
+      <button type="button" :disabled="loading || !token || !room" @click="refreshCurrentRoomHand">刷新当前手牌</button>
+    </section>
+
+    <section v-if="room" class="rules-strip">
+      <span>房间 {{ room.id }} · 邀请码 {{ room.inviteCode }} · 状态 {{ room.status }}</span>
+      <span>房主 {{ room.ownerUserId }}</span>
+      <span v-for="member in room.members" :key="member.userId">{{ member.nickname }}({{ member.role }})</span>
+    </section>
+
+    <section v-if="room" class="setup-strip">
+      <button v-for="seat in room.seats" :key="seat.seatNo" type="button" :disabled="loading" @click="seat.userId ? doLeaveSeat(seat.seatNo) : doTakeSeat(seat.seatNo)">
+        {{ seat.userId ? `离座 #${seat.seatNo} ${seat.nickname}` : `占座 #${seat.seatNo}` }}
+      </button>
+    </section>
+
+    <section v-if="currentRoomHand" class="rules-strip">
+      <span>当前手牌 {{ currentRoomHand.handId }} · 阶段 {{ currentRoomHand.status }} · 当前座位 {{ currentRoomHand.currentSeat }}</span>
+      <span>底池 {{ currentRoomHand.pot }}</span>
+      <span v-for="player in currentRoomHand.players" :key="player.seatNo">#{{ player.seatNo }} {{ player.name }} {{ player.status }} {{ player.stack }}</span>
+      <button v-for="action in currentRoomHand.availableActions" :key="action" type="button" :disabled="loading" @click="doRoomAction(action)">{{ actionLabel(action) }}</button>
+    </section>
 
     <section class="layout">
       <section class="table-zone" :class="{ replaying: visual().replayTransition, compact: visual().seatPositions.length >= 6 }">

@@ -1,12 +1,18 @@
 package api
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/dengbin9009/DePu/backend/internal/game"
 	"github.com/dengbin9009/DePu/backend/internal/handeval"
@@ -19,10 +25,28 @@ type Store interface {
 	Load(string) (*game.Game, error)
 	SnapshotAt(string, int) (*game.Game, error)
 	History(string) ([]game.Action, error)
+	CreateUser(username, passwordHash, nickname string, initialBalance int) (*storage.UserRecord, *storage.WalletRecord, error)
+	FindUserByUsername(username string) (*storage.UserRecord, error)
+	FindUserByID(userID string) (*storage.UserRecord, error)
+	UpdateNickname(userID, nickname string) error
+	WalletByUserID(userID string) (*storage.WalletRecord, error)
+	ListWalletTransactions(userID string, limit int) ([]storage.WalletTransactionRecord, error)
+	AddWalletTransaction(userID, typ string, amount int, referenceType, referenceID, note string) (*storage.WalletRecord, *storage.WalletTransactionRecord, error)
+	CreateRoom(ownerUserID, ruleSetID string, seatCount, minPlayersToStart int) (*storage.RoomRecord, error)
+	JoinRoomByInviteCode(userID, inviteCode string) (*storage.RoomRecord, error)
+	RoomByID(roomID string) (*storage.RoomRecord, error)
+	TakeSeat(roomID, userID string, seatNo, buyInChips int) (*storage.RoomRecord, error)
+	LeaveSeat(roomID, userID string, seatNo int) (*storage.RoomRecord, error)
+	SetRoomCurrentGame(roomID, gameID string) error
+	ArchiveHandResult(roomID string, g *game.Game) error
+	RecentHandResultsByRoom(roomID string, limit int) ([]storage.HandResultRecord, error)
+	UserHands(userID string, limit int) ([]storage.UserHandRecord, error)
 }
 
 type Server struct {
 	store Store
+	sessions map[string]string
+	mu sync.RWMutex
 }
 
 func NewServer() *Server {
@@ -35,17 +59,28 @@ func NewServer() *Server {
 	if err != nil {
 		panic(err)
 	}
-	return &Server{store: store}
+	return &Server{store: store, sessions: map[string]string{}}
 }
 
 func NewServerWithStore(store Store) *Server {
-	return &Server{store: store}
+	return &Server{store: store, sessions: map[string]string{}}
 }
 
 func (s *Server) Routes() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", s.health)
 	mux.HandleFunc("/api/rulesets", s.rulesets)
+	mux.HandleFunc("/api/auth/register", s.register)
+	mux.HandleFunc("/api/auth/login", s.login)
+	mux.HandleFunc("/api/me", s.me)
+	mux.HandleFunc("/api/me/profile", s.updateProfile)
+	mux.HandleFunc("/api/me/wallet", s.wallet)
+	mux.HandleFunc("/api/me/hands", s.myHands)
+	mux.HandleFunc("/api/recharge/options", s.rechargeOptions)
+	mux.HandleFunc("/api/recharge", s.recharge)
+	mux.HandleFunc("/api/rooms", s.rooms)
+	mux.HandleFunc("/api/rooms/join", s.joinRoom)
+	mux.HandleFunc("/api/rooms/", s.roomByID)
 	mux.HandleFunc("/api/games", s.games)
 	mux.HandleFunc("/api/games/", s.gameByID)
 	return mux
@@ -392,4 +427,256 @@ func writeError(w http.ResponseWriter, status int, code, message, field string) 
 
 func itoa(n int) string {
 	return strconv.Itoa(n)
+}
+
+
+type authRequest struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Nickname string `json:"nickname"`
+}
+
+type updateProfileRequest struct {
+	Nickname string `json:"nickname"`
+}
+
+func (s *Server) hashPassword(password string) string {
+	sum := sha256.Sum256([]byte("depu:" + password))
+	return hex.EncodeToString(sum[:])
+}
+
+func (s *Server) createSession(userID string) string {
+	token := fmt.Sprintf("tok_%d", time.Now().UTC().UnixNano())
+	s.mu.Lock()
+	s.sessions[token] = userID
+	s.mu.Unlock()
+	return token
+}
+
+func (s *Server) requireUser(r *http.Request) (*storage.UserRecord, error) {
+	auth := strings.TrimSpace(r.Header.Get("Authorization"))
+	if !strings.HasPrefix(auth, "Bearer ") {
+		return nil, errors.New("missing bearer token")
+	}
+	token := strings.TrimPrefix(auth, "Bearer ")
+	s.mu.RLock()
+	userID, ok := s.sessions[token]
+	s.mu.RUnlock()
+	if !ok {
+		return nil, errors.New("invalid session")
+	}
+	return s.store.FindUserByID(userID)
+}
+
+func (s *Server) register(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost { writeError(w, http.StatusMethodNotAllowed, "method_not_allowed", "method not allowed", ""); return }
+	var req authRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil { writeError(w, http.StatusBadRequest, "bad_json", err.Error(), ""); return }
+	if len(req.Password) < 8 { writeError(w, http.StatusBadRequest, "invalid_password", "password must be at least 8 characters", "password"); return }
+	if _, err := s.store.FindUserByUsername(req.Username); err == nil { writeError(w, http.StatusConflict, "duplicate_username", "username already exists", "username"); return }
+	if _, _, err := s.store.CreateUser(req.Username, s.hashPassword(req.Password), req.Nickname, 0); err != nil {
+		msg := err.Error()
+		if strings.Contains(msg, "nickname") || strings.Contains(msg, "UNIQUE") { writeError(w, http.StatusConflict, "duplicate_nickname", "nickname already exists", "nickname"); return }
+		writeError(w, http.StatusInternalServerError, "storage_error", msg, "")
+		return
+	}
+	user, _ := s.store.FindUserByUsername(req.Username)
+	token := s.createSession(user.ID)
+	writeJSON(w, http.StatusCreated, map[string]any{"user": map[string]any{"id": user.ID, "username": user.Username, "nickname": user.Nickname}, "token": token})
+}
+
+func (s *Server) login(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost { writeError(w, http.StatusMethodNotAllowed, "method_not_allowed", "method not allowed", ""); return }
+	var req authRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil { writeError(w, http.StatusBadRequest, "bad_json", err.Error(), ""); return }
+	user, err := s.store.FindUserByUsername(req.Username)
+	if err != nil || user.PasswordHash != s.hashPassword(req.Password) { writeError(w, http.StatusUnauthorized, "unauthorized", "invalid username or password", ""); return }
+	token := s.createSession(user.ID)
+	writeJSON(w, http.StatusOK, map[string]any{"user": map[string]any{"id": user.ID, "username": user.Username, "nickname": user.Nickname}, "token": token})
+}
+
+func (s *Server) me(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet { writeError(w, http.StatusMethodNotAllowed, "method_not_allowed", "method not allowed", ""); return }
+	user, err := s.requireUser(r)
+	if err != nil { writeError(w, http.StatusUnauthorized, "unauthorized", "authentication required", ""); return }
+	wallet, err := s.store.WalletByUserID(user.ID)
+	if err != nil { writeError(w, http.StatusInternalServerError, "storage_error", err.Error(), ""); return }
+	writeJSON(w, http.StatusOK, map[string]any{"id": user.ID, "username": user.Username, "nickname": user.Nickname, "walletBalance": wallet.Balance, "handsPlayed": 0, "totalProfit": 0, "lastPlayedAt": nil})
+}
+
+func (s *Server) updateProfile(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPatch { writeError(w, http.StatusMethodNotAllowed, "method_not_allowed", "method not allowed", ""); return }
+	user, err := s.requireUser(r)
+	if err != nil { writeError(w, http.StatusUnauthorized, "unauthorized", "authentication required", ""); return }
+	var req updateProfileRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil { writeError(w, http.StatusBadRequest, "bad_json", err.Error(), ""); return }
+	if err := s.store.UpdateNickname(user.ID, req.Nickname); err != nil {
+		if strings.Contains(err.Error(), "nickname") || strings.Contains(err.Error(), "UNIQUE") { writeError(w, http.StatusConflict, "duplicate_nickname", "nickname already exists", "nickname"); return }
+		writeError(w, http.StatusInternalServerError, "storage_error", err.Error(), "")
+		return
+	}
+	updated, _ := s.store.FindUserByID(user.ID)
+	wallet, _ := s.store.WalletByUserID(user.ID)
+	writeJSON(w, http.StatusOK, map[string]any{"id": updated.ID, "username": updated.Username, "nickname": updated.Nickname, "walletBalance": wallet.Balance, "handsPlayed": 0, "totalProfit": 0, "lastPlayedAt": nil})
+}
+
+func (s *Server) wallet(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet { writeError(w, http.StatusMethodNotAllowed, "method_not_allowed", "method not allowed", ""); return }
+	user, err := s.requireUser(r)
+	if err != nil { writeError(w, http.StatusUnauthorized, "unauthorized", "authentication required", ""); return }
+	wallet, err := s.store.WalletByUserID(user.ID)
+	if err != nil { writeError(w, http.StatusInternalServerError, "storage_error", err.Error(), ""); return }
+	txns, err := s.store.ListWalletTransactions(user.ID, 20)
+	if err != nil { writeError(w, http.StatusInternalServerError, "storage_error", err.Error(), ""); return }
+	writeJSON(w, http.StatusOK, map[string]any{"balance": wallet.Balance, "transactions": txns})
+}
+
+func (s *Server) rechargeOptions(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet { writeError(w, http.StatusMethodNotAllowed, "method_not_allowed", "method not allowed", ""); return }
+	writeJSON(w, http.StatusOK, map[string]any{"options": []map[string]any{{"code":"small","label":"小额金币包","amount":1000},{"code":"medium","label":"中额金币包","amount":5000},{"code":"large","label":"大额金币包","amount":10000}}})
+}
+
+func (s *Server) recharge(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost { writeError(w, http.StatusMethodNotAllowed, "method_not_allowed", "method not allowed", ""); return }
+	user, err := s.requireUser(r)
+	if err != nil { writeError(w, http.StatusUnauthorized, "unauthorized", "authentication required", ""); return }
+	var req struct { OptionCode string `json:"optionCode"`; Confirm bool `json:"confirm"` }
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil { writeError(w, http.StatusBadRequest, "bad_json", err.Error(), ""); return }
+	amounts := map[string]int{"small":1000,"medium":5000,"large":10000}
+	amount, ok := amounts[req.OptionCode]
+	if !ok || !req.Confirm { writeError(w, http.StatusBadRequest, "invalid_recharge", "invalid recharge request", "optionCode"); return }
+	wallet, txn, err := s.store.AddWalletTransaction(user.ID, "recharge_simulated", amount, "recharge", req.OptionCode, "simulated recharge")
+	if err != nil { writeError(w, http.StatusInternalServerError, "storage_error", err.Error(), ""); return }
+	writeJSON(w, http.StatusOK, map[string]any{"status": "simulated_success", "walletBalance": wallet.Balance, "transaction": txn})
+}
+
+
+func (s *Server) rooms(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost { writeError(w, http.StatusMethodNotAllowed, "method_not_allowed", "method not allowed", ""); return }
+	user, err := s.requireUser(r)
+	if err != nil { writeError(w, http.StatusUnauthorized, "unauthorized", "authentication required", ""); return }
+	var req struct { RuleSetID string `json:"ruleSetId"`; SeatCount int `json:"seatCount"`; MinPlayersToStart int `json:"minPlayersToStart"` }
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil { writeError(w, http.StatusBadRequest, "bad_json", err.Error(), ""); return }
+	room, err := s.store.CreateRoom(user.ID, req.RuleSetID, req.SeatCount, req.MinPlayersToStart)
+	if err != nil { writeError(w, http.StatusInternalServerError, "storage_error", err.Error(), ""); return }
+	writeJSON(w, http.StatusCreated, room)
+}
+
+func (s *Server) joinRoom(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost { writeError(w, http.StatusMethodNotAllowed, "method_not_allowed", "method not allowed", ""); return }
+	user, err := s.requireUser(r)
+	if err != nil { writeError(w, http.StatusUnauthorized, "unauthorized", "authentication required", ""); return }
+	var req struct { InviteCode string `json:"inviteCode"` }
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil { writeError(w, http.StatusBadRequest, "bad_json", err.Error(), ""); return }
+	room, err := s.store.JoinRoomByInviteCode(user.ID, req.InviteCode)
+	if err != nil { writeError(w, http.StatusBadRequest, "invalid_invite_code", "invalid invite code", "inviteCode"); return }
+	writeJSON(w, http.StatusOK, room)
+}
+
+func (s *Server) roomByID(w http.ResponseWriter, r *http.Request) {
+	user, err := s.requireUser(r)
+	if err != nil { writeError(w, http.StatusUnauthorized, "unauthorized", "authentication required", ""); return }
+	_ = user
+	parts := strings.Split(strings.TrimPrefix(r.URL.Path, "/api/rooms/"), "/")
+	if len(parts) == 0 || parts[0] == "" { writeError(w, http.StatusNotFound, "room_not_found", "room not found", ""); return }
+	roomID := parts[0]
+	if len(parts) == 1 && r.Method == http.MethodGet {
+		room, err := s.store.RoomByID(roomID)
+		if err != nil { writeError(w, http.StatusNotFound, "room_not_found", "room not found", ""); return }
+		writeJSON(w, http.StatusOK, room)
+		return
+	}
+	if len(parts) == 2 && parts[1] == "start" && r.Method == http.MethodPost {
+		currentUser, err := s.requireUser(r)
+		if err != nil { writeError(w, http.StatusUnauthorized, "unauthorized", "authentication required", ""); return }
+		room, err := s.store.RoomByID(roomID)
+		if err != nil { writeError(w, http.StatusNotFound, "room_not_found", "room not found", ""); return }
+		if room.OwnerUserID != currentUser.ID { writeError(w, http.StatusForbidden, "not_room_owner", "only room owner can start", ""); return }
+		var seats []game.SeatConfig
+		for _, seat := range room.Seats {
+			if seat.UserID != nil && seat.Nickname != nil && seat.BuyInChips != nil {
+				seats = append(seats, game.SeatConfig{SeatNo: seat.SeatNo, Name: *seat.Nickname, Stack: *seat.BuyInChips})
+			}
+		}
+		if len(seats) < room.MinPlayersToStart { writeError(w, http.StatusForbidden, "insufficient_coins", "not enough players to start", ""); return }
+		g, err := game.New(game.Config{RuleSetID: room.RuleSetID, ButtonSeat: 1, SmallBlind: 50, BigBlind: 100, Seats: seats, DealMode: game.DealRandom})
+		if err != nil { writeError(w, http.StatusInternalServerError, "storage_error", err.Error(), ""); return }
+		if err := s.store.Save(g); err != nil { writeError(w, http.StatusInternalServerError, "storage_error", err.Error(), ""); return }
+		if err := s.store.SetRoomCurrentGame(roomID, g.ID); err != nil { writeError(w, http.StatusInternalServerError, "storage_error", err.Error(), ""); return }
+		writeJSON(w, http.StatusOK, map[string]any{"roomId": roomID, "handId": g.ID, "status": string(g.Stage), "currentSeat": g.CurrentSeat, "pot": g.CurrentBet, "boardCards": g.Board, "players": snapshot(g).Seats, "availableActions": g.LegalActions()})
+		return
+	}
+	if len(parts) == 2 && parts[1] == "current-hand" && r.Method == http.MethodGet {
+		room, err := s.store.RoomByID(roomID)
+		if err != nil || room.CurrentGameID == "" { writeError(w, http.StatusNotFound, "room_not_found", "current hand not found", ""); return }
+		g, err := s.store.Load(room.CurrentGameID)
+		if err != nil { writeError(w, http.StatusNotFound, "room_not_found", "current hand not found", ""); return }
+		writeJSON(w, http.StatusOK, map[string]any{"roomId": roomID, "handId": g.ID, "status": string(g.Stage), "currentSeat": g.CurrentSeat, "pot": g.CurrentBet, "boardCards": g.Board, "players": snapshot(g).Seats, "availableActions": g.LegalActions()})
+		return
+	}
+	if len(parts) == 2 && parts[1] == "actions" && r.Method == http.MethodPost {
+		currentUser, err := s.requireUser(r)
+		if err != nil { writeError(w, http.StatusUnauthorized, "unauthorized", "authentication required", ""); return }
+		room, err := s.store.RoomByID(roomID)
+		if err != nil || room.CurrentGameID == "" { writeError(w, http.StatusNotFound, "room_not_found", "current hand not found", ""); return }
+		g, err := s.store.Load(room.CurrentGameID)
+		if err != nil { writeError(w, http.StatusNotFound, "room_not_found", "current hand not found", ""); return }
+		allowed := false
+		for _, seat := range room.Seats {
+			if seat.SeatNo == g.CurrentSeat && seat.UserID != nil && *seat.UserID == currentUser.ID { allowed = true; break }
+		}
+		if !allowed { writeError(w, http.StatusForbidden, "not_your_turn", "not your turn", ""); return }
+		var req struct { Action string `json:"action"`; Amount int `json:"amount"` }
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil { writeError(w, http.StatusBadRequest, "bad_json", err.Error(), ""); return }
+		if err := g.Apply(game.Command{SeatNo: g.CurrentSeat, Type: game.ActionType(req.Action), Amount: req.Amount}); err != nil { writeError(w, http.StatusConflict, "invalid_action", err.Error(), ""); return }
+		if g.Stage == game.StageFinished {
+			if err := s.store.ArchiveHandResult(roomID, g); err != nil {
+				writeError(w, http.StatusInternalServerError, "storage_error", err.Error(), "")
+				return
+			}
+		}
+		if err := s.store.Save(g); err != nil { writeError(w, http.StatusInternalServerError, "storage_error", err.Error(), ""); return }
+		writeJSON(w, http.StatusOK, map[string]any{"roomId": roomID, "handId": g.ID, "status": string(g.Stage), "currentSeat": g.CurrentSeat, "pot": g.CurrentBet, "boardCards": g.Board, "players": snapshot(g).Seats, "availableActions": g.LegalActions()})
+		return
+	}
+	if len(parts) == 3 && parts[1] == "hands" && parts[2] == "recent" && r.Method == http.MethodGet {
+		items, err := s.store.RecentHandResultsByRoom(roomID, 10)
+		if err != nil { writeError(w, http.StatusNotFound, "room_not_found", "room not found", ""); return }
+		writeJSON(w, http.StatusOK, map[string]any{"items": items})
+		return
+	}
+	if len(parts) == 3 && parts[1] == "seats" && r.Method == http.MethodDelete {
+		seatNo, _ := strconv.Atoi(parts[2])
+		currentUser, err := s.requireUser(r)
+		if err != nil { writeError(w, http.StatusUnauthorized, "unauthorized", "authentication required", ""); return }
+		room, err := s.store.LeaveSeat(roomID, currentUser.ID, seatNo)
+		if err != nil { writeError(w, http.StatusInternalServerError, "storage_error", err.Error(), ""); return }
+		writeJSON(w, http.StatusOK, room)
+		return
+	}
+	if len(parts) == 3 && parts[1] == "seats" && r.Method == http.MethodPost {
+		seatNo, _ := strconv.Atoi(parts[2])
+		var req struct { BuyInChips int `json:"buyInChips"` }
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil { writeError(w, http.StatusBadRequest, "bad_json", err.Error(), ""); return }
+		currentUser, err := s.requireUser(r)
+		if err != nil { writeError(w, http.StatusUnauthorized, "unauthorized", "authentication required", ""); return }
+		room, err := s.store.TakeSeat(roomID, currentUser.ID, seatNo, req.BuyInChips)
+		if err != nil {
+			if strings.Contains(err.Error(), "taken") { writeError(w, http.StatusConflict, "seat_taken", "seat already taken", "seatNo"); return }
+			writeError(w, http.StatusInternalServerError, "storage_error", err.Error(), "")
+			return
+		}
+		writeJSON(w, http.StatusOK, room)
+		return
+	}
+	writeError(w, http.StatusNotFound, "room_not_found", "route not found", "")
+}
+
+func (s *Server) myHands(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet { writeError(w, http.StatusMethodNotAllowed, "method_not_allowed", "method not allowed", ""); return }
+	user, err := s.requireUser(r)
+	if err != nil { writeError(w, http.StatusUnauthorized, "unauthorized", "authentication required", ""); return }
+	items, err := s.store.UserHands(user.ID, 20)
+	if err != nil { writeError(w, http.StatusInternalServerError, "storage_error", err.Error(), ""); return }
+	writeJSON(w, http.StatusOK, map[string]any{"items": items})
 }

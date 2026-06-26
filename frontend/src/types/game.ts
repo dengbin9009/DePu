@@ -101,3 +101,102 @@ export interface ActionLog {
   stateSummary: StateSummary;
   createdAt: string;
 }
+
+
+export interface ProfileResponse {
+  id: string;
+  username: string;
+  nickname: string;
+  walletBalance: number;
+  handsPlayed: number;
+  totalProfit: number;
+  lastPlayedAt: string | null;
+}
+
+export interface WalletTransaction {
+  id: string;
+  type: string;
+  amount: number;
+  balanceAfter: number;
+  referenceType?: string | null;
+  referenceId?: string | null;
+  note?: string | null;
+  createdAt: string;
+}
+
+export interface WalletResponse {
+  balance: number;
+  transactions: WalletTransaction[];
+}
+
+export interface RechargeOption {
+  code: string;
+  label: string;
+  amount: number;
+}
+
+export interface RechargeResponse {
+  status: 'simulated_success';
+  walletBalance: number;
+  transaction: WalletTransaction;
+}
+
+export interface RoomMember {
+  userId: string;
+  nickname: string;
+  role: 'owner' | 'player';
+  joinedAt: string;
+}
+
+export interface RoomSeat {
+  seatNo: number;
+  seatStatus: 'empty' | 'occupied' | 'sitting_out';
+  userId?: string | null;
+  nickname?: string | null;
+  buyInChips?: number | null;
+}
+
+export interface RoomResponse {
+  id: string;
+  inviteCode: string;
+  ownerUserId: string;
+  status: 'waiting' | 'playing' | 'closed';
+  ruleSetId?: string;
+  seatCount?: number;
+  minPlayersToStart?: number;
+  members: RoomMember[];
+  seats: RoomSeat[];
+}
+
+export interface UserHandRecord {
+  handId: string;
+  roomId: string;
+  handNo: number;
+  completedAt: string;
+  nickname: string;
+  profit: number;
+  winnerSummary: string;
+}
+
+
+export interface RoomHandPlayer {
+  seatNo: number;
+  name: string;
+  stack: number;
+  holeCards?: string[] | null;
+  status: string;
+  streetCommitted: number;
+  handCommitted: number;
+  hasActed?: boolean;
+}
+
+export interface RoomHandState {
+  roomId: string;
+  handId: string;
+  status: string;
+  currentSeat: number | null;
+  pot: number;
+  boardCards: string[] | null;
+  players: RoomHandPlayer[];
+  availableActions: string[];
+}

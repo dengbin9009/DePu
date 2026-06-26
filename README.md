@@ -94,9 +94,49 @@ env PATH="$HOME/.nvm/versions/node/v20.19.4/bin:$PATH" npm run dev
 
 ## 当前实现说明
 
-- 当前仓库实现仍以 `001` 规则引擎与测试页能力为主
-- `002` 目录中的 Spec Kit 文档用于指导后续多人版本实现
-- 在 `002` 正式落地前，README 中的多人描述属于产品规划而非已完成能力
+- 当前仓库同时保留 `001` 规则测试页能力与 `002` 多人 v1 的增量实现
+- 规则测试页继续使用 `/api/rulesets`、`/api/games`、`/api/games/{id}/history`、`/api/games/{id}/replay` 等接口
+- 正式多人流程使用独立的 `/api/auth/*`、`/api/me/*`、`/api/recharge*`、`/api/rooms*` 路由，不复用测试页调试能力
+- 正式多人当前已支持：注册登录、昵称修改、模拟充值、建房/加入/入座/开局、轮流操作、房间最近牌局、个人战绩
+- 当前多人版本仍为本地开发态，不包含真实支付、WebSocket 实时推送、大厅匹配、超时托管
+
+## 数据库模式
+
+### 默认开发模式：SQLite
+
+后端默认使用本地 SQLite 文件，适合单机开发和规则测试：
+
+```bash
+cd backend
+DEPU_DB_PATH=./data/depu.db go run ./cmd/depu-server
+```
+
+### 多人模式验证：MySQL
+
+如果要验证 002 多人 v1 的生产目标数据库语义，可切换到 MySQL DSN。当前实现目标是业务语义一致，仅配置不同。
+
+```bash
+cd backend
+DEPU_DB_DRIVER=mysql \
+DEPU_DSN='root@tcp(127.0.0.1:3306)/depu_multiplayer?parseTime=true&multiStatements=true' \
+go run ./cmd/depu-server
+```
+
+建议预先创建数据库：
+
+```sql
+CREATE DATABASE depu_multiplayer CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+## 002 手动验收提要
+
+- 注册两个或以上账号，并保证用户名、昵称都唯一
+- 登录后修改昵称，确认牌桌与资料页都展示昵称
+- 执行模拟充值，确认余额增加且流水落库
+- 房主建房并分享邀请码，其他账号加入并入座
+- 房主开局后，按当前行动席位轮流提交动作
+- 一手牌结束后检查房间最近牌局、个人战绩、钱包流水是否一致
+- 确认规则测试页仍可独立创建测试牌局、设定调试牌与只读回放
 
 ## 规则引擎 OpenAPI 创建请求示例
 
