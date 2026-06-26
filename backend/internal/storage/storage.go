@@ -35,6 +35,12 @@ type UserRecord struct {
 	UpdatedAt    string `json:"updatedAt"`
 }
 
+type UserStatsRecord struct {
+	HandsPlayed  int     `json:"handsPlayed"`
+	TotalProfit  int     `json:"totalProfit"`
+	LastPlayedAt *string `json:"lastPlayedAt"`
+}
+
 type WalletRecord struct {
 	UserID    string `json:"userId"`
 	Balance   int    `json:"balance"`
@@ -205,6 +211,16 @@ func (s *Store) FindUserByID(userID string) (*UserRecord, error) {
 func (s *Store) UpdateNickname(userID, nickname string) error {
 	_, err := s.db.Exec(`update user_profiles set nickname = ?, updated_at = ? where user_id = ?`, nickname, time.Now().UTC().Format(time.RFC3339Nano), userID)
 	return err
+}
+
+func (s *Store) UserStats(userID string) (*UserStatsRecord, error) {
+	var stats UserStatsRecord
+	var lastPlayedAt sql.NullString
+	if err := s.db.QueryRow(`select hands_played, total_profit, last_played_at from user_profiles where user_id = ?`, userID).Scan(&stats.HandsPlayed, &stats.TotalProfit, &lastPlayedAt); err != nil { return nil, err }
+	if lastPlayedAt.Valid {
+		stats.LastPlayedAt = &lastPlayedAt.String
+	}
+	return &stats, nil
 }
 
 func (s *Store) WalletByUserID(userID string) (*WalletRecord, error) {

@@ -29,6 +29,7 @@ type Store interface {
 	FindUserByUsername(username string) (*storage.UserRecord, error)
 	FindUserByID(userID string) (*storage.UserRecord, error)
 	UpdateNickname(userID, nickname string) error
+	UserStats(userID string) (*storage.UserStatsRecord, error)
 	WalletByUserID(userID string) (*storage.WalletRecord, error)
 	ListWalletTransactions(userID string, limit int) ([]storage.WalletTransactionRecord, error)
 	AddWalletTransaction(userID, typ string, amount int, referenceType, referenceID, note string) (*storage.WalletRecord, *storage.WalletTransactionRecord, error)
@@ -501,7 +502,9 @@ func (s *Server) me(w http.ResponseWriter, r *http.Request) {
 	if err != nil { writeError(w, http.StatusUnauthorized, "unauthorized", "authentication required", ""); return }
 	wallet, err := s.store.WalletByUserID(user.ID)
 	if err != nil { writeError(w, http.StatusInternalServerError, "storage_error", err.Error(), ""); return }
-	writeJSON(w, http.StatusOK, map[string]any{"id": user.ID, "username": user.Username, "nickname": user.Nickname, "walletBalance": wallet.Balance, "handsPlayed": 0, "totalProfit": 0, "lastPlayedAt": nil})
+	stats, err := s.store.UserStats(user.ID)
+	if err != nil { writeError(w, http.StatusInternalServerError, "storage_error", err.Error(), ""); return }
+	writeJSON(w, http.StatusOK, map[string]any{"id": user.ID, "username": user.Username, "nickname": user.Nickname, "walletBalance": wallet.Balance, "handsPlayed": stats.HandsPlayed, "totalProfit": stats.TotalProfit, "lastPlayedAt": stats.LastPlayedAt})
 }
 
 func (s *Server) updateProfile(w http.ResponseWriter, r *http.Request) {
@@ -517,7 +520,8 @@ func (s *Server) updateProfile(w http.ResponseWriter, r *http.Request) {
 	}
 	updated, _ := s.store.FindUserByID(user.ID)
 	wallet, _ := s.store.WalletByUserID(user.ID)
-	writeJSON(w, http.StatusOK, map[string]any{"id": updated.ID, "username": updated.Username, "nickname": updated.Nickname, "walletBalance": wallet.Balance, "handsPlayed": 0, "totalProfit": 0, "lastPlayedAt": nil})
+	stats, _ := s.store.UserStats(user.ID)
+	writeJSON(w, http.StatusOK, map[string]any{"id": updated.ID, "username": updated.Username, "nickname": updated.Nickname, "walletBalance": wallet.Balance, "handsPlayed": stats.HandsPlayed, "totalProfit": stats.TotalProfit, "lastPlayedAt": stats.LastPlayedAt})
 }
 
 func (s *Server) wallet(w http.ResponseWriter, r *http.Request) {
