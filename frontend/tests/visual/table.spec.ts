@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import appSource from '../../src/App.vue?raw';
+import rulesTestSource from '../../src/pages/RulesTestPage.vue?raw';
 import { tableVisualState } from '../../src/pokerVisuals';
 import type { GameSnapshot } from '../../src/types/game';
 
@@ -62,7 +62,7 @@ describe('visual acceptance record', () => {
 			expect(visual.replayTransition).toBe(true);
 			expect(visual.seatPositions.every((seat) => seat.compact)).toBe(players >= 6);
 		}
-		expect(appSource).toContain('回放');
+		expect(rulesTestSource).toContain('回放');
 		expect(cssSource).toContain('.replaying .table-felt');
 	});
 });
