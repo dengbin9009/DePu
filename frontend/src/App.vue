@@ -49,6 +49,9 @@ const recentRoomHands = ref<RoomHandHistoryRecord[]>([]);
 const currentRoomHand = ref<RoomHandState | null>(null);
 const faceDownBoardCards = [0, 1, 2];
 const betAmountBounds = computed(() => calculateBetAmountBounds(game.value));
+const myRoomSeat = computed(() => room.value?.seats.find((seat) => seat.userId && seat.userId === me.value?.id) ?? null);
+const isMyTurn = computed(() => !!currentRoomHand.value && !!myRoomSeat.value && currentRoomHand.value.currentSeat === myRoomSeat.value.seatNo);
+const myRoomHandPlayer = computed(() => !!currentRoomHand.value && !!myRoomSeat.value ? currentRoomHand.value.players.find((player) => player.seatNo === myRoomSeat.value?.seatNo) ?? null : null);
 
 onMounted(async () => {
   try {
@@ -396,6 +399,8 @@ watch(
     <section v-if="room" class="rules-strip">
       <span>房间 {{ room.id }} · 邀请码 {{ room.inviteCode }} · 状态 {{ room.status }}</span>
       <span>房主 {{ room.ownerUserId }}</span>
+      <span v-if="myRoomSeat">我的座位 #{{ myRoomSeat.seatNo }} · 买入 {{ myRoomSeat.buyInChips }}</span>
+      <span v-else-if="me">我当前还未入座</span>
       <span v-for="member in room.members" :key="member.userId">{{ member.nickname }}({{ member.role }})</span>
     </section>
 
@@ -408,6 +413,9 @@ watch(
     <section v-if="currentRoomHand" class="rules-strip">
       <span>当前手牌 {{ currentRoomHand.handId }} · 阶段 {{ currentRoomHand.status }} · 当前座位 {{ currentRoomHand.currentSeat }}</span>
       <span>底池 {{ currentRoomHand.pot }}</span>
+      <span v-if="myRoomHandPlayer">我本手状态 {{ myRoomHandPlayer.status }} · 剩余 {{ myRoomHandPlayer.stack }} · 已投入 {{ myRoomHandPlayer.handCommitted }}</span>
+      <span v-if="isMyTurn">现在轮到我操作</span>
+      <span v-else-if="myRoomSeat">当前不是我的回合</span>
       <span v-for="player in currentRoomHand.players" :key="player.seatNo">#{{ player.seatNo }} {{ player.name }} {{ player.status }} {{ player.stack }}</span>
       <button v-for="action in currentRoomHand.availableActions" :key="action" type="button" :disabled="loading" @click="doRoomAction(action)">{{ actionLabel(action) }}</button>
     </section>
