@@ -444,6 +444,12 @@ type apiError struct {
 	Field   string
 }
 
+type roomActionResult struct {
+	State   map[string]any
+	Settled bool
+	Result  *storage.HandResultRecord
+}
+
 func itoa(n int) string {
 	return strconv.Itoa(n)
 }
@@ -772,12 +778,12 @@ func (s *Server) roomByID(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadRequest, "bad_json", err.Error(), "")
 			return
 		}
-		state, apiErr := s.applyRoomActionForUser(roomID, currentUser.ID, req.Action, req.Amount)
+		result, apiErr := s.applyRoomActionForUser(roomID, currentUser.ID, req.Action, req.Amount)
 		if apiErr != nil {
 			writeError(w, apiErr.Status, apiErr.Code, apiErr.Message, apiErr.Field)
 			return
 		}
-		writeJSON(w, http.StatusOK, state)
+		writeJSON(w, http.StatusOK, result.State)
 		return
 	}
 	if len(parts) == 3 && parts[1] == "hands" && parts[2] == "recent" && r.Method == http.MethodGet {
@@ -902,7 +908,7 @@ func (s *Server) startRoomHandForUser(roomID, userID string) (map[string]any, *a
 	return roomHandState(roomID, g), nil
 }
 
-func (s *Server) applyRoomActionForUser(roomID, userID, action string, amount int) (map[string]any, *apiError) {
+func (s *Server) applyRoomActionForUser(roomID, userID, action string, amount int) (*roomActionResult, *apiError) {
 	room, err := s.store.RoomByID(roomID)
 	if err != nil || room.CurrentGameID == "" {
 		return nil, &apiError{Status: http.StatusNotFound, Code: "room_not_found", Message: "current hand not found"}
@@ -924,13 +930,17 @@ func (s *Server) applyRoomActionForUser(roomID, userID, action string, amount in
 	if err := g.Apply(game.Command{SeatNo: g.CurrentSeat, Type: game.ActionType(action), Amount: amount}); err != nil {
 		return nil, &apiError{Status: http.StatusConflict, Code: "invalid_action", Message: err.Error()}
 	}
+	result := &roomActionResult{State: roomHandState(roomID, g), Settled: g.Stage == game.StageFinished}
 	if g.Stage == game.StageFinished {
 		if err := s.store.ArchiveHandResult(roomID, g); err != nil {
 			return nil, &apiError{Status: http.StatusInternalServerError, Code: "storage_error", Message: err.Error()}
+		}
+		if results, err := s.store.RecentHandResultsByRoom(roomID, 1); err == nil && len(results) > 0 {
+			result.Result = &results[0]
 		}
 	}
 	if err := s.store.Save(g); err != nil {
 		return nil, &apiError{Status: http.StatusInternalServerError, Code: "storage_error", Message: err.Error()}
 	}
-	return roomHandState(roomID, g), nil
+	return result, nil
 }

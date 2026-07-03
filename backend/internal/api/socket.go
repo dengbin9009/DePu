@@ -326,17 +326,28 @@ func (c *socketClient) handleAction(message socketEnvelope) {
 		return
 	}
 	c.server.hub.withRoomLock(message.RoomID, func() {
-		state, apiErr := c.server.applyRoomActionForUser(message.RoomID, c.userID, req.Action, req.Amount)
+		result, apiErr := c.server.applyRoomActionForUser(message.RoomID, c.userID, req.Action, req.Amount)
 		if apiErr != nil {
 			c.writeAPIError(message, apiErr)
 			return
 		}
 		c.writeAck(message)
+		if result.Settled && result.Result != nil {
+			c.server.broadcastRoomEvent(message.RoomID, socketEnvelope{
+				Type:      "hand.settled",
+				RequestID: message.RequestID,
+				RoomID:    message.RoomID,
+				Payload:   mustJSON(map[string]any{"hand": result.Result}),
+				SentAt:    time.Now().UTC().Format(time.RFC3339),
+			})
+			c.server.sendWalletUpdates(message.RoomID, message.RequestID, result.Result.Participants, result.Result.HandID)
+			return
+		}
 		c.server.broadcastRoomEvent(message.RoomID, socketEnvelope{
 			Type:      "hand.updated",
 			RequestID: message.RequestID,
 			RoomID:    message.RoomID,
-			Payload:   mustJSON(map[string]any{"hand": state}),
+			Payload:   mustJSON(map[string]any{"hand": result.State}),
 			SentAt:    time.Now().UTC().Format(time.RFC3339),
 		})
 	})
@@ -400,6 +411,28 @@ func roomHasMember(room *storage.RoomRecord, userID string) bool {
 func (s *Server) broadcastRoomEvent(roomID string, event socketEnvelope) {
 	for _, client := range s.hub.roomClients(roomID) {
 		_ = client.writeJSON(event)
+	}
+}
+
+func (s *Server) sendWalletUpdates(roomID, requestID string, participants []storage.HandParticipantRecord, handID string) {
+	userIDs := map[string]struct{}{}
+	for _, participant := range participants {
+		userIDs[participant.UserID] = struct{}{}
+	}
+	for _, client := range s.hub.roomClients(roomID) {
+		if _, ok := userIDs[client.userID]; !ok {
+			continue
+		}
+		_ = client.writeJSON(socketEnvelope{
+			Type:      "wallet.updated",
+			RequestID: requestID,
+			RoomID:    roomID,
+			Payload: mustJSON(map[string]string{
+				"reason": "hand_settled",
+				"handId": handID,
+			}),
+			SentAt: time.Now().UTC().Format(time.RFC3339),
+		})
 	}
 }
 

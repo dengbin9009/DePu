@@ -5,12 +5,15 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/dengbin9009/DePu/backend/internal/game"
 )
 
 const socketTestReadTimeout = time.Second
@@ -449,6 +452,127 @@ func TestSocketInvalidActionDoesNotMutateHand(t *testing.T) {
 	}
 }
 
+func TestSocketSettledHandBroadcastsSettlementAndWalletUpdates(t *testing.T) {
+	server := testServer(t)
+	roomID, ownerToken, playerToken := setupRoomWithSeats(t, server)
+	ts := httptest.NewServer(server.Routes())
+	defer ts.Close()
+	ownerClient := dialSocket(t, ts.URL, "/api/socket?token="+ownerToken)
+	defer ownerClient.Close()
+	playerClient := dialSocket(t, ts.URL, "/api/socket?token="+playerToken)
+	defer playerClient.Close()
+	subscribeSocket(t, ownerClient, roomID, "req_owner_sub")
+	subscribeSocket(t, playerClient, roomID, "req_player_sub")
+	startHandViaSocket(t, ownerClient, playerClient, roomID)
+
+	var settled socketEnvelope
+	var ownerWalletUpdates int
+	var playerWalletUpdates int
+	for i := 0; i < 12; i++ {
+		current, ok := tryCurrentHandViaHTTP(t, server, roomID, ownerToken)
+		if !ok {
+			break
+		}
+		if current.Status == "finished" {
+			break
+		}
+		action := preferredAction(current.AvailableActions)
+		actor := ownerClient
+		observer := playerClient
+		if current.CurrentSeat == 2 {
+			actor = playerClient
+			observer = ownerClient
+		}
+		if err := writeClientTextFrame(actor, []byte(`{"type":"room.action","requestId":"req_settle_`+itoa(i)+`","roomId":"`+roomID+`","payload":{"action":"`+action+`","amount":0}}`)); err != nil {
+			t.Fatal(err)
+		}
+		readSocketMessage(t, actor, "ack")
+		first := readSocketMessageAny(t, actor)
+		second := readSocketMessageAny(t, observer)
+		for _, msg := range []socketEnvelope{first, second} {
+			if msg.Type == "hand.settled" {
+				settled = msg
+			}
+			if msg.Type == "wallet.updated" {
+				if actor == ownerClient {
+					ownerWalletUpdates++
+				} else {
+					playerWalletUpdates++
+				}
+			}
+		}
+		if settled.Type == "hand.settled" {
+			ownerWalletUpdates += drainWalletUpdates(t, ownerClient)
+			playerWalletUpdates += drainWalletUpdates(t, playerClient)
+			break
+		}
+	}
+	if settled.Type != "hand.settled" {
+		t.Fatal("expected hand.settled broadcast")
+	}
+	var payload struct {
+		Hand struct {
+			HandID        string `json:"handId"`
+			WinnerSummary string `json:"winnerSummary"`
+			PotSummary    string `json:"potSummary"`
+			Participants  []any  `json:"participants"`
+			HandNo        int    `json:"handNo"`
+			CompletedAt   string `json:"completedAt"`
+		} `json:"hand"`
+	}
+	if err := json.Unmarshal(settled.Payload, &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload.Hand.HandID == "" || payload.Hand.HandNo == 0 || payload.Hand.WinnerSummary == "" || payload.Hand.PotSummary == "" || len(payload.Hand.Participants) != 2 {
+		t.Fatalf("settlement payload incomplete: %#v", payload.Hand)
+	}
+	if ownerWalletUpdates == 0 || playerWalletUpdates == 0 {
+		t.Fatalf("wallet updates owner=%d player=%d, want both > 0", ownerWalletUpdates, playerWalletUpdates)
+	}
+}
+
+func TestSocketStorageFailureDoesNotBroadcastSuccess(t *testing.T) {
+	base := testServer(t)
+	roomID, ownerToken, playerToken := setupRoomWithSeats(t, base)
+	startReq := httptest.NewRequest(http.MethodPost, "/api/rooms/"+roomID+"/start", nil)
+	startReq.Header.Set("Authorization", "Bearer "+ownerToken)
+	startRes := httptest.NewRecorder()
+	base.Routes().ServeHTTP(startRes, startReq)
+	if startRes.Code != http.StatusOK {
+		t.Fatalf("start status=%d body=%s", startRes.Code, startRes.Body.String())
+	}
+	server := NewServerWithStore(&saveFailStore{Store: base.store})
+	server.sessions = base.sessions
+	ts := httptest.NewServer(server.Routes())
+	defer ts.Close()
+	ownerClient := dialSocket(t, ts.URL, "/api/socket?token="+ownerToken)
+	defer ownerClient.Close()
+	playerClient := dialSocket(t, ts.URL, "/api/socket?token="+playerToken)
+	defer playerClient.Close()
+	subscribeSocket(t, ownerClient, roomID, "req_owner_sub")
+	subscribeSocket(t, playerClient, roomID, "req_player_sub")
+
+	current := currentHandViaHTTP(t, base, roomID, ownerToken)
+	actorClient := ownerClient
+	if current.CurrentSeat == 2 {
+		actorClient = playerClient
+	}
+	if err := writeClientTextFrame(actorClient, []byte(`{"type":"room.action","requestId":"req_storage_fail","roomId":"`+roomID+`","payload":{"action":"call","amount":0}}`)); err != nil {
+		t.Fatal(err)
+	}
+	msg := readSocketMessage(t, actorClient, "error")
+	var payload ErrorResponse
+	if err := json.Unmarshal(msg.Payload, &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload.Code != "storage_error" {
+		t.Fatalf("error code = %s, want storage_error", payload.Code)
+	}
+	if msg, ok := tryReadSocketMessage(playerClient, 50*time.Millisecond); ok && (msg.Type == "hand.updated" || msg.Type == "hand.settled") {
+		t.Fatalf("unexpected success broadcast after storage failure: %#v", msg)
+	}
+}
+
 func socketUpgradeRequest(path string) *http.Request {
 	req := httptest.NewRequest(http.MethodGet, path, nil)
 	req.Header.Set("Connection", "Upgrade")
@@ -596,8 +720,17 @@ func socketHubRoomClientCount(hub *socketHub, roomID string) int {
 type socketTestHandState struct {
 	RoomID           string   `json:"roomId"`
 	HandID           string   `json:"handId"`
+	Status           string   `json:"status"`
 	CurrentSeat      int      `json:"currentSeat"`
 	AvailableActions []string `json:"availableActions"`
+}
+
+type saveFailStore struct {
+	Store
+}
+
+func (s *saveFailStore) Save(*game.Game) error {
+	return errors.New("forced save failure")
 }
 
 func subscribeSocket(t *testing.T, client *socketTestConn, roomID, requestID string) {
@@ -623,10 +756,22 @@ func startHandViaSocket(t *testing.T, ownerClient, playerClient *socketTestConn,
 
 func currentHandViaHTTP(t *testing.T, server *Server, roomID, token string) socketTestHandState {
 	t.Helper()
+	state, ok := tryCurrentHandViaHTTP(t, server, roomID, token)
+	if !ok {
+		t.Fatalf("current hand not found for room %s", roomID)
+	}
+	return state
+}
+
+func tryCurrentHandViaHTTP(t *testing.T, server *Server, roomID, token string) (socketTestHandState, bool) {
+	t.Helper()
 	req := httptest.NewRequest(http.MethodGet, "/api/rooms/"+roomID+"/current-hand", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 	res := httptest.NewRecorder()
 	server.Routes().ServeHTTP(res, req)
+	if res.Code == http.StatusNotFound {
+		return socketTestHandState{}, false
+	}
 	if res.Code != http.StatusOK {
 		t.Fatalf("current hand status=%d body=%s", res.Code, res.Body.String())
 	}
@@ -634,7 +779,7 @@ func currentHandViaHTTP(t *testing.T, server *Server, roomID, token string) sock
 	if err := json.Unmarshal(res.Body.Bytes(), &state); err != nil {
 		t.Fatal(err)
 	}
-	return state
+	return state, true
 }
 
 func hasAction(actions []string, want string) bool {
@@ -644,6 +789,73 @@ func hasAction(actions []string, want string) bool {
 		}
 	}
 	return false
+}
+
+func preferredAction(actions []string) string {
+	switch {
+	case hasAction(actions, "check"):
+		return "check"
+	case hasAction(actions, "call"):
+		return "call"
+	case hasAction(actions, "fold"):
+		return "fold"
+	default:
+		return "all_in"
+	}
+}
+
+func readSocketMessageAny(t *testing.T, client *socketTestConn) socketEnvelope {
+	t.Helper()
+	_, payload := readServerTextFrame(t, client)
+	var msg socketEnvelope
+	if err := json.Unmarshal(payload, &msg); err != nil {
+		t.Fatal(err)
+	}
+	return msg
+}
+
+func drainWalletUpdates(t *testing.T, client *socketTestConn) int {
+	t.Helper()
+	count := 0
+	for {
+		msg, ok := tryReadSocketMessage(client, 30*time.Millisecond)
+		if !ok {
+			return count
+		}
+		if msg.Type == "wallet.updated" {
+			count++
+		}
+	}
+}
+
+func tryReadSocketMessage(client *socketTestConn, timeout time.Duration) (socketEnvelope, bool) {
+	_ = client.SetReadDeadline(time.Now().Add(timeout))
+	defer client.SetReadDeadline(time.Time{})
+	header := make([]byte, 2)
+	if _, err := client.reader.Read(header); err != nil {
+		return socketEnvelope{}, false
+	}
+	opcode := header[0] & 0x0f
+	if opcode != 1 {
+		return socketEnvelope{}, false
+	}
+	length := int(header[1] & 0x7f)
+	if length == 126 {
+		extended := make([]byte, 2)
+		if _, err := client.reader.Read(extended); err != nil {
+			return socketEnvelope{}, false
+		}
+		length = int(extended[0])<<8 | int(extended[1])
+	}
+	payload := make([]byte, length)
+	if _, err := client.reader.Read(payload); err != nil {
+		return socketEnvelope{}, false
+	}
+	var msg socketEnvelope
+	if err := json.Unmarshal(payload, &msg); err != nil {
+		return socketEnvelope{}, false
+	}
+	return msg, true
 }
 
 func eventually(t *testing.T, ok func() bool) {
