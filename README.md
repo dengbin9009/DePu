@@ -111,9 +111,9 @@ env PATH="$HOME/.nvm/versions/node/v20.19.4/bin:$PATH" npm run dev
 
 - 当前仓库同时保留 `001` 规则测试页能力与 `002` 多人 v1 的增量实现
 - 规则测试页继续使用 `/api/rulesets`、`/api/games`、`/api/games/{id}/history`、`/api/games/{id}/replay` 等接口
-- 正式多人流程使用独立的 `/api/auth/*`、`/api/me/*`、`/api/recharge*`、`/api/rooms*` 路由，不复用测试页调试能力
+- 正式多人流程使用独立的 `/api/auth/*`、`/api/me/*`、`/api/recharge*`、`/api/rooms*` 路由和 `/api/socket` 实时通道，不复用测试页调试能力
 - 正式多人当前已支持：注册登录、昵称修改、模拟充值、建房/加入/入座/开局、轮流操作、房间最近牌局、个人战绩
-- 当前代码基线仍为 HTTP 刷新正式多人状态；本 OpenSpec 版本计划迁移正式房间实时同步、开局和玩家动作到 socket
+- 当前 OpenSpec 版本已将正式房间实时同步、开局和玩家动作迁移到 socket；`/api/rooms/{roomId}/current-hand` 保留为重连、调试或手动兜底读取接口
 - 当前多人版本仍为本地开发态，不包含真实支付、大厅匹配、超时托管
 
 ### 已实现的多人页面体验

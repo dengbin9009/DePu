@@ -49,14 +49,14 @@
 
 ## 6. HTTP 边界与兼容
 
-- [ ] T033 保留账号、资料、钱包、充值、建房、邀请码加入、历史查询 HTTP API。
-- [ ] T034 明确 `/api/rooms/{roomId}/current-hand` 可作为重连或调试兜底读取接口，但正式 UI 不再周期轮询它。
-- [ ] T035 规则测试页 `/api/games/*` 保持原行为，不接入正式多人 socket 协议。
-- [ ] T036 更新 README，说明正式多人实时通道、HTTP 保留边界和本地验收步骤。
+- [x] T033 保留账号、资料、钱包、充值、建房、邀请码加入、历史查询 HTTP API。
+- [x] T034 明确 `/api/rooms/{roomId}/current-hand` 可作为重连或调试兜底读取接口，但正式 UI 不再周期轮询它。
+- [x] T035 规则测试页 `/api/games/*` 保持原行为，不接入正式多人 socket 协议。
+- [x] T036 更新 README，说明正式多人实时通道、HTTP 保留边界和本地验收步骤。
 
 ## 7. 验证
 
-- [ ] T037 运行后端规则和多人相关测试：`cd backend && go test ./internal/api ./internal/storage ./internal/game -count=1`。
-- [ ] T038 运行前端测试：`cd frontend && npm test -- --run` 或项目等效命令。
+- [x] T037 运行后端规则和多人相关测试：`cd backend && go test ./internal/api ./internal/storage ./internal/game -count=1`。
+- [x] T038 运行前端测试：`cd frontend && npm test -- --run` 或项目等效命令。
 - [ ] T039 手动使用两个账号验证同房间 socket 同步：入座、开局、行动、结算、钱包和历史刷新。
 - [ ] T040 手动验证规则测试页仍可创建测试牌局、调试设牌、查看历史和只读回放。
