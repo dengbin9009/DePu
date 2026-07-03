@@ -9,6 +9,7 @@ DePu 是一个德州扑克项目，当前目标是基于 Vue 前端和 Go 后端
 - 支持虚拟金币充值（模拟成功，不接真实支付）
 - 支持房主建房、邀请码加入、多人同房间轮流操作
 - 支持每手牌结果保存、房间历史和个人战绩展示
+- 将正式多人房间从 HTTP 轮询/HTTP 动作提交升级为 socket 实时同步
 - 生产默认使用 MySQL，开发/测试允许 SQLite
 
 ## 当前版本范围
@@ -21,8 +22,9 @@ DePu 是一个德州扑克项目，当前目标是基于 Vue 前端和 Go 后端
 - 房主建房、邀请码加入、入座与离座
 - 多真实账号同房间轮流推进正式牌局
 - 每手牌结果归档、房间最近对局与个人战绩
+- 本版本计划将正式多人实时状态、开局和玩家动作迁移到 socket
 - 保留独立规则测试页，不与正式多人流程混用
-- 不包含真实支付、WebSocket 实时推送、大厅匹配、托管和机器人
+- 不包含真实支付、大厅匹配、托管和机器人
 
 ### 001：完整牌局模拟器（历史规则引擎基线）
 
@@ -32,22 +34,29 @@ DePu 是一个德州扑克项目，当前目标是基于 Vue 前端和 Go 后端
 - SQLite 保存牌局快照、行动历史和只读回放
 - 面向本地规则验证、回归测试和牌局复盘
 
-## Spec Kit 文档
+## OpenSpec 文档
 
-### 当前主规格
+### 当前主变更
 
-主要规格位于 [specs/002-multiplayer-poker-v1/spec.md](/Users/dengbin/Code/github/DePu/specs/002-multiplayer-poker-v1/spec.md)。
+当前版本使用 OpenSpec 进行规格驱动开发；历史 Spec Kit 文档仍保留为已实现基线参考。
+
+当前变更位于 [openspec/changes/migrate-http-to-socket/proposal.md](/Users/dengbin/Code/github/DePu/openspec/changes/migrate-http-to-socket/proposal.md)。
 
 ```text
-specs/002-multiplayer-poker-v1/
-├── spec.md
-├── plan.md
-├── research.md
-├── data-model.md
-├── quickstart.md
-├── contracts/openapi.yaml
-└── tasks.md
+openspec/
+├── project.md
+├── specs/multiplayer-poker/spec.md
+└── changes/migrate-http-to-socket/
+    ├── proposal.md
+    ├── design.md
+    ├── tasks.md
+    ├── contracts/socket-events.md
+    └── specs/multiplayer-poker/spec.md
 ```
+
+### 历史 Spec Kit 规格
+
+多人 HTTP 基线规格仍保留在 [specs/002-multiplayer-poker-v1/spec.md](/Users/dengbin/Code/github/DePu/specs/002-multiplayer-poker-v1/spec.md)。
 
 ### 历史规则引擎规格
 
@@ -104,7 +113,8 @@ env PATH="$HOME/.nvm/versions/node/v20.19.4/bin:$PATH" npm run dev
 - 规则测试页继续使用 `/api/rulesets`、`/api/games`、`/api/games/{id}/history`、`/api/games/{id}/replay` 等接口
 - 正式多人流程使用独立的 `/api/auth/*`、`/api/me/*`、`/api/recharge*`、`/api/rooms*` 路由，不复用测试页调试能力
 - 正式多人当前已支持：注册登录、昵称修改、模拟充值、建房/加入/入座/开局、轮流操作、房间最近牌局、个人战绩
-- 当前多人版本仍为本地开发态，不包含真实支付、WebSocket 实时推送、大厅匹配、超时托管
+- 当前代码基线仍为 HTTP 刷新正式多人状态；本 OpenSpec 版本计划迁移正式房间实时同步、开局和玩家动作到 socket
+- 当前多人版本仍为本地开发态，不包含真实支付、大厅匹配、超时托管
 
 ### 已实现的多人页面体验
 
