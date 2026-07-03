@@ -2,7 +2,43 @@ import { computed, ref } from 'vue';
 import { createRoom, fetchCurrentRoomHand, fetchMe, fetchRoom, fetchRoomHands, fetchUserHands, fetchWallet, joinRoom, leaveSeat, login, recharge, register, startRoomHand, submitRoomAction, takeSeat, updateProfile } from '../api/client';
 import type { ProfileResponse, RechargeOption, RoomHandHistoryRecord, RoomHandState, RoomResponse, UserHandRecord, WalletResponse } from '../types/game';
 
-const token = ref('');
+const TOKEN_STORAGE_KEY = 'depu.auth.token';
+
+function storedToken() {
+  if (typeof window === 'undefined') return '';
+  try {
+    return window.sessionStorage.getItem(TOKEN_STORAGE_KEY) ?? '';
+  } catch {
+    return '';
+  }
+}
+
+function setToken(nextToken: string) {
+  token.value = nextToken;
+  if (typeof window === 'undefined') return;
+  try {
+    if (nextToken) {
+      window.sessionStorage.setItem(TOKEN_STORAGE_KEY, nextToken);
+    } else {
+      window.sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+    }
+  } catch {
+  }
+}
+
+export function emptyRoom(roomId: string): RoomResponse {
+  return {
+    id: roomId,
+    inviteCode: '',
+    ownerUserId: '',
+    status: 'waiting',
+    members: [],
+    seats: [],
+    seatCount: 0,
+  };
+}
+
+const token = ref(storedToken());
 const me = ref<ProfileResponse | null>(null);
 const wallet = ref<WalletResponse | null>(null);
 const room = ref<RoomResponse | null>(null);
@@ -33,15 +69,33 @@ async function run<T>(fn: () => Promise<T>) {
 
 async function refreshProfile() {
   if (!token.value) return;
-  me.value = await fetchMe(token.value);
-  wallet.value = await fetchWallet(token.value);
-  roomHistory.value = (await fetchUserHands(token.value)).items;
+  try {
+    me.value = await fetchMe(token.value);
+    wallet.value = await fetchWallet(token.value);
+    roomHistory.value = (await fetchUserHands(token.value)).items;
+  } catch (err) {
+    if (err instanceof Error && err.message.includes('authentication required')) {
+      doLogout();
+    }
+    throw err;
+  }
+}
+
+async function refreshHistoryDetails() {
+  if (!token.value) return;
+  await refreshProfile();
+  const historyRoomId = room.value?.id || roomHistory.value[0]?.roomId;
+  if (!historyRoomId) {
+    recentRoomHands.value = [];
+    return;
+  }
+  recentRoomHands.value = (await fetchRoomHands(token.value, historyRoomId)).items;
 }
 
 async function doRegister(username: string, password: string, nickname: string) {
   await run(async () => {
     const payload = await register(username, password, nickname);
-    token.value = payload.token;
+    setToken(payload.token);
     await refreshProfile();
   });
 }
@@ -49,9 +103,21 @@ async function doRegister(username: string, password: string, nickname: string) 
 async function doLogin(username: string, password: string) {
   await run(async () => {
     const payload = await login(username, password);
-    token.value = payload.token;
+    setToken(payload.token);
     await refreshProfile();
   });
+}
+
+function doLogout() {
+  stopRoomPolling();
+  setToken('');
+  me.value = null;
+  wallet.value = null;
+  room.value = null;
+  currentRoomHand.value = null;
+  recentRoomHands.value = [];
+  roomHistory.value = [];
+  error.value = '';
 }
 
 async function saveNickname(nickname: string) {
@@ -151,8 +217,20 @@ async function doStartRoomHand() {
 
 async function refreshCurrentRoomHand() {
   if (!token.value || !room.value) return;
+  await safeRefreshCurrentRoomHand();
+}
+
+async function safeRefreshCurrentRoomHand() {
   await run(async () => {
-    currentRoomHand.value = await fetchCurrentRoomHand(token.value, room.value!.id);
+    try {
+      currentRoomHand.value = await fetchCurrentRoomHand(token.value, room.value!.id);
+    } catch (err) {
+      if (err instanceof Error && err.message.includes('current hand not found')) {
+        currentRoomHand.value = null;
+        return;
+      }
+      throw err;
+    }
     recentRoomHands.value = (await fetchRoomHands(token.value, room.value!.id)).items;
   });
 }
@@ -184,8 +262,10 @@ export function useAppState() {
     myRoomHandPlayer,
     run,
     refreshProfile,
+    refreshHistoryDetails,
     doRegister,
     doLogin,
+    doLogout,
     saveNickname,
     doRecharge,
     doCreateRoom,
@@ -194,7 +274,7 @@ export function useAppState() {
     doTakeSeat,
     doLeaveSeat,
     doStartRoomHand,
-    refreshCurrentRoomHand,
+    refreshCurrentRoomHand: safeRefreshCurrentRoomHand,
     doRoomAction,
     startRoomPolling,
     stopRoomPolling,

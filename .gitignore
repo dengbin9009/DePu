@@ -22,3 +22,10 @@ backend/internal/data/
 **/*.db-wal
 .env
 .env.local
+
+# Local dev runtime
+.bin/
+.logs/
+backend/data/
+__pycache__/
+frontend/__pycache__/

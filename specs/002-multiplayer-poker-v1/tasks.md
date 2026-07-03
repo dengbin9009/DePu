@@ -24,8 +24,8 @@
 
 **Purpose**: 准备多人 feature 文档映射、分层入口和后续实现约束。
 
-- [ ] T001 复核 `specs/002-multiplayer-poker-v1/plan.md` 与 `AGENTS.md` 中的 feature 引用一致
-- [ ] T002 [P] 盘点现有规则引擎与测试页可复用边界，记录到 `specs/002-multiplayer-poker-v1/research.md`
+- [x] T001 复核 `specs/002-multiplayer-poker-v1/plan.md` 与 `AGENTS.md` 中的 feature 引用一致
+- [x] T002 [P] 盘点现有规则引擎与测试页可复用边界，记录到 `specs/002-multiplayer-poker-v1/research.md`
 - [x] T003 [P] 规划 MySQL/SQLite 运行配置入口并映射到 `backend/cmd/depu-server/main.go`
 - [x] T004 规划正式多人 API 与测试页 API 的路由分组边界，落地到 `backend/internal/api/server.go`
 
@@ -60,7 +60,7 @@
 - [x] T010 [P] [US1] 编写注册与登录契约测试于 `backend/internal/api/auth_contract_test.go`
 - [x] T011 [P] [US1] 编写重复用户名与重复昵称测试于 `backend/internal/api/auth_uniqueness_test.go`
 - [x] T012 [P] [US1] 编写未登录访问资料接口测试于 `backend/internal/api/auth_guard_test.go`
-- [ ] T013 [P] [US1] 编写资料页昵称修改前端交互测试于 `frontend/src/profilePage.test.ts`
+- [x] T013 [P] [US1] 编写资料页昵称修改前端交互测试于 `frontend/src/profilePage.test.ts`
 - [x] T014 [P] [US1] 编写密码最小长度校验与响应不返回密码字段测试于 `backend/internal/api/auth_security_test.go`
 
 ### Implementation for User Story 1
@@ -88,16 +88,16 @@
 - [x] T022 [P] [US2] 编写至少 3 个服务端充值档位与模拟充值契约测试于 `backend/internal/api/wallet_contract_test.go`
 - [x] T023 [P] [US2] 编写钱包余额累加与流水写入测试于 `backend/internal/storage/storage_test.go`
 - [x] T024 [P] [US2] 编写未登录访问钱包接口测试于 `backend/internal/api/wallet_auth_test.go`
-- [ ] T025 [P] [US2] 编写前端钱包页交互测试于 `frontend/src/walletPage.test.ts`
+- [x] T025 [P] [US2] 编写前端钱包页交互测试于 `frontend/src/walletPage.test.ts`
 
 ### Implementation for User Story 2
 
 - [x] T026 [P] [US2] 定义 `Wallet` 与 `WalletTransaction` 存储模型于 `backend/internal/storage/storage.go`
-- [ ] T027 [US2] 实现充值档位、钱包余额和流水查询接口于 `backend/internal/api/server.go`
-- [ ] T028 [US2] 实现模拟充值成功与余额累加逻辑于 `backend/internal/storage/storage.go`
-- [ ] T029 [P] [US2] 扩展前端钱包 API 类型于 `frontend/src/api/client.ts`
+- [x] T027 [US2] 实现充值档位、钱包余额和流水查询接口于 `backend/internal/api/server.go`
+- [x] T028 [US2] 实现模拟充值成功与余额累加逻辑于 `backend/internal/storage/storage.go`
+- [x] T029 [P] [US2] 扩展前端钱包 API 类型于 `frontend/src/api/client.ts`
 - [x] T030 [US2] 实现充值确认、余额展示和流水列表于 `frontend/src/App.vue`
-- [ ] T031 [US2] 在 `backend/internal/api/server.go` 统一返回钱包相关 `unauthorized` 错误
+- [x] T031 [US2] 在 `backend/internal/api/server.go` 统一返回钱包相关 `unauthorized` 错误
 
 **Checkpoint**: User Stories 1 and 2 should both work independently
 
@@ -111,19 +111,19 @@
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T032 [P] [US3] 编写建房默认 6 人桌、最少 2 人开局与邀请码唯一性测试于 `backend/internal/api/room_create_test.go`
-- [ ] T033 [P] [US3] 编写通过邀请码加入房间测试于 `backend/internal/api/room_join_test.go`
-- [ ] T034 [P] [US3] 编写入座/离座、房主离开转移权限与空房关闭测试于 `backend/internal/api/room_seat_test.go`
-- [ ] T035 [P] [US3] 编写房间页前端交互测试于 `frontend/src/roomPage.test.ts`
+- [x] T032 [P] [US3] 编写建房默认 6 人桌、最少 2 人开局与邀请码唯一性测试于 `backend/internal/api/room_create_test.go`
+- [x] T033 [P] [US3] 编写通过邀请码加入房间测试于 `backend/internal/api/room_join_test.go`
+- [x] T034 [P] [US3] 编写入座/离座、房主离开转移权限与空房关闭测试于 `backend/internal/api/room_seat_test.go`
+- [x] T035 [P] [US3] 编写房间页前端交互测试于 `frontend/src/roomPage.test.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T036 [P] [US3] 定义 `Room`、`RoomMember`、`RoomSeat` 存储模型于 `backend/internal/storage/storage.go`
-- [ ] T037 [US3] 实现创建房间、邀请码加入和房间详情接口于 `backend/internal/api/server.go`
-- [ ] T038 [US3] 实现入座、离座、房主离开转移与空房关闭逻辑于 `backend/internal/api/server.go`
-- [ ] T039 [US3] 在 `backend/internal/api/server.go` 统一返回 `room_not_found`、`invalid_invite_code`、`seat_taken`
-- [ ] T040 [P] [US3] 扩展前端房间 API 类型于 `frontend/src/api/client.ts`
-- [ ] T041 [US3] 实现建房、加入房间和入座交互于 `frontend/src/App.vue`
+- [x] T036 [P] [US3] 定义 `Room`、`RoomMember`、`RoomSeat` 存储模型于 `backend/internal/storage/storage.go`
+- [x] T037 [US3] 实现创建房间、邀请码加入和房间详情接口于 `backend/internal/api/server.go`
+- [x] T038 [US3] 实现入座、离座、房主离开转移与空房关闭逻辑于 `backend/internal/api/server.go`
+- [x] T039 [US3] 在 `backend/internal/api/server.go` 统一返回 `room_not_found`、`invalid_invite_code`、`seat_taken`
+- [x] T040 [P] [US3] 扩展前端房间 API 类型于 `frontend/src/api/client.ts`
+- [x] T041 [US3] 实现建房、加入房间和入座交互于 `frontend/src/App.vue`
 
 **Checkpoint**: User Stories 1-3 should each be independently testable
 

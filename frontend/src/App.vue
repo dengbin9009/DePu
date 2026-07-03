@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router';
 import BottomTabBar from './components/BottomTabBar.vue';
 
 const route = useRoute();
-const showTabs = computed(() => route.path !== '/login' && route.path !== '/rules-test');
+const showTabs = computed(() => route.path !== '/login' && route.path !== '/rules-test' && !route.path.startsWith('/room/'));
 </script>
 
 <template>

@@ -1,12 +1,16 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import { fetchRechargeOptions } from '../api/client';
 import { useAppState } from '../composables/useAppState';
 import { walletTransactionLabel } from '../displayLabels';
+import type { RechargeOption } from '../types/game';
 
-const { me, wallet, saveNickname, refreshProfile, loading } = useAppState();
+const { me, wallet, saveNickname, refreshProfile, doRecharge, doLogout, loading } = useAppState();
 const router = useRouter();
 const nickname = ref('');
+const rechargeOptions = ref<RechargeOption[]>([]);
+const rechargeMessage = ref('');
 
 function formatDateTime(value?: string | null) {
   if (!value) return '暂无';
@@ -18,10 +22,23 @@ function formatDateTime(value?: string | null) {
 onMounted(async () => {
   await refreshProfile();
   nickname.value = me.value?.nickname ?? '';
+  rechargeOptions.value = (await fetchRechargeOptions()).options;
 });
 
 async function submitNickname() {
   await saveNickname(nickname.value);
+}
+
+async function simulateRecharge(option: RechargeOption) {
+  const confirmed = window.confirm(`确认模拟充值 ${option.label}（+${option.amount} 金币）？`);
+  if (!confirmed) return;
+  await doRecharge(option.code);
+  rechargeMessage.value = `充值成功：+${option.amount} 金币`;
+}
+
+function logoutNow() {
+  doLogout();
+  router.push('/login');
 }
 </script>
 
@@ -43,6 +60,23 @@ async function submitNickname() {
       <button type="button" :disabled="loading" @click="submitNickname">保存昵称</button>
     </section>
 
+    <section class="panel mobile-panel recharge-card">
+      <div class="section-headline">
+        <div>
+          <h2>金币充值</h2>
+          <p>当前为模拟充值，不接真实支付。</p>
+        </div>
+        <strong>{{ wallet?.balance ?? me?.walletBalance ?? 0 }}</strong>
+      </div>
+      <div class="recharge-options">
+        <button v-for="option in rechargeOptions" :key="option.code" type="button" :disabled="loading" @click="simulateRecharge(option)">
+          <span>{{ option.label }}</span>
+          <strong>+{{ option.amount }}</strong>
+        </button>
+      </div>
+      <p v-if="rechargeMessage" class="success-text">{{ rechargeMessage }}</p>
+    </section>
+
     <section class="panel mobile-panel">
       <h2>功能入口</h2>
       <div class="menu-list">
@@ -53,6 +87,7 @@ async function submitNickname() {
         <button type="button" disabled>客服</button>
         <button type="button" disabled>生涯</button>
         <button type="button" disabled>牌谱收藏</button>
+        <button type="button" class="danger-link" @click="logoutNow">退出登录</button>
       </div>
     </section>
 

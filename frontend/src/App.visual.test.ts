@@ -38,7 +38,7 @@ function snapshotWithSeats(count: number): GameSnapshot {
 
 describe('App visual contract', () => {
 	it('keeps the app shell with router outlet and bottom tabs', () => {
-		for (const token of ['router-view', 'BottomTabBar', "route.path !== '/login'", "route.path !== '/rules-test'"]) {
+		for (const token of ['router-view', 'BottomTabBar', "route.path !== '/login'", "route.path !== '/rules-test'", "!route.path.startsWith('/room/')"]) {
 			expect(appSource).toContain(token);
 		}
 	});
@@ -108,13 +108,16 @@ describe('App visual contract', () => {
 	});
 
 	it('keeps multiplayer profile, wallet, room history, and player perspective sections in dedicated pages', () => {
-		for (const token of ['钱包流水', 'walletTransactionLabel', 'formatDateTime']) {
+		for (const token of ['金币充值', '当前为模拟充值', 'simulateRecharge', '钱包流水', 'walletTransactionLabel', 'formatDateTime']) {
+			expect(meSource).toContain(token);
+		}
+		for (const token of ['退出登录', 'doLogout', "router.push('/login')"]) {
 			expect(meSource).toContain(token);
 		}
 		for (const token of ['房间最近牌局', '个人战绩', 'recentRoomHands']) {
 			expect(historySource).toContain(token);
 		}
-		for (const token of ['myRoomSeat', 'isMyTurn', 'myRoomHandPlayer', '现在轮到我操作', '我当前还未入座', '旁观 / 坐下 / 已入座']) {
+		for (const token of ['myRoomSeat', 'isMyTurn', 'myRoomHandPlayer', '坐下 #', '选座位', '等待开局']) {
 			expect(roomSource).toContain(token);
 		}
 	});

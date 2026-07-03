@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
@@ -14,7 +15,7 @@ import (
 
 func testServer(t *testing.T) *Server {
 	t.Helper()
-	store, err := storage.Open(fmt.Sprintf("file:depu_test_%d?mode=memory&cache=shared", time.Now().UnixNano()))
+	store, err := openTestStore(t)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -22,6 +23,18 @@ func testServer(t *testing.T) *Server {
 		_ = store.Close()
 	})
 	return NewServerWithStore(store)
+}
+
+func openTestStore(t *testing.T) (*storage.Store, error) {
+	t.Helper()
+	if dsn := os.Getenv("DEPU_TEST_MYSQL_DSN"); dsn != "" {
+		store, err := storage.OpenWithConfig(storage.Config{Driver: storage.DriverMySQL, DSN: dsn})
+		if err == nil {
+			return store, nil
+		}
+		t.Logf("fallback to sqlite test store, mysql unavailable: %v", err)
+	}
+	return storage.Open(fmt.Sprintf("file:depu_test_%d?mode=memory&cache=shared", time.Now().UnixNano()))
 }
 
 func TestRulesetsEndpoint(t *testing.T) {

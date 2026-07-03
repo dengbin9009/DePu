@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from 'vue-router';
 import LoginPage from '../pages/LoginPage.vue';
 import LobbyPage from '../pages/LobbyPage.vue';
 import RoomPage from '../pages/RoomPage.vue';
+import RoomInfoPage from '../pages/RoomInfoPage.vue';
+import RoomPlayersPage from '../pages/RoomPlayersPage.vue';
 import HistoryPage from '../pages/HistoryPage.vue';
 import MePage from '../pages/MePage.vue';
 import PlaceholderPage from '../pages/PlaceholderPage.vue';
@@ -13,6 +15,8 @@ const routes = [
   { path: '/login', component: LoginPage },
   { path: '/lobby', component: LobbyPage },
   { path: '/room/:roomId', component: RoomPage },
+  { path: '/room/:roomId/info', component: RoomInfoPage },
+  { path: '/room/:roomId/players', component: RoomPlayersPage },
   { path: '/history', component: HistoryPage },
   { path: '/me', component: MePage },
   { path: '/match', component: PlaceholderPage, props: { title: '约赛', description: '约赛功能先留空展位。' } },
@@ -26,9 +30,16 @@ export const router = createRouter({
   routes,
 });
 
-router.beforeEach((to) => {
-  const { token } = useAppState();
+router.beforeEach(async (to) => {
+  const { token, me, refreshProfile } = useAppState();
   if (!token.value && to.path !== '/login') return '/login';
+  if (token.value && !me.value) {
+    try {
+      await refreshProfile();
+    } catch {
+      if (to.path !== '/login') return '/login';
+    }
+  }
   if (token.value && to.path === '/login') return '/lobby';
   return true;
 });

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
+import { cardAltText, cardImagePath } from '../cardAssets';
 import { useAppState } from '../composables/useAppState';
 
-const { me, room, roomHistory, recentRoomHands, refreshProfile, refreshRoom } = useAppState();
+const { me, roomHistory, recentRoomHands, refreshHistoryDetails } = useAppState();
 
 function formatDateTime(value?: string | null) {
   if (!value) return '暂无';
@@ -11,9 +12,18 @@ function formatDateTime(value?: string | null) {
   return date.toLocaleString('zh-CN');
 }
 
+function displayCards(cards?: string[] | null) {
+  return cards?.filter(Boolean) ?? [];
+}
+
+function hideBrokenCardImage(event: Event) {
+  if (event.target instanceof HTMLImageElement) {
+    event.target.style.visibility = 'hidden';
+  }
+}
+
 onMounted(async () => {
-  await refreshProfile();
-  if (room.value) await refreshRoom();
+  await refreshHistoryDetails();
 });
 </script>
 
@@ -35,7 +45,33 @@ onMounted(async () => {
         <ol class="history" v-else>
           <li v-for="hand in recentRoomHands" :key="hand.handId">
             <strong>#{{ hand.handNo }}</strong> · {{ formatDateTime(hand.completedAt) }} · 赢家 {{ hand.winnerSummary }} · {{ hand.potSummary }}
-            <div>公共牌：{{ hand.boardCards.join(' ') }}</div>
+            <div class="history-card-block">
+              <span class="history-card-label">公共牌</span>
+              <span class="history-card-row" aria-label="公共牌">
+                <span v-for="card in displayCards(hand.boardCards)" :key="card" class="history-card-frame">
+                  <img v-if="cardImagePath(card)" :src="cardImagePath(card) || undefined" :alt="cardAltText(card)" class="history-playing-card" @error="hideBrokenCardImage" />
+                </span>
+              </span>
+            </div>
+            <div v-for="participant in hand.participants" :key="`${hand.handId}-${participant.seatNo}`" class="history-participant">
+              <span class="history-participant-title">#{{ participant.seatNo }} {{ participant.nickname }} · 投入 {{ participant.handCommitted }} · 返奖 {{ participant.awardAmount }} · 净 {{ participant.profit >= 0 ? '+' : '' }}{{ participant.profit }}</span>
+              <span class="history-card-block">
+                <span class="history-card-label">手牌</span>
+                <span class="history-card-row" aria-label="手牌">
+                  <span v-for="card in displayCards(participant.holeCards)" :key="card" class="history-card-frame">
+                    <img v-if="cardImagePath(card)" :src="cardImagePath(card) || undefined" :alt="cardAltText(card)" class="history-playing-card" @error="hideBrokenCardImage" />
+                  </span>
+                </span>
+              </span>
+              <span class="history-card-block">
+                <span class="history-card-label">最佳牌</span>
+                <span class="history-card-row" aria-label="最佳牌">
+                  <span v-for="card in displayCards(participant.bestCards)" :key="card" class="history-card-frame">
+                    <img v-if="cardImagePath(card)" :src="cardImagePath(card) || undefined" :alt="cardAltText(card)" class="history-playing-card" @error="hideBrokenCardImage" />
+                  </span>
+                </span>
+              </span>
+            </div>
           </li>
         </ol>
       </section>

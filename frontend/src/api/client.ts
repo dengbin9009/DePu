@@ -14,7 +14,7 @@ import type {
 } from '../types/game';
 
 const jsonHeaders = { 'Content-Type': 'application/json' };
-const apiBase = import.meta.env.DEV ? 'http://127.0.0.1:5174' : '';
+const apiBase = import.meta.env.DEV ? 'http://localhost:5174' : '';
 
 function apiUrl(path: string): string {
   return `${apiBase}${path}`;
