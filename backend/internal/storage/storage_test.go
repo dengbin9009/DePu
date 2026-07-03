@@ -1,13 +1,29 @@
 package storage
 
 import (
+	"fmt"
+	"os"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/dengbin9009/DePu/backend/internal/game"
 )
 
+func openStorageTestStore(t *testing.T) (*Store, error) {
+	t.Helper()
+	if dsn := os.Getenv("DEPU_TEST_MYSQL_DSN"); dsn != "" {
+		store, err := OpenWithConfig(Config{Driver: DriverMySQL, DSN: dsn})
+		if err == nil {
+			return store, nil
+		}
+		t.Logf("fallback to sqlite storage test store, mysql unavailable: %v", err)
+	}
+	return Open(fmt.Sprintf("file:depu_storage_test_%d?mode=memory&cache=shared", time.Now().UnixNano()))
+}
+
 func TestSaveLoadGameAndHistory(t *testing.T) {
-	store, err := Open(":memory:")
+	store, err := openStorageTestStore(t)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,8 +74,17 @@ func TestSaveLoadGameAndHistory(t *testing.T) {
 	}
 }
 
+func TestSaveUsesMySQLUpsertSyntaxForMySQLDriver(t *testing.T) {
+	if got := saveGameUpsertSQL(DriverMySQL); !strings.Contains(got, "on duplicate key update") {
+		t.Fatalf("expected mysql upsert syntax, got %s", got)
+	}
+	if got := saveGameUpsertSQL(DriverSQLite); !strings.Contains(got, "on conflict(id) do update") {
+		t.Fatalf("expected sqlite upsert syntax, got %s", got)
+	}
+}
+
 func TestSaveReturnsErrorWhenStorageUnavailable(t *testing.T) {
-	store, err := Open(":memory:")
+	store, err := openStorageTestStore(t)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import appSource from './App.vue?raw';
+import rulesTestSource from './pages/RulesTestPage.vue?raw';
+import roomSource from './pages/RoomPage.vue?raw';
+import meSource from './pages/MePage.vue?raw';
+import historySource from './pages/HistoryPage.vue?raw';
 import { tableVisualState, visibleOpponentSeats } from './pokerVisuals';
 import type { GameSnapshot } from './types/game';
 
@@ -33,9 +37,15 @@ function snapshotWithSeats(count: number): GameSnapshot {
 }
 
 describe('App visual contract', () => {
-	it('keeps the table, board, pot, actions, history, and debug areas in the component', () => {
+	it('keeps the app shell with router outlet and bottom tabs', () => {
+		for (const token of ['router-view', 'BottomTabBar', "route.path !== '/login'", "route.path !== '/rules-test'", "!route.path.startsWith('/room/')"]) {
+			expect(appSource).toContain(token);
+		}
+	});
+
+	it('keeps the rules test table, board, pot, actions, history, and debug areas in the rules test page', () => {
 		for (const token of [
-			'class="table-zone"',
+			'v-if="game" class="table-zone panel mobile-panel"',
 			'class="phone-stage"',
 			'class="mobile-table-screen"',
 			'class="table-status-bar"',
@@ -47,8 +57,8 @@ describe('App visual contract', () => {
 			'class="hero-rank"',
 			'class="card opponent-card"',
 			'visibleOpponentSeats',
-			'handClassLabel(seat.seat.currentHand.handClass)',
-			'handClassLabel(heroSeat()?.currentHand?.handClass',
+			'seatHandClass((seat.seat.currentHand as any)?.handClass)',
+			'seatHandClass(heroSeat()?.currentHand?.handClass)',
 			'has-game',
 			'class="table-felt"',
 			'class="board"',
@@ -70,7 +80,7 @@ describe('App visual contract', () => {
 			'faceDownBoardCards',
 			'cardBackImagePath'
 		]) {
-			expect(appSource).toContain(token);
+			expect(rulesTestSource).toContain(token);
 		}
 	});
 
@@ -95,5 +105,20 @@ describe('App visual contract', () => {
 		expect(opponents.some((seat) => seat.x < 35)).toBe(true);
 		expect(opponents.some((seat) => seat.x > 65)).toBe(true);
 		expect(opponents.some((seat) => seat.x >= 42 && seat.x <= 58 && seat.y <= 20)).toBe(true);
+	});
+
+	it('keeps multiplayer profile, wallet, room history, and player perspective sections in dedicated pages', () => {
+		for (const token of ['金币充值', '当前为模拟充值', 'simulateRecharge', '钱包流水', 'walletTransactionLabel', 'formatDateTime']) {
+			expect(meSource).toContain(token);
+		}
+		for (const token of ['退出登录', 'doLogout', "router.push('/login')"]) {
+			expect(meSource).toContain(token);
+		}
+		for (const token of ['房间最近牌局', '个人战绩', 'recentRoomHands']) {
+			expect(historySource).toContain(token);
+		}
+		for (const token of ['myRoomSeat', 'isMyTurn', 'myRoomHandPlayer', '坐下 #', '选座位', '等待开局']) {
+			expect(roomSource).toContain(token);
+		}
 	});
 });
