@@ -37,15 +37,15 @@
 
 ## 5. 前端 socket client
 
-- [ ] T024 新增前端 socket client 模块，封装连接、重连、发送 command、ACK/error 匹配和事件订阅。
-- [ ] T025 为 socket client 编写消息解析、ACK、error 和断线重连测试。
-- [ ] T026 在 `useAppState` 中接入 socket：进入房间后连接并发送 `room.subscribe`。
-- [ ] T027 将 `doStartRoomHand` 改为发送 `room.start_hand`。
-- [ ] T028 将 `doRoomAction` 改为发送 `room.action`。
-- [ ] T029 移除正式牌局推进对 `startRoomPolling()` 的依赖，保留必要的手动刷新能力。
-- [ ] T030 收到 `room.snapshot`、`room.updated`、`hand.started`、`hand.updated`、`hand.settled` 后更新本地 room/hand 状态。
-- [ ] T031 收到 `wallet.updated` 后刷新或更新钱包余额和个人战绩。
-- [ ] T032 退出登录、离开房间或切换房间时取消订阅并关闭连接。
+- [x] T024 新增前端 socket client 模块，封装连接、重连、发送 command、ACK/error 匹配和事件订阅。
+- [x] T025 为 socket client 编写消息解析、ACK、error 和断线重连测试。
+- [x] T026 在 `useAppState` 中接入 socket：进入房间后连接并发送 `room.subscribe`。
+- [x] T027 将 `doStartRoomHand` 改为发送 `room.start_hand`。
+- [x] T028 将 `doRoomAction` 改为发送 `room.action`。
+- [x] T029 移除正式牌局推进对 `startRoomPolling()` 的依赖，保留必要的手动刷新能力。
+- [x] T030 收到 `room.snapshot`、`room.updated`、`hand.started`、`hand.updated`、`hand.settled` 后更新本地 room/hand 状态。
+- [x] T031 收到 `wallet.updated` 后刷新或更新钱包余额和个人战绩。
+- [x] T032 退出登录、离开房间或切换房间时取消订阅并关闭连接。
 
 ## 6. HTTP 边界与兼容
 

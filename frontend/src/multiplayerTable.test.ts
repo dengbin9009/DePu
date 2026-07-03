@@ -102,4 +102,23 @@ describe('multiplayer table contract', () => {
       '坐下 #'
     ].forEach((token) => expect(roomPlayersSource).toContain(token));
   });
+
+  it('uses socket commands for formal room start and player actions', () => {
+    [
+      'createRoomSocketClient',
+      "room.start_hand",
+      "room.action",
+      "room.snapshot",
+      "hand.started",
+      "hand.updated",
+      "hand.settled",
+      "wallet.updated",
+      'connectRoomSocket'
+    ].forEach((token) => expect(appStateSource).toContain(token));
+
+    expect(appStateSource).not.toContain('startRoomHand,');
+    expect(appStateSource).not.toContain('submitRoomAction,');
+    expect(appStateSource).not.toContain('currentRoomHand.value = await startRoomHand');
+    expect(appStateSource).not.toContain('currentRoomHand.value = await submitRoomAction');
+  });
 });

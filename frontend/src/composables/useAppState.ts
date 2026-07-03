@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue';
-import { createRoom, fetchCurrentRoomHand, fetchMe, fetchRoom, fetchRoomHands, fetchUserHands, fetchWallet, joinRoom, leaveSeat, login, recharge, register, startRoomHand, submitRoomAction, takeSeat, updateProfile } from '../api/client';
+import { createRoom, fetchCurrentRoomHand, fetchMe, fetchRoom, fetchRoomHands, fetchUserHands, fetchWallet, joinRoom, leaveSeat, login, recharge, register, takeSeat, updateProfile } from '../api/client';
+import { createRoomSocketClient, type SocketEnvelope } from '../api/socketClient';
 import type { ProfileResponse, RechargeOption, RoomHandHistoryRecord, RoomHandState, RoomResponse, UserHandRecord, WalletResponse } from '../types/game';
 
 const TOKEN_STORAGE_KEY = 'depu.auth.token';
@@ -49,6 +50,8 @@ const rechargeOptions = ref<RechargeOption[]>([]);
 const loading = ref(false);
 const error = ref('');
 let roomPollTimer: number | null = null;
+let roomSocket: ReturnType<typeof createRoomSocketClient> | null = null;
+let socketRoomId = '';
 
 const myRoomSeat = computed(() => room.value?.seats.find((seat) => seat.userId && seat.userId === me.value?.id) ?? null);
 const isMyTurn = computed(() => !!currentRoomHand.value && !!myRoomSeat.value && currentRoomHand.value.currentSeat === myRoomSeat.value.seatNo);
@@ -110,6 +113,7 @@ async function doLogin(username: string, password: string) {
 
 function doLogout() {
   stopRoomPolling();
+  disconnectRoomSocket();
   setToken('');
   me.value = null;
   wallet.value = null;
@@ -118,6 +122,56 @@ function doLogout() {
   recentRoomHands.value = [];
   roomHistory.value = [];
   error.value = '';
+}
+
+function applyRoomSocketPayload(message: SocketEnvelope) {
+  const payload = message.payload as { room?: RoomResponse; hand?: RoomHandState | null } | undefined;
+  if (payload?.room) {
+    room.value = payload.room;
+  }
+  if ('hand' in (payload ?? {})) {
+    currentRoomHand.value = payload?.hand ?? null;
+  }
+}
+
+function applyHandSocketPayload(message: SocketEnvelope) {
+  const payload = message.payload as { hand?: RoomHandState | RoomHandHistoryRecord } | undefined;
+  const hand = payload?.hand;
+  if (!hand) return;
+  if ('availableActions' in hand) {
+    currentRoomHand.value = hand;
+  } else {
+    currentRoomHand.value = null;
+    void refreshHistoryDetails();
+  }
+}
+
+async function connectRoomSocket(roomId: string) {
+  if (!token.value) return;
+  if (roomSocket && socketRoomId === roomId) return;
+  disconnectRoomSocket();
+  socketRoomId = roomId;
+  roomSocket = createRoomSocketClient(token.value);
+  roomSocket.on('room.snapshot', applyRoomSocketPayload);
+  roomSocket.on('room.updated', applyRoomSocketPayload);
+  roomSocket.on('hand.started', applyHandSocketPayload);
+  roomSocket.on('hand.updated', applyHandSocketPayload);
+  roomSocket.on('hand.settled', applyHandSocketPayload);
+  roomSocket.on('wallet.updated', () => {
+    void refreshProfile();
+    void refreshHistoryDetails();
+  });
+  await roomSocket.connect();
+  await roomSocket.send('room.subscribe', roomId, {});
+}
+
+function disconnectRoomSocket() {
+  if (roomSocket && socketRoomId) {
+    void roomSocket.send('room.unsubscribe', socketRoomId, {}).catch(() => {});
+  }
+  roomSocket?.close();
+  roomSocket = null;
+  socketRoomId = '';
 }
 
 async function saveNickname(nickname: string) {
@@ -168,7 +222,7 @@ async function doCreateRoom(payload: { ruleSetId: string; seatCount: number; min
   return run(async () => {
     room.value = await createRoom(token.value, payload);
     recentRoomHands.value = [];
-    startRoomPolling();
+    await connectRoomSocket(room.value.id);
     return room.value;
   });
 }
@@ -178,7 +232,7 @@ async function doJoinRoom(inviteCode: string) {
   return run(async () => {
     room.value = await joinRoom(token.value, inviteCode.trim());
     recentRoomHands.value = (await fetchRoomHands(token.value, room.value.id)).items;
-    startRoomPolling();
+    await connectRoomSocket(room.value.id);
     return room.value;
   });
 }
@@ -210,8 +264,8 @@ async function doLeaveSeat(seatNo: number) {
 async function doStartRoomHand() {
   if (!token.value || !room.value) return;
   await run(async () => {
-    currentRoomHand.value = await startRoomHand(token.value, room.value!.id);
-    recentRoomHands.value = (await fetchRoomHands(token.value, room.value!.id)).items;
+    await connectRoomSocket(room.value!.id);
+    await roomSocket?.send('room.start_hand', room.value!.id, {});
   });
 }
 
@@ -238,10 +292,8 @@ async function safeRefreshCurrentRoomHand() {
 async function doRoomAction(action: string) {
   if (!token.value || !room.value) return;
   await run(async () => {
-    currentRoomHand.value = await submitRoomAction(token.value, room.value!.id, action, 0);
-    recentRoomHands.value = (await fetchRoomHands(token.value, room.value!.id)).items;
-    roomHistory.value = (await fetchUserHands(token.value)).items;
-    wallet.value = await fetchWallet(token.value);
+    await connectRoomSocket(room.value!.id);
+    await roomSocket?.send('room.action', room.value!.id, { action, amount: 0 });
   });
 }
 
@@ -276,6 +328,8 @@ export function useAppState() {
     doStartRoomHand,
     refreshCurrentRoomHand: safeRefreshCurrentRoomHand,
     doRoomAction,
+    connectRoomSocket,
+    disconnectRoomSocket,
     startRoomPolling,
     stopRoomPolling,
     pollRoomState,
