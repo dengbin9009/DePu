@@ -2,11 +2,11 @@
 
 ## 1. 后端 socket 基础设施
 
-- [ ] T001 在 `backend/internal/api` 新增 socket 消息信封类型，覆盖 `type`、`requestId`、`roomId`、`payload`、`sentAt`。
-- [ ] T002 在 `backend/internal/api` 新增 socket hub，管理连接、用户身份、房间订阅和按房间广播。
-- [ ] T003 为 `Server.Routes()` 增加 socket endpoint，并复用现有 token 会话鉴权。
-- [ ] T004 编写 socket 鉴权失败测试，验证无 token 或无效 token 返回 `unauthorized`。
-- [ ] T005 编写连接成功测试，验证服务端发送 `connection.ready`。
+- [x] T001 在 `backend/internal/api` 新增 socket 消息信封类型，覆盖 `type`、`requestId`、`roomId`、`payload`、`sentAt`。
+- [x] T002 在 `backend/internal/api` 新增 socket hub，管理连接、用户身份、房间订阅和按房间广播。
+- [x] T003 为 `Server.Routes()` 增加 socket endpoint，并复用现有 token 会话鉴权。
+- [x] T004 编写 socket 鉴权失败测试，验证无 token 或无效 token 返回 `unauthorized`。
+- [x] T005 编写连接成功测试，验证服务端发送 `connection.ready`。
 
 ## 2. 房间订阅与快照
 
@@ -60,4 +60,3 @@
 - [ ] T038 运行前端测试：`cd frontend && npm test -- --run` 或项目等效命令。
 - [ ] T039 手动使用两个账号验证同房间 socket 同步：入座、开局、行动、结算、钱包和历史刷新。
 - [ ] T040 手动验证规则测试页仍可创建测试牌局、调试设牌、查看历史和只读回放。
-

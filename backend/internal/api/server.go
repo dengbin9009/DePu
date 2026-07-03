@@ -47,6 +47,7 @@ type Store interface {
 type Server struct {
 	store    Store
 	sessions map[string]string
+	hub      *socketHub
 	mu       sync.RWMutex
 }
 
@@ -69,11 +70,11 @@ func NewServer() *Server {
 			panic(err)
 		}
 	}
-	return &Server{store: store, sessions: map[string]string{}}
+	return &Server{store: store, sessions: map[string]string{}, hub: newSocketHub()}
 }
 
 func NewServerWithStore(store Store) *Server {
-	return &Server{store: store, sessions: map[string]string{}}
+	return &Server{store: store, sessions: map[string]string{}, hub: newSocketHub()}
 }
 
 func (s *Server) Routes() http.Handler {
@@ -88,6 +89,7 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("/api/me/hands", s.myHands)
 	mux.HandleFunc("/api/recharge/options", s.rechargeOptions)
 	mux.HandleFunc("/api/recharge", s.recharge)
+	mux.HandleFunc("/api/socket", s.socketEndpoint)
 	mux.HandleFunc("/api/rooms", s.rooms)
 	mux.HandleFunc("/api/rooms/join", s.joinRoom)
 	mux.HandleFunc("/api/rooms/", s.roomByID)
