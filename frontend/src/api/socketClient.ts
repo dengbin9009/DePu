@@ -13,7 +13,7 @@ interface PendingCommand {
   reject: (error: Error) => void;
 }
 
-const apiBase = import.meta.env.DEV ? 'http://localhost:5174' : '';
+const apiBase = import.meta.env.VITE_DEPU_API_BASE || '';
 
 function socketUrl(token: string): string {
   const base = apiBase || window.location.origin;
@@ -104,4 +104,3 @@ export function createRoomSocketClient(token: string) {
 
   return { connect, send, on, close };
 }
-

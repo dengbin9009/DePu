@@ -56,6 +56,18 @@ describe('socketClient', () => {
     await expect(ack).resolves.toEqual({ command: 'room.subscribe' });
   });
 
+  it('defaults the socket URL to the current origin so Vite proxy can handle local development', async () => {
+    vi.stubGlobal('WebSocket', FakeWebSocket);
+    FakeWebSocket.instances = [];
+    const client = createRoomSocketClient('tok_proxy');
+
+    const connected = client.connect();
+    const socket = FakeWebSocket.instances[0];
+    expect(socket.url).toBe('ws://localhost:3000/api/socket?token=tok_proxy');
+    socket.open();
+    await connected;
+  });
+
   it('rejects a pending command when the server returns error', async () => {
     vi.stubGlobal('WebSocket', FakeWebSocket);
     FakeWebSocket.instances = [];
@@ -90,4 +102,3 @@ describe('socketClient', () => {
     expect(events).toEqual(['snapshot', 'updated']);
   });
 });
-
