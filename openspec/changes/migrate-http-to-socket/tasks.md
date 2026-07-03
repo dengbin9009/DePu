@@ -10,11 +10,11 @@
 
 ## 2. 房间订阅与快照
 
-- [ ] T006 实现 `room.subscribe` command，订阅成功后返回 `room.snapshot`。
-- [ ] T007 实现 `room.unsubscribe` command，释放连接的房间订阅。
-- [ ] T008 校验订阅权限：非房间成员不得订阅房间。
-- [ ] T009 编写订阅非成员房间失败测试。
-- [ ] T010 编写订阅成功后返回 room/hand 快照测试。
+- [x] T006 实现 `room.subscribe` command，订阅成功后返回 `room.snapshot`。
+- [x] T007 实现 `room.unsubscribe` command，释放连接的房间订阅。
+- [x] T008 校验订阅权限：非房间成员不得订阅房间。
+- [x] T009 编写订阅非成员房间失败测试。
+- [x] T010 编写订阅成功后返回 room/hand 快照测试。
 
 ## 3. socket 开局与动作提交
 

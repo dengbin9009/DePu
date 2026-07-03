@@ -33,6 +33,7 @@ type socketHub struct {
 }
 
 type socketClient struct {
+	server *Server
 	userID string
 	conn   net.Conn
 
@@ -50,6 +51,28 @@ func newSocketHub() *socketHub {
 func (h *socketHub) add(client *socketClient) {
 	h.mu.Lock()
 	h.clients[client] = struct{}{}
+	h.mu.Unlock()
+}
+
+func (h *socketHub) subscribe(client *socketClient, roomID string) {
+	h.mu.Lock()
+	if h.rooms[roomID] == nil {
+		h.rooms[roomID] = map[*socketClient]struct{}{}
+	}
+	h.rooms[roomID][client] = struct{}{}
+	client.rooms[roomID] = struct{}{}
+	h.mu.Unlock()
+}
+
+func (h *socketHub) unsubscribe(client *socketClient, roomID string) {
+	h.mu.Lock()
+	if roomClients, ok := h.rooms[roomID]; ok {
+		delete(roomClients, client)
+		if len(roomClients) == 0 {
+			delete(h.rooms, roomID)
+		}
+	}
+	delete(client.rooms, roomID)
 	h.mu.Unlock()
 }
 
@@ -82,7 +105,7 @@ func (s *Server) socketEndpoint(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "bad_websocket", err.Error(), "")
 		return
 	}
-	client := &socketClient{userID: user.ID, conn: conn, rooms: map[string]struct{}{}}
+	client := &socketClient{server: s, userID: user.ID, conn: conn, rooms: map[string]struct{}{}}
 	s.hub.add(client)
 	go func() {
 		defer conn.Close()
@@ -204,11 +227,97 @@ func (c *socketClient) writeText(payload []byte) error {
 func (c *socketClient) readLoop() {
 	reader := bufio.NewReader(c.conn)
 	for {
-		opcode, _, err := readClientFrame(reader)
+		opcode, payload, err := readClientFrame(reader)
 		if err != nil || opcode == 0x8 {
 			return
 		}
+		if opcode == 0x1 {
+			c.handleMessage(payload)
+		}
 	}
+}
+
+func (c *socketClient) handleMessage(payload []byte) {
+	var message socketEnvelope
+	if err := json.Unmarshal(payload, &message); err != nil {
+		c.writeError(socketEnvelope{}, "bad_message", "invalid socket message", "")
+		return
+	}
+	switch message.Type {
+	case "room.subscribe":
+		c.handleSubscribe(message)
+	case "room.unsubscribe":
+		c.server.hub.unsubscribe(c, message.RoomID)
+		c.writeAck(message)
+	default:
+		c.writeError(message, "bad_message", "unsupported socket message type", "type")
+	}
+}
+
+func (c *socketClient) handleSubscribe(message socketEnvelope) {
+	room, err := c.server.store.RoomByID(message.RoomID)
+	if err != nil {
+		c.writeError(message, "room_not_found", "room not found", "roomId")
+		return
+	}
+	if !roomHasMember(room, c.userID) {
+		c.writeError(message, "forbidden", "room subscription requires membership", "roomId")
+		return
+	}
+	c.server.hub.subscribe(c, message.RoomID)
+	c.writeAck(message)
+	c.writeRoomSnapshot(message, room)
+}
+
+func (c *socketClient) writeAck(request socketEnvelope) {
+	payload, _ := json.Marshal(map[string]string{"command": request.Type})
+	_ = c.writeJSON(socketEnvelope{
+		Type:      "ack",
+		RequestID: request.RequestID,
+		RoomID:    request.RoomID,
+		Payload:   payload,
+		SentAt:    time.Now().UTC().Format(time.RFC3339),
+	})
+}
+
+func (c *socketClient) writeError(request socketEnvelope, code, message, field string) {
+	payload, _ := json.Marshal(ErrorResponse{Code: code, Message: message, Field: field})
+	_ = c.writeJSON(socketEnvelope{
+		Type:      "error",
+		RequestID: request.RequestID,
+		RoomID:    request.RoomID,
+		Payload:   payload,
+		SentAt:    time.Now().UTC().Format(time.RFC3339),
+	})
+}
+
+func (c *socketClient) writeRoomSnapshot(request socketEnvelope, room *storage.RoomRecord) {
+	var hand any
+	if room.CurrentGameID != "" {
+		if g, err := c.server.store.Load(room.CurrentGameID); err == nil {
+			hand = roomHandState(room.ID, g)
+		}
+	}
+	payload, _ := json.Marshal(map[string]any{
+		"room": room,
+		"hand": hand,
+	})
+	_ = c.writeJSON(socketEnvelope{
+		Type:      "room.snapshot",
+		RequestID: request.RequestID,
+		RoomID:    request.RoomID,
+		Payload:   payload,
+		SentAt:    time.Now().UTC().Format(time.RFC3339),
+	})
+}
+
+func roomHasMember(room *storage.RoomRecord, userID string) bool {
+	for _, member := range room.Members {
+		if member.UserID == userID {
+			return true
+		}
+	}
+	return false
 }
 
 func readClientFrame(reader *bufio.Reader) (byte, []byte, error) {

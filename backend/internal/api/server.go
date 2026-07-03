@@ -761,7 +761,7 @@ func (s *Server) roomByID(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusInternalServerError, "storage_error", err.Error(), "")
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"roomId": roomID, "handId": g.ID, "status": string(g.Stage), "currentSeat": g.CurrentSeat, "pot": g.CurrentBet, "boardCards": g.Board, "players": snapshot(g).Seats, "availableActions": g.LegalActions()})
+		writeJSON(w, http.StatusOK, roomHandState(roomID, g))
 		return
 	}
 	if len(parts) == 2 && parts[1] == "current-hand" && r.Method == http.MethodGet {
@@ -775,7 +775,7 @@ func (s *Server) roomByID(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, "room_not_found", "current hand not found", "")
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"roomId": roomID, "handId": g.ID, "status": string(g.Stage), "currentSeat": g.CurrentSeat, "pot": g.CurrentBet, "boardCards": g.Board, "players": snapshot(g).Seats, "availableActions": g.LegalActions()})
+		writeJSON(w, http.StatusOK, roomHandState(roomID, g))
 		return
 	}
 	if len(parts) == 2 && parts[1] == "actions" && r.Method == http.MethodPost {
@@ -827,7 +827,7 @@ func (s *Server) roomByID(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusInternalServerError, "storage_error", err.Error(), "")
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"roomId": roomID, "handId": g.ID, "status": string(g.Stage), "currentSeat": g.CurrentSeat, "pot": g.CurrentBet, "boardCards": g.Board, "players": snapshot(g).Seats, "availableActions": g.LegalActions()})
+		writeJSON(w, http.StatusOK, roomHandState(roomID, g))
 		return
 	}
 	if len(parts) == 3 && parts[1] == "hands" && parts[2] == "recent" && r.Method == http.MethodGet {
@@ -907,4 +907,17 @@ func (s *Server) myHands(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"items": items})
+}
+
+func roomHandState(roomID string, g *game.Game) map[string]any {
+	return map[string]any{
+		"roomId":           roomID,
+		"handId":           g.ID,
+		"status":           string(g.Stage),
+		"currentSeat":      g.CurrentSeat,
+		"pot":              g.CurrentBet,
+		"boardCards":       g.Board,
+		"players":          snapshot(g).Seats,
+		"availableActions": g.LegalActions(),
+	}
 }
