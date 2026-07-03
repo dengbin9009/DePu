@@ -291,4 +291,3 @@
 - `insufficient_coins`
 - `storage_error`
 - `bad_message`
-
