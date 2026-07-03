@@ -18,14 +18,14 @@
 
 ## 3. socket 开局与动作提交
 
-- [ ] T011 实现 `room.start_hand` command，复用现有 HTTP 开局逻辑中的房主、座位、金币和规则引擎校验。
-- [ ] T012 实现 `room.action` command，复用现有 HTTP 动作提交逻辑中的当前行动玩家和合法动作校验。
-- [ ] T013 为同一房间 command 增加串行处理保护，避免并发动作破坏手牌状态。
-- [ ] T014 编写房主通过 socket 开局成功并广播 `hand.started` 测试。
-- [ ] T015 编写非房主通过 socket 开局返回 `not_room_owner` 测试。
-- [ ] T016 编写当前玩家通过 socket 提交动作成功并广播 `hand.updated` 测试。
-- [ ] T017 编写非当前玩家通过 socket 提交动作返回 `not_your_turn` 且状态不变测试。
-- [ ] T018 编写非法动作返回 `invalid_action` 且状态不变测试。
+- [x] T011 实现 `room.start_hand` command，复用现有 HTTP 开局逻辑中的房主、座位、金币和规则引擎校验。
+- [x] T012 实现 `room.action` command，复用现有 HTTP 动作提交逻辑中的当前行动玩家和合法动作校验。
+- [x] T013 为同一房间 command 增加串行处理保护，避免并发动作破坏手牌状态。
+- [x] T014 编写房主通过 socket 开局成功并广播 `hand.started` 测试。
+- [x] T015 编写非房主通过 socket 开局返回 `not_room_owner` 测试。
+- [x] T016 编写当前玩家通过 socket 提交动作成功并广播 `hand.updated` 测试。
+- [x] T017 编写非当前玩家通过 socket 提交动作返回 `not_your_turn` 且状态不变测试。
+- [x] T018 编写非法动作返回 `invalid_action` 且状态不变测试。
 
 ## 4. 结算、钱包与历史事件
 

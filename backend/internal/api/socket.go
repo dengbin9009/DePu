@@ -30,6 +30,7 @@ type socketHub struct {
 	mu      sync.RWMutex
 	clients map[*socketClient]struct{}
 	rooms   map[string]map[*socketClient]struct{}
+	roomMu  map[string]*sync.Mutex
 }
 
 type socketClient struct {
@@ -45,6 +46,7 @@ func newSocketHub() *socketHub {
 	return &socketHub{
 		clients: map[*socketClient]struct{}{},
 		rooms:   map[string]map[*socketClient]struct{}{},
+		roomMu:  map[string]*sync.Mutex{},
 	}
 }
 
@@ -74,6 +76,29 @@ func (h *socketHub) unsubscribe(client *socketClient, roomID string) {
 	}
 	delete(client.rooms, roomID)
 	h.mu.Unlock()
+}
+
+func (h *socketHub) withRoomLock(roomID string, fn func()) {
+	h.mu.Lock()
+	mu := h.roomMu[roomID]
+	if mu == nil {
+		mu = &sync.Mutex{}
+		h.roomMu[roomID] = mu
+	}
+	h.mu.Unlock()
+	mu.Lock()
+	defer mu.Unlock()
+	fn()
+}
+
+func (h *socketHub) roomClients(roomID string) []*socketClient {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	clients := make([]*socketClient, 0, len(h.rooms[roomID]))
+	for client := range h.rooms[roomID] {
+		clients = append(clients, client)
+	}
+	return clients
 }
 
 func (h *socketHub) remove(client *socketClient) {
@@ -249,6 +274,10 @@ func (c *socketClient) handleMessage(payload []byte) {
 	case "room.unsubscribe":
 		c.server.hub.unsubscribe(c, message.RoomID)
 		c.writeAck(message)
+	case "room.start_hand":
+		c.handleStartHand(message)
+	case "room.action":
+		c.handleAction(message)
 	default:
 		c.writeError(message, "bad_message", "unsupported socket message type", "type")
 	}
@@ -267,6 +296,50 @@ func (c *socketClient) handleSubscribe(message socketEnvelope) {
 	c.server.hub.subscribe(c, message.RoomID)
 	c.writeAck(message)
 	c.writeRoomSnapshot(message, room)
+}
+
+func (c *socketClient) handleStartHand(message socketEnvelope) {
+	c.server.hub.withRoomLock(message.RoomID, func() {
+		state, apiErr := c.server.startRoomHandForUser(message.RoomID, c.userID)
+		if apiErr != nil {
+			c.writeAPIError(message, apiErr)
+			return
+		}
+		c.writeAck(message)
+		c.server.broadcastRoomEvent(message.RoomID, socketEnvelope{
+			Type:      "hand.started",
+			RequestID: message.RequestID,
+			RoomID:    message.RoomID,
+			Payload:   mustJSON(map[string]any{"hand": state}),
+			SentAt:    time.Now().UTC().Format(time.RFC3339),
+		})
+	})
+}
+
+func (c *socketClient) handleAction(message socketEnvelope) {
+	var req struct {
+		Action string `json:"action"`
+		Amount int    `json:"amount"`
+	}
+	if err := json.Unmarshal(message.Payload, &req); err != nil {
+		c.writeError(message, "bad_message", "invalid action payload", "payload")
+		return
+	}
+	c.server.hub.withRoomLock(message.RoomID, func() {
+		state, apiErr := c.server.applyRoomActionForUser(message.RoomID, c.userID, req.Action, req.Amount)
+		if apiErr != nil {
+			c.writeAPIError(message, apiErr)
+			return
+		}
+		c.writeAck(message)
+		c.server.broadcastRoomEvent(message.RoomID, socketEnvelope{
+			Type:      "hand.updated",
+			RequestID: message.RequestID,
+			RoomID:    message.RoomID,
+			Payload:   mustJSON(map[string]any{"hand": state}),
+			SentAt:    time.Now().UTC().Format(time.RFC3339),
+		})
+	})
 }
 
 func (c *socketClient) writeAck(request socketEnvelope) {
@@ -289,6 +362,10 @@ func (c *socketClient) writeError(request socketEnvelope, code, message, field s
 		Payload:   payload,
 		SentAt:    time.Now().UTC().Format(time.RFC3339),
 	})
+}
+
+func (c *socketClient) writeAPIError(request socketEnvelope, apiErr *apiError) {
+	c.writeError(request, apiErr.Code, apiErr.Message, apiErr.Field)
 }
 
 func (c *socketClient) writeRoomSnapshot(request socketEnvelope, room *storage.RoomRecord) {
@@ -318,6 +395,17 @@ func roomHasMember(room *storage.RoomRecord, userID string) bool {
 		}
 	}
 	return false
+}
+
+func (s *Server) broadcastRoomEvent(roomID string, event socketEnvelope) {
+	for _, client := range s.hub.roomClients(roomID) {
+		_ = client.writeJSON(event)
+	}
+}
+
+func mustJSON(value any) json.RawMessage {
+	payload, _ := json.Marshal(value)
+	return payload
 }
 
 func readClientFrame(reader *bufio.Reader) (byte, []byte, error) {

@@ -3,6 +3,7 @@ package api
 import (
 	"bufio"
 	"bytes"
+	"encoding/binary"
 	"encoding/json"
 	"net"
 	"net/http"
@@ -266,6 +267,188 @@ func TestSocketUnsubscribeRemovesRoomSubscription(t *testing.T) {
 	}
 }
 
+func TestSocketOwnerCanStartHandAndSubscribersReceiveStarted(t *testing.T) {
+	server := testServer(t)
+	roomID, ownerToken, playerToken := setupRoomWithSeats(t, server)
+	ts := httptest.NewServer(server.Routes())
+	defer ts.Close()
+	ownerClient := dialSocket(t, ts.URL, "/api/socket?token="+ownerToken)
+	defer ownerClient.Close()
+	playerClient := dialSocket(t, ts.URL, "/api/socket?token="+playerToken)
+	defer playerClient.Close()
+	subscribeSocket(t, ownerClient, roomID, "req_owner_sub")
+	subscribeSocket(t, playerClient, roomID, "req_player_sub")
+
+	if err := writeClientTextFrame(ownerClient, []byte(`{"type":"room.start_hand","requestId":"req_start","roomId":"`+roomID+`","payload":{}}`)); err != nil {
+		t.Fatal(err)
+	}
+	ack := readSocketMessage(t, ownerClient, "ack")
+	if ack.RequestID != "req_start" {
+		t.Fatalf("start ack requestId = %s, want req_start", ack.RequestID)
+	}
+	ownerStarted := readSocketMessage(t, ownerClient, "hand.started")
+	playerStarted := readSocketMessage(t, playerClient, "hand.started")
+	for _, msg := range []socketEnvelope{ownerStarted, playerStarted} {
+		if msg.RoomID != roomID {
+			t.Fatalf("started roomId = %s, want %s", msg.RoomID, roomID)
+		}
+		var payload struct {
+			Hand struct {
+				RoomID      string `json:"roomId"`
+				HandID      string `json:"handId"`
+				CurrentSeat int    `json:"currentSeat"`
+			} `json:"hand"`
+		}
+		if err := json.Unmarshal(msg.Payload, &payload); err != nil {
+			t.Fatal(err)
+		}
+		if payload.Hand.RoomID != roomID || payload.Hand.HandID == "" || payload.Hand.CurrentSeat == 0 {
+			t.Fatalf("hand.started payload incomplete: %#v", payload.Hand)
+		}
+	}
+}
+
+func TestSocketNonOwnerCannotStartHand(t *testing.T) {
+	server := testServer(t)
+	roomID, _, playerToken := setupRoomWithSeats(t, server)
+	ts := httptest.NewServer(server.Routes())
+	defer ts.Close()
+	playerClient := dialSocket(t, ts.URL, "/api/socket?token="+playerToken)
+	defer playerClient.Close()
+	subscribeSocket(t, playerClient, roomID, "req_player_sub")
+
+	if err := writeClientTextFrame(playerClient, []byte(`{"type":"room.start_hand","requestId":"req_bad_start","roomId":"`+roomID+`","payload":{}}`)); err != nil {
+		t.Fatal(err)
+	}
+	msg := readSocketMessage(t, playerClient, "error")
+	var payload ErrorResponse
+	if err := json.Unmarshal(msg.Payload, &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload.Code != "not_room_owner" {
+		t.Fatalf("error code = %s, want not_room_owner", payload.Code)
+	}
+}
+
+func TestSocketCurrentPlayerCanActAndSubscribersReceiveUpdate(t *testing.T) {
+	server := testServer(t)
+	roomID, ownerToken, playerToken := setupRoomWithSeats(t, server)
+	ts := httptest.NewServer(server.Routes())
+	defer ts.Close()
+	ownerClient := dialSocket(t, ts.URL, "/api/socket?token="+ownerToken)
+	defer ownerClient.Close()
+	playerClient := dialSocket(t, ts.URL, "/api/socket?token="+playerToken)
+	defer playerClient.Close()
+	subscribeSocket(t, ownerClient, roomID, "req_owner_sub")
+	subscribeSocket(t, playerClient, roomID, "req_player_sub")
+	startHandViaSocket(t, ownerClient, playerClient, roomID)
+
+	current := currentHandViaHTTP(t, server, roomID, ownerToken)
+	actorClient := ownerClient
+	observerClient := playerClient
+	if current.CurrentSeat == 2 {
+		actorClient = playerClient
+		observerClient = ownerClient
+	}
+	action := "call"
+	if hasAction(current.AvailableActions, "check") {
+		action = "check"
+	}
+	if err := writeClientTextFrame(actorClient, []byte(`{"type":"room.action","requestId":"req_action","roomId":"`+roomID+`","payload":{"action":"`+action+`","amount":0}}`)); err != nil {
+		t.Fatal(err)
+	}
+	ack := readSocketMessage(t, actorClient, "ack")
+	if ack.RequestID != "req_action" {
+		t.Fatalf("action ack requestId = %s, want req_action", ack.RequestID)
+	}
+	actorUpdate := readSocketMessage(t, actorClient, "hand.updated")
+	observerUpdate := readSocketMessage(t, observerClient, "hand.updated")
+	for _, msg := range []socketEnvelope{actorUpdate, observerUpdate} {
+		var payload struct {
+			Hand struct {
+				HandID      string `json:"handId"`
+				CurrentSeat int    `json:"currentSeat"`
+			} `json:"hand"`
+		}
+		if err := json.Unmarshal(msg.Payload, &payload); err != nil {
+			t.Fatal(err)
+		}
+		if payload.Hand.HandID == "" || payload.Hand.CurrentSeat == current.CurrentSeat {
+			t.Fatalf("hand.updated did not advance action: before=%d payload=%#v", current.CurrentSeat, payload.Hand)
+		}
+	}
+}
+
+func TestSocketNonCurrentPlayerCannotAct(t *testing.T) {
+	server := testServer(t)
+	roomID, ownerToken, playerToken := setupRoomWithSeats(t, server)
+	ts := httptest.NewServer(server.Routes())
+	defer ts.Close()
+	ownerClient := dialSocket(t, ts.URL, "/api/socket?token="+ownerToken)
+	defer ownerClient.Close()
+	playerClient := dialSocket(t, ts.URL, "/api/socket?token="+playerToken)
+	defer playerClient.Close()
+	subscribeSocket(t, ownerClient, roomID, "req_owner_sub")
+	subscribeSocket(t, playerClient, roomID, "req_player_sub")
+	startHandViaSocket(t, ownerClient, playerClient, roomID)
+
+	current := currentHandViaHTTP(t, server, roomID, ownerToken)
+	nonActorClient := playerClient
+	if current.CurrentSeat == 2 {
+		nonActorClient = ownerClient
+	}
+	if err := writeClientTextFrame(nonActorClient, []byte(`{"type":"room.action","requestId":"req_bad_action","roomId":"`+roomID+`","payload":{"action":"call","amount":0}}`)); err != nil {
+		t.Fatal(err)
+	}
+	msg := readSocketMessage(t, nonActorClient, "error")
+	var payload ErrorResponse
+	if err := json.Unmarshal(msg.Payload, &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload.Code != "not_your_turn" {
+		t.Fatalf("error code = %s, want not_your_turn", payload.Code)
+	}
+	after := currentHandViaHTTP(t, server, roomID, ownerToken)
+	if after.CurrentSeat != current.CurrentSeat || after.HandID != current.HandID {
+		t.Fatalf("non-current action changed hand: before=%#v after=%#v", current, after)
+	}
+}
+
+func TestSocketInvalidActionDoesNotMutateHand(t *testing.T) {
+	server := testServer(t)
+	roomID, ownerToken, playerToken := setupRoomWithSeats(t, server)
+	ts := httptest.NewServer(server.Routes())
+	defer ts.Close()
+	ownerClient := dialSocket(t, ts.URL, "/api/socket?token="+ownerToken)
+	defer ownerClient.Close()
+	playerClient := dialSocket(t, ts.URL, "/api/socket?token="+playerToken)
+	defer playerClient.Close()
+	subscribeSocket(t, ownerClient, roomID, "req_owner_sub")
+	subscribeSocket(t, playerClient, roomID, "req_player_sub")
+	startHandViaSocket(t, ownerClient, playerClient, roomID)
+
+	current := currentHandViaHTTP(t, server, roomID, ownerToken)
+	actorClient := ownerClient
+	if current.CurrentSeat == 2 {
+		actorClient = playerClient
+	}
+	if err := writeClientTextFrame(actorClient, []byte(`{"type":"room.action","requestId":"req_invalid_action","roomId":"`+roomID+`","payload":{"action":"raise","amount":1}}`)); err != nil {
+		t.Fatal(err)
+	}
+	msg := readSocketMessage(t, actorClient, "error")
+	var payload ErrorResponse
+	if err := json.Unmarshal(msg.Payload, &payload); err != nil {
+		t.Fatal(err)
+	}
+	if payload.Code != "invalid_action" {
+		t.Fatalf("error code = %s, want invalid_action", payload.Code)
+	}
+	after := currentHandViaHTTP(t, server, roomID, ownerToken)
+	if after.CurrentSeat != current.CurrentSeat || after.HandID != current.HandID {
+		t.Fatalf("invalid action changed hand: before=%#v after=%#v", current, after)
+	}
+}
+
 func socketUpgradeRequest(path string) *http.Request {
 	req := httptest.NewRequest(http.MethodGet, path, nil)
 	req.Header.Set("Connection", "Upgrade")
@@ -373,7 +556,21 @@ func writeClientCloseFrame(client *socketTestConn) error {
 
 func writeClientFrame(client *socketTestConn, opcode byte, payload []byte) error {
 	mask := []byte{1, 2, 3, 4}
-	header := []byte{0x80 | opcode, 0x80 | byte(len(payload))}
+	header := []byte{0x80 | opcode}
+	switch {
+	case len(payload) < 126:
+		header = append(header, 0x80|byte(len(payload)))
+	case len(payload) <= 65535:
+		extended := make([]byte, 2)
+		binary.BigEndian.PutUint16(extended, uint16(len(payload)))
+		header = append(header, 0x80|126)
+		header = append(header, extended...)
+	default:
+		extended := make([]byte, 8)
+		binary.BigEndian.PutUint64(extended, uint64(len(payload)))
+		header = append(header, 0x80|127)
+		header = append(header, extended...)
+	}
 	masked := make([]byte, len(payload))
 	for i, b := range payload {
 		masked[i] = b ^ mask[i%len(mask)]
@@ -394,6 +591,59 @@ func socketHubRoomClientCount(hub *socketHub, roomID string) int {
 	hub.mu.RLock()
 	defer hub.mu.RUnlock()
 	return len(hub.rooms[roomID])
+}
+
+type socketTestHandState struct {
+	RoomID           string   `json:"roomId"`
+	HandID           string   `json:"handId"`
+	CurrentSeat      int      `json:"currentSeat"`
+	AvailableActions []string `json:"availableActions"`
+}
+
+func subscribeSocket(t *testing.T, client *socketTestConn, roomID, requestID string) {
+	t.Helper()
+	readUpgradeResponse(t, client)
+	readSocketMessage(t, client, "connection.ready")
+	if err := writeClientTextFrame(client, []byte(`{"type":"room.subscribe","requestId":"`+requestID+`","roomId":"`+roomID+`","payload":{}}`)); err != nil {
+		t.Fatal(err)
+	}
+	readSocketMessage(t, client, "ack")
+	readSocketMessage(t, client, "room.snapshot")
+}
+
+func startHandViaSocket(t *testing.T, ownerClient, playerClient *socketTestConn, roomID string) {
+	t.Helper()
+	if err := writeClientTextFrame(ownerClient, []byte(`{"type":"room.start_hand","requestId":"req_start_helper","roomId":"`+roomID+`","payload":{}}`)); err != nil {
+		t.Fatal(err)
+	}
+	readSocketMessage(t, ownerClient, "ack")
+	readSocketMessage(t, ownerClient, "hand.started")
+	readSocketMessage(t, playerClient, "hand.started")
+}
+
+func currentHandViaHTTP(t *testing.T, server *Server, roomID, token string) socketTestHandState {
+	t.Helper()
+	req := httptest.NewRequest(http.MethodGet, "/api/rooms/"+roomID+"/current-hand", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	res := httptest.NewRecorder()
+	server.Routes().ServeHTTP(res, req)
+	if res.Code != http.StatusOK {
+		t.Fatalf("current hand status=%d body=%s", res.Code, res.Body.String())
+	}
+	var state socketTestHandState
+	if err := json.Unmarshal(res.Body.Bytes(), &state); err != nil {
+		t.Fatal(err)
+	}
+	return state
+}
+
+func hasAction(actions []string, want string) bool {
+	for _, action := range actions {
+		if action == want {
+			return true
+		}
+	}
+	return false
 }
 
 func eventually(t *testing.T, ok func() bool) {
