@@ -10,14 +10,12 @@ import (
 
 	"github.com/dengbin9009/DePu/backend/internal/game"
 	_ "github.com/go-sql-driver/mysql"
-	_ "modernc.org/sqlite"
 )
 
 type Driver string
 
 const (
-	DriverSQLite Driver = "sqlite"
-	DriverMySQL  Driver = "mysql"
+	DriverMySQL Driver = "mysql"
 )
 
 type Config struct {
@@ -125,38 +123,70 @@ type UserHandRecord struct {
 	WinnerSummary string `json:"winnerSummary"`
 }
 
+type RoomLeaderboardRecord struct {
+	UserID        string `json:"userId"`
+	Nickname      string `json:"nickname"`
+	HandsPlayed   int    `json:"handsPlayed"`
+	HandsWon      int    `json:"handsWon"`
+	NetProfit     int    `json:"netProfit"`
+	BiggestPotWon int    `json:"biggestPotWon"`
+	LastSettledAt string `json:"lastSettledAt"`
+}
+
+type HandReplayActionRecord struct {
+	Type   string `json:"type"`
+	SeatNo int    `json:"seatNo"`
+	Amount int    `json:"amount"`
+}
+
+type HandReplayPlayerRecord struct {
+	SeatNo        int      `json:"seatNo"`
+	Nickname      string   `json:"nickname"`
+	Stack         int      `json:"stack"`
+	Status        string   `json:"status"`
+	HandCommitted int      `json:"handCommitted"`
+	HoleCards     []string `json:"holeCards,omitempty"`
+}
+
+type HandReplayStepRecord struct {
+	Seq         int                      `json:"seq"`
+	Stage       string                   `json:"stage"`
+	CurrentSeat int                      `json:"currentSeat"`
+	BoardCards  []string                 `json:"boardCards"`
+	Pot         int                      `json:"pot"`
+	Action      *HandReplayActionRecord  `json:"action,omitempty"`
+	Players     []HandReplayPlayerRecord `json:"players"`
+}
+
+type HandReplayRecord struct {
+	HandID string                 `json:"handId"`
+	RoomID string                 `json:"roomId"`
+	GameID string                 `json:"gameId"`
+	Steps  []HandReplayStepRecord `json:"steps"`
+}
+
 type Store struct {
 	db     *sql.DB
 	driver Driver
 }
 
 func Open(path string) (*Store, error) {
-	return OpenWithConfig(Config{Driver: DriverSQLite, DSN: path})
+	return OpenWithConfig(Config{Driver: DriverMySQL, DSN: path})
 }
 
 func OpenWithConfig(cfg Config) (*Store, error) {
 	driver := cfg.Driver
 	if driver == "" {
-		driver = DriverSQLite
+		driver = DriverMySQL
 	}
 	dsn := strings.TrimSpace(cfg.DSN)
 	if dsn == "" {
-		if driver == DriverSQLite {
-			dsn = ":memory:"
-		} else {
-			return nil, errors.New("missing dsn")
-		}
+		return nil, errors.New("missing mysql dsn")
 	}
-	var sqlDriver string
-	switch driver {
-	case DriverSQLite:
-		sqlDriver = "sqlite"
-	case DriverMySQL:
-		sqlDriver = "mysql"
-	default:
+	if driver != DriverMySQL {
 		return nil, fmt.Errorf("unsupported driver: %s", driver)
 	}
-	db, err := sql.Open(sqlDriver, dsn)
+	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		return nil, err
 	}
@@ -181,11 +211,7 @@ func (s *Store) CreateUser(username, passwordHash, nickname string, initialBalan
 	if err != nil {
 		return nil, nil, err
 	}
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-		}
-	}()
+	defer tx.Rollback()
 	_, err = tx.Exec(`insert into users(id, username, password_hash, status, created_at, updated_at) values(?, ?, ?, ?, ?, ?)`, userID, username, passwordHash, "active", now, now)
 	if err != nil {
 		return nil, nil, err
@@ -279,11 +305,7 @@ func (s *Store) AddWalletTransaction(userID, typ string, amount int, referenceTy
 	if err != nil {
 		return nil, nil, err
 	}
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-		}
-	}()
+	defer tx.Rollback()
 	var balance int
 	if err = tx.QueryRow(`select balance from wallets where user_id = ?`, userID).Scan(&balance); err != nil {
 		return nil, nil, err
@@ -324,11 +346,7 @@ func (s *Store) CreateRoom(ownerUserID, ruleSetID string, seatCount, minPlayersT
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-		}
-	}()
+	defer tx.Rollback()
 	if _, err = tx.Exec(`insert into rooms(id, invite_code, owner_user_id, status, rule_set_id, seat_count, min_players_to_start, created_at, updated_at) values(?, ?, ?, ?, ?, ?, ?, ?, ?)`, roomID, inviteCode, ownerUserID, "waiting", ruleSetID, seatCount, minPlayersToStart, now, now); err != nil {
 		return nil, err
 	}
@@ -365,11 +383,7 @@ func (s *Store) JoinRoomByInviteCode(userID, inviteCode string) (*RoomRecord, er
 		return nil, err
 	}
 	now := time.Now().UTC().Format(time.RFC3339Nano)
-	query := `insert into room_members(room_id, user_id, role, joined_at) values(?, ?, ?, ?) on conflict(room_id, user_id) do nothing`
-	if s.driver == DriverMySQL {
-		query = `insert ignore into room_members(room_id, user_id, role, joined_at) values(?, ?, ?, ?)`
-	}
-	_, err = s.db.Exec(query, room.ID, userID, "player", now)
+	_, err = s.db.Exec(`insert ignore into room_members(room_id, user_id, role, joined_at) values(?, ?, ?, ?)`, room.ID, userID, "player", now)
 	if err != nil {
 		return nil, err
 	}
@@ -421,11 +435,7 @@ func (s *Store) TakeSeat(roomID, userID string, seatNo, buyInChips int) (*RoomRe
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-		}
-	}()
+	defer tx.Rollback()
 	var balance int
 	if err = tx.QueryRow(`select balance from wallets where user_id = ?`, userID).Scan(&balance); err != nil {
 		return nil, err
@@ -435,6 +445,12 @@ func (s *Store) TakeSeat(roomID, userID string, seatNo, buyInChips int) (*RoomRe
 	}
 	if balance < buyInChips {
 		return nil, errors.New("insufficient coins")
+	}
+	var occupiedSeatNo int
+	if err = tx.QueryRow(`select seat_no from room_seats where room_id = ? and user_id = ? limit 1`, roomID, userID).Scan(&occupiedSeatNo); err == nil {
+		return nil, errors.New("user already seated")
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		return nil, err
 	}
 	var existing sql.NullString
 	if err = tx.QueryRow(`select user_id from room_seats where room_id = ? and seat_no = ?`, roomID, seatNo).Scan(&existing); err != nil {
@@ -467,11 +483,7 @@ func (s *Store) LeaveSeat(roomID, userID string, seatNo int) (*RoomRecord, error
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-		}
-	}()
+	defer tx.Rollback()
 	var currentUser sql.NullString
 	if err = tx.QueryRow(`select user_id from room_seats where room_id = ? and seat_no = ?`, roomID, seatNo).Scan(&currentUser); err != nil {
 		return nil, err
@@ -548,11 +560,7 @@ func (s *Store) ArchiveHandResult(roomID string, g *game.Game) error {
 	if err != nil {
 		return err
 	}
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-		}
-	}()
+	defer tx.Rollback()
 
 	var nextHandNo int
 	if err = tx.QueryRow(`select coalesce(max(hand_no), 0) + 1 from hand_results where room_id = ?`, roomID).Scan(&nextHandNo); err != nil {
@@ -729,6 +737,107 @@ func (s *Store) UserHands(userID string, limit int) ([]UserHandRecord, error) {
 	return items, rows.Err()
 }
 
+func (s *Store) RoomLeaderboard(roomID string, limit int) ([]RoomLeaderboardRecord, error) {
+	if limit <= 0 {
+		limit = 10
+	}
+	rows, err := s.db.Query(`
+		select
+			hp.user_id,
+			max(hp.nickname_snapshot),
+			count(*),
+			sum(case when hp.profit > 0 then 1 else 0 end),
+			sum(hp.profit),
+			max(case when hp.profit > 0 then hr.total_pot else 0 end),
+			max(hr.completed_at)
+		from hand_participants hp
+		join hand_results hr on hr.id = hp.hand_id
+		where hp.room_id = ?
+		group by hp.user_id
+		order by sum(hp.profit) desc, count(*) desc
+		limit ?`, roomID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []RoomLeaderboardRecord{}
+	for rows.Next() {
+		var rec RoomLeaderboardRecord
+		if err := rows.Scan(&rec.UserID, &rec.Nickname, &rec.HandsPlayed, &rec.HandsWon, &rec.NetProfit, &rec.BiggestPotWon, &rec.LastSettledAt); err != nil {
+			return nil, err
+		}
+		items = append(items, rec)
+	}
+	return items, rows.Err()
+}
+
+func (s *Store) FormalHandReplay(roomID, handID string) (*HandReplayRecord, error) {
+	var gameID string
+	if err := s.db.QueryRow(`select game_id from hand_results where room_id = ? and id = ?`, roomID, handID).Scan(&gameID); err != nil {
+		return nil, err
+	}
+	actions, err := s.History(gameID)
+	if err != nil {
+		return nil, err
+	}
+	replay := &HandReplayRecord{HandID: handID, RoomID: roomID, GameID: gameID}
+	if step, err := s.formalReplayStep(gameID, 0, nil); err == nil {
+		replay.Steps = append(replay.Steps, step)
+	} else {
+		return nil, err
+	}
+	for _, action := range actions {
+		actionCopy := action
+		step, err := s.formalReplayStep(gameID, action.Seq, &actionCopy)
+		if err != nil {
+			return nil, err
+		}
+		replay.Steps = append(replay.Steps, step)
+	}
+	return replay, nil
+}
+
+func (s *Store) formalReplayStep(gameID string, seq int, action *game.Action) (HandReplayStepRecord, error) {
+	g, err := s.SnapshotAt(gameID, seq)
+	if err != nil {
+		return HandReplayStepRecord{}, err
+	}
+	step := HandReplayStepRecord{
+		Seq:         seq,
+		Stage:       string(g.Stage),
+		CurrentSeat: g.CurrentSeat,
+		BoardCards:  append([]string{}, g.Board...),
+		Pot:         replayPotTotal(g),
+		Players:     make([]HandReplayPlayerRecord, 0, len(g.Seats)),
+	}
+	if action != nil {
+		step.Action = &HandReplayActionRecord{Type: string(action.Type), SeatNo: action.SeatNo, Amount: action.Amount}
+	}
+	showHoleCards := g.Stage == game.StageFinished
+	for _, seat := range g.Seats {
+		player := HandReplayPlayerRecord{
+			SeatNo:        seat.SeatNo,
+			Nickname:      seat.Name,
+			Stack:         seat.Stack,
+			Status:        seat.Status,
+			HandCommitted: seat.HandCommitted,
+		}
+		if showHoleCards {
+			player.HoleCards = append([]string{}, seat.HoleCards...)
+		}
+		step.Players = append(step.Players, player)
+	}
+	return step, nil
+}
+
+func replayPotTotal(g *game.Game) int {
+	total := 0
+	for _, seat := range g.Seats {
+		total += seat.HandCommitted
+	}
+	return total
+}
+
 func (s *Store) handParticipants(handID string) ([]HandParticipantRecord, error) {
 	rows, err := s.db.Query(`select user_id, nickname_snapshot, seat_no, profit, award_amount, hand_committed, result_type, hole_cards_json, best_cards_json, hand_class from hand_participants where hand_id = ? order by seat_no asc`, handID)
 	if err != nil {
@@ -758,11 +867,7 @@ func (s *Store) Save(g *game.Game) error {
 	if err != nil {
 		return err
 	}
-	defer func() {
-		if err != nil {
-			_ = tx.Rollback()
-		}
-	}()
+	defer tx.Rollback()
 	body, err := json.Marshal(g)
 	if err != nil {
 		return err
@@ -776,7 +881,7 @@ func (s *Store) Save(g *game.Game) error {
 	if initialSnapshot == "" {
 		initialSnapshot = string(body)
 	}
-	_, err = tx.Exec(saveGameUpsertSQL(s.driver), g.ID, g.RuleSetID, string(g.Stage), g.Version, string(body), time.Now().UTC().Format(time.RFC3339Nano))
+	_, err = tx.Exec(saveGameUpsertSQL(), g.ID, g.RuleSetID, string(g.Stage), g.Version, string(body), time.Now().UTC().Format(time.RFC3339Nano))
 	if err != nil {
 		return err
 	}
@@ -816,11 +921,8 @@ func (s *Store) Save(g *game.Game) error {
 	return tx.Commit()
 }
 
-func saveGameUpsertSQL(driver Driver) string {
-	if driver == DriverMySQL {
-		return `insert into games(id, ruleset_id, stage, version, snapshot, updated_at) values(?, ?, ?, ?, ?, ?) on duplicate key update ruleset_id=values(ruleset_id), stage=values(stage), version=values(version), snapshot=values(snapshot), updated_at=values(updated_at)`
-	}
-	return `insert into games(id, ruleset_id, stage, version, snapshot, updated_at) values(?, ?, ?, ?, ?, ?) on conflict(id) do update set ruleset_id=excluded.ruleset_id, stage=excluded.stage, version=excluded.version, snapshot=excluded.snapshot, updated_at=excluded.updated_at`
+func saveGameUpsertSQL() string {
+	return `insert into games(id, ruleset_id, stage, version, snapshot, updated_at) values(?, ?, ?, ?, ?, ?) on duplicate key update ruleset_id=values(ruleset_id), stage=values(stage), version=values(version), snapshot=values(snapshot), updated_at=values(updated_at)`
 }
 
 func (s *Store) Load(id string) (*game.Game, error) {

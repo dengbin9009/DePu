@@ -7,7 +7,7 @@ import { useAppState } from '../composables/useAppState';
 import type { RuleSet } from '../types/game';
 
 const router = useRouter();
-const { doCreateRoom, doJoinRoom, room, loading, error, rechargeOptions } = useAppState();
+const { doCreateRoom, doJoinRoom, room, loading, error, rechargeOptions, clearError } = useAppState();
 const ruleSets = ref<RuleSet[]>([]);
 const selectedRuleSet = ref('long-holdem');
 const inviteCode = ref('');
@@ -16,6 +16,7 @@ const roomMinPlayers = ref(2);
 const roomBuyIn = ref(1000);
 
 onMounted(async () => {
+  clearError();
   ruleSets.value = await fetchRuleSets();
   if (!rechargeOptions.value.length) {
     rechargeOptions.value = (await fetchRechargeOptions()).options;

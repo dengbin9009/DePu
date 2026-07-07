@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/dengbin9009/DePu/backend/internal/game"
 	"github.com/dengbin9009/DePu/backend/internal/storage"
 )
 
@@ -27,10 +28,15 @@ type socketEnvelope struct {
 }
 
 type socketHub struct {
-	mu      sync.RWMutex
-	clients map[*socketClient]struct{}
-	rooms   map[string]map[*socketClient]struct{}
-	roomMu  map[string]*sync.Mutex
+	mu             sync.RWMutex
+	clients        map[*socketClient]struct{}
+	rooms          map[string]map[*socketClient]struct{}
+	roomMu         map[string]*sync.Mutex
+	presence       map[string]map[string]*roomPresence
+	actionLogs     map[string][]roomActionLogEntry
+	chatMessages   map[string][]roomChatMessage
+	nextChatByUser map[string]time.Time
+	timerVersion   map[string]int
 }
 
 type socketClient struct {
@@ -42,11 +48,47 @@ type socketClient struct {
 	rooms  map[string]struct{}
 }
 
+type roomPresence struct {
+	UserID             string  `json:"userId"`
+	SeatNo             int     `json:"seatNo,omitempty"`
+	Status             string  `json:"status"`
+	LastDisconnectedAt *string `json:"lastDisconnectedAt"`
+	connections        int
+}
+
+type roomActionLogEntry struct {
+	HandID    string `json:"handId,omitempty"`
+	Seq       int    `json:"seq"`
+	Kind      string `json:"kind"`
+	Street    string `json:"street,omitempty"`
+	SeatNo    int    `json:"seatNo,omitempty"`
+	Nickname  string `json:"nickname,omitempty"`
+	Action    string `json:"action,omitempty"`
+	Amount    int    `json:"amount,omitempty"`
+	Source    string `json:"source"`
+	CreatedAt string `json:"createdAt"`
+}
+
+type roomChatMessage struct {
+	ID        string `json:"id"`
+	Kind      string `json:"kind"`
+	Text      string `json:"text,omitempty"`
+	EmojiCode string `json:"emojiCode,omitempty"`
+	UserID    string `json:"userId"`
+	Nickname  string `json:"nickname"`
+	CreatedAt string `json:"createdAt"`
+}
+
 func newSocketHub() *socketHub {
 	return &socketHub{
-		clients: map[*socketClient]struct{}{},
-		rooms:   map[string]map[*socketClient]struct{}{},
-		roomMu:  map[string]*sync.Mutex{},
+		clients:        map[*socketClient]struct{}{},
+		rooms:          map[string]map[*socketClient]struct{}{},
+		roomMu:         map[string]*sync.Mutex{},
+		presence:       map[string]map[string]*roomPresence{},
+		actionLogs:     map[string][]roomActionLogEntry{},
+		chatMessages:   map[string][]roomChatMessage{},
+		nextChatByUser: map[string]time.Time{},
+		timerVersion:   map[string]int{},
 	}
 }
 
@@ -103,6 +145,7 @@ func (h *socketHub) roomClients(roomID string) []*socketClient {
 
 func (h *socketHub) remove(client *socketClient) {
 	h.mu.Lock()
+	changed := make([]roomPresence, 0)
 	delete(h.clients, client)
 	for roomID := range client.rooms {
 		if roomClients, ok := h.rooms[roomID]; ok {
@@ -111,8 +154,131 @@ func (h *socketHub) remove(client *socketClient) {
 				delete(h.rooms, roomID)
 			}
 		}
+		if presence := h.presence[roomID][client.userID]; presence != nil {
+			presence.connections--
+			if presence.connections <= 0 {
+				presence.connections = 0
+				presence.Status = "offline"
+				now := time.Now().UTC().Format(time.RFC3339Nano)
+				presence.LastDisconnectedAt = &now
+				changed = append(changed, *presence)
+			}
+		}
 	}
 	h.mu.Unlock()
+	for _, item := range changed {
+		client.server.broadcastRoomPresence(item)
+	}
+}
+
+func (h *socketHub) markOnline(room *storage.RoomRecord, userID string) (roomPresence, bool) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if h.presence[room.ID] == nil {
+		h.presence[room.ID] = map[string]*roomPresence{}
+	}
+	seatNo := 0
+	for _, seat := range room.Seats {
+		if seat.UserID != nil && *seat.UserID == userID {
+			seatNo = seat.SeatNo
+			break
+		}
+	}
+	item := h.presence[room.ID][userID]
+	isFirstPresence := item == nil
+	wasOnline := item != nil && item.connections > 0
+	if item == nil {
+		item = &roomPresence{UserID: userID}
+		h.presence[room.ID][userID] = item
+	}
+	wasOffline := item.connections == 0 && item.Status == "offline"
+	item.SeatNo = seatNo
+	item.Status = "online"
+	item.LastDisconnectedAt = nil
+	item.connections++
+	return *item, isFirstPresence || (wasOffline && !wasOnline)
+}
+
+func (h *socketHub) presenceSnapshot(room *storage.RoomRecord) []roomPresence {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	items := make([]roomPresence, 0, len(room.Members))
+	for _, member := range room.Members {
+		seatNo := 0
+		for _, seat := range room.Seats {
+			if seat.UserID != nil && *seat.UserID == member.UserID {
+				seatNo = seat.SeatNo
+				break
+			}
+		}
+		if existing := h.presence[room.ID][member.UserID]; existing != nil {
+			copy := *existing
+			copy.SeatNo = seatNo
+			items = append(items, copy)
+			continue
+		}
+		items = append(items, roomPresence{UserID: member.UserID, SeatNo: seatNo, Status: "offline"})
+	}
+	return items
+}
+
+func (h *socketHub) appendActionLog(roomID string, entry roomActionLogEntry) roomActionLogEntry {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	entry.Seq = len(h.actionLogs[roomID]) + 1
+	entry.CreatedAt = time.Now().UTC().Format(time.RFC3339Nano)
+	h.actionLogs[roomID] = append(h.actionLogs[roomID], entry)
+	if len(h.actionLogs[roomID]) > 50 {
+		h.actionLogs[roomID] = h.actionLogs[roomID][len(h.actionLogs[roomID])-50:]
+	}
+	return entry
+}
+
+func (h *socketHub) recentActionLog(roomID string) []roomActionLogEntry {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	items := append([]roomActionLogEntry{}, h.actionLogs[roomID]...)
+	return items
+}
+
+func (h *socketHub) appendChat(roomID string, message roomChatMessage) roomChatMessage {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.chatMessages[roomID] = append(h.chatMessages[roomID], message)
+	if len(h.chatMessages[roomID]) > 30 {
+		h.chatMessages[roomID] = h.chatMessages[roomID][len(h.chatMessages[roomID])-30:]
+	}
+	return message
+}
+
+func (h *socketHub) recentChat(roomID string) []roomChatMessage {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	items := append([]roomChatMessage{}, h.chatMessages[roomID]...)
+	return items
+}
+
+func (h *socketHub) allowChat(userID string, now time.Time) bool {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if next := h.nextChatByUser[userID]; !next.IsZero() && now.Before(next) {
+		return false
+	}
+	h.nextChatByUser[userID] = now.Add(300 * time.Millisecond)
+	return true
+}
+
+func (h *socketHub) nextTimerVersion(roomID string) int {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.timerVersion[roomID]++
+	return h.timerVersion[roomID]
+}
+
+func (h *socketHub) currentTimerVersion(roomID string) int {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.timerVersion[roomID]
 }
 
 func (s *Server) socketEndpoint(w http.ResponseWriter, r *http.Request) {
@@ -278,6 +444,8 @@ func (c *socketClient) handleMessage(payload []byte) {
 		c.handleStartHand(message)
 	case "room.action":
 		c.handleAction(message)
+	case "chat.send":
+		c.handleChatSend(message)
 	default:
 		c.writeError(message, "bad_message", "unsupported socket message type", "type")
 	}
@@ -294,8 +462,12 @@ func (c *socketClient) handleSubscribe(message socketEnvelope) {
 		return
 	}
 	c.server.hub.subscribe(c, message.RoomID)
+	presence, changed := c.server.hub.markOnline(room, c.userID)
 	c.writeAck(message)
 	c.writeRoomSnapshot(message, room)
+	if changed {
+		c.server.broadcastRoomPresence(presence)
+	}
 }
 
 func (c *socketClient) handleStartHand(message socketEnvelope) {
@@ -311,6 +483,20 @@ func (c *socketClient) handleStartHand(message socketEnvelope) {
 			RequestID: message.RequestID,
 			RoomID:    message.RoomID,
 			Payload:   mustJSON(map[string]any{"hand": state}),
+			SentAt:    time.Now().UTC().Format(time.RFC3339),
+		})
+		entry := c.server.hub.appendActionLog(message.RoomID, roomActionLogEntry{
+			HandID: stringFromMap(state, "handId"),
+			Kind:   "hand_started",
+			Street: stringFromMap(state, "status"),
+			SeatNo: intFromMap(state, "currentSeat"),
+			Source: "system",
+		})
+		c.server.broadcastRoomEvent(message.RoomID, socketEnvelope{
+			Type:      "hand.log.appended",
+			RequestID: message.RequestID,
+			RoomID:    message.RoomID,
+			Payload:   mustJSON(map[string]any{"entry": entry}),
 			SentAt:    time.Now().UTC().Format(time.RFC3339),
 		})
 	})
@@ -341,6 +527,7 @@ func (c *socketClient) handleAction(message socketEnvelope) {
 				SentAt:    time.Now().UTC().Format(time.RFC3339),
 			})
 			c.server.sendWalletUpdates(message.RoomID, message.RequestID, result.Result.Participants, result.Result.HandID)
+			c.server.broadcastLeaderboard(message.RoomID, message.RequestID)
 			return
 		}
 		c.server.broadcastRoomEvent(message.RoomID, socketEnvelope{
@@ -350,6 +537,92 @@ func (c *socketClient) handleAction(message socketEnvelope) {
 			Payload:   mustJSON(map[string]any{"hand": result.State}),
 			SentAt:    time.Now().UTC().Format(time.RFC3339),
 		})
+		entry := c.server.hub.appendActionLog(message.RoomID, roomActionLogEntry{
+			HandID: stringFromMap(result.State, "handId"),
+			Kind:   "player_action",
+			Street: stringFromMap(result.State, "status"),
+			SeatNo: intFromMap(result.State, "currentSeat"),
+			Action: req.Action,
+			Amount: req.Amount,
+			Source: "player",
+		})
+		c.server.broadcastRoomEvent(message.RoomID, socketEnvelope{
+			Type:      "hand.log.appended",
+			RequestID: message.RequestID,
+			RoomID:    message.RoomID,
+			Payload:   mustJSON(map[string]any{"entry": entry}),
+			SentAt:    time.Now().UTC().Format(time.RFC3339),
+		})
+	})
+}
+
+func (c *socketClient) handleChatSend(message socketEnvelope) {
+	room, err := c.server.store.RoomByID(message.RoomID)
+	if err != nil {
+		c.writeError(message, "room_not_found", "room not found", "roomId")
+		return
+	}
+	if !roomHasMember(room, c.userID) {
+		c.writeError(message, "forbidden", "chat requires room membership", "roomId")
+		return
+	}
+	var req struct {
+		Kind      string `json:"kind"`
+		Text      string `json:"text"`
+		EmojiCode string `json:"emojiCode"`
+	}
+	if err := json.Unmarshal(message.Payload, &req); err != nil {
+		c.writeError(message, "bad_message", "invalid chat payload", "payload")
+		return
+	}
+	req.Kind = strings.TrimSpace(req.Kind)
+	req.Text = strings.TrimSpace(req.Text)
+	req.EmojiCode = strings.TrimSpace(req.EmojiCode)
+	switch req.Kind {
+	case "text":
+		if req.Text == "" {
+			c.writeError(message, "chat_message_empty", "chat message cannot be empty", "text")
+			return
+		}
+		if len([]rune(req.Text)) > 200 {
+			c.writeError(message, "chat_message_too_long", "chat message is too long", "text")
+			return
+		}
+	case "emoji":
+		if !allowedEmojiCode(req.EmojiCode) {
+			c.writeError(message, "chat_emoji_unknown", "unknown emoji", "emojiCode")
+			return
+		}
+	default:
+		c.writeError(message, "bad_message", "unsupported chat kind", "kind")
+		return
+	}
+	if !c.server.hub.allowChat(c.userID, time.Now().UTC()) {
+		c.writeError(message, "chat_rate_limited", "chat messages are too frequent", "")
+		return
+	}
+	user, err := c.server.store.FindUserByID(c.userID)
+	if err != nil {
+		c.writeError(message, "unauthorized", "user not found", "")
+		return
+	}
+	now := time.Now().UTC().Format(time.RFC3339Nano)
+	chat := c.server.hub.appendChat(message.RoomID, roomChatMessage{
+		ID:        "chat_" + itoa(time.Now().UTC().Nanosecond()),
+		Kind:      req.Kind,
+		Text:      req.Text,
+		EmojiCode: req.EmojiCode,
+		UserID:    c.userID,
+		Nickname:  user.Nickname,
+		CreatedAt: now,
+	})
+	c.writeAck(message)
+	c.server.broadcastRoomEvent(message.RoomID, socketEnvelope{
+		Type:      "chat.message",
+		RequestID: message.RequestID,
+		RoomID:    message.RoomID,
+		Payload:   mustJSON(map[string]any{"message": chat}),
+		SentAt:    time.Now().UTC().Format(time.RFC3339),
 	})
 }
 
@@ -383,12 +656,17 @@ func (c *socketClient) writeRoomSnapshot(request socketEnvelope, room *storage.R
 	var hand any
 	if room.CurrentGameID != "" {
 		if g, err := c.server.store.Load(room.CurrentGameID); err == nil {
-			hand = roomHandState(room.ID, g)
+			hand = c.server.roomHandState(room.ID, g)
 		}
 	}
+	leaderboard, _ := c.server.store.RoomLeaderboard(room.ID, 10)
 	payload, _ := json.Marshal(map[string]any{
-		"room": room,
-		"hand": hand,
+		"room":               room,
+		"hand":               hand,
+		"presence":           c.server.hub.presenceSnapshot(room),
+		"recentActionLog":    c.server.hub.recentActionLog(room.ID),
+		"recentChatMessages": c.server.hub.recentChat(room.ID),
+		"leaderboard":        leaderboard,
 	})
 	_ = c.writeJSON(socketEnvelope{
 		Type:      "room.snapshot",
@@ -397,6 +675,15 @@ func (c *socketClient) writeRoomSnapshot(request socketEnvelope, room *storage.R
 		Payload:   payload,
 		SentAt:    time.Now().UTC().Format(time.RFC3339),
 	})
+}
+
+func allowedEmojiCode(code string) bool {
+	switch code {
+	case "nice_hand", "good_luck", "wow", "thanks", "all_in":
+		return true
+	default:
+		return false
+	}
 }
 
 func roomHasMember(room *storage.RoomRecord, userID string) bool {
@@ -433,6 +720,175 @@ func (s *Server) sendWalletUpdates(roomID, requestID string, participants []stor
 			}),
 			SentAt: time.Now().UTC().Format(time.RFC3339),
 		})
+	}
+}
+
+func (s *Server) broadcastRoomUpdate(roomID string, room *storage.RoomRecord) {
+	s.broadcastRoomEvent(roomID, socketEnvelope{
+		Type:    "room.updated",
+		RoomID:  roomID,
+		Payload: mustJSON(map[string]any{"room": room}),
+		SentAt:  time.Now().UTC().Format(time.RFC3339),
+	})
+}
+
+func (s *Server) broadcastRoomLog(roomID, kind, userID string, seatNo int) {
+	nickname := ""
+	if user, err := s.store.FindUserByID(userID); err == nil {
+		nickname = user.Nickname
+	}
+	entry := s.hub.appendActionLog(roomID, roomActionLogEntry{
+		Kind:     kind,
+		SeatNo:   seatNo,
+		Nickname: nickname,
+		Source:   "system",
+	})
+	s.broadcastRoomEvent(roomID, socketEnvelope{
+		Type:    "hand.log.appended",
+		RoomID:  roomID,
+		Payload: mustJSON(map[string]any{"entry": entry}),
+		SentAt:  time.Now().UTC().Format(time.RFC3339),
+	})
+}
+
+func (s *Server) broadcastRoomPresence(item roomPresence) {
+	roomID := ""
+	s.hub.mu.RLock()
+	for candidateRoomID, members := range s.hub.presence {
+		if members[item.UserID] != nil {
+			roomID = candidateRoomID
+			break
+		}
+	}
+	s.hub.mu.RUnlock()
+	if roomID == "" {
+		return
+	}
+	s.broadcastRoomEvent(roomID, socketEnvelope{
+		Type:    "player.presence.updated",
+		RoomID:  roomID,
+		Payload: mustJSON(item),
+		SentAt:  time.Now().UTC().Format(time.RFC3339),
+	})
+}
+
+func (s *Server) broadcastLeaderboard(roomID, requestID string) {
+	items, err := s.store.RoomLeaderboard(roomID, 10)
+	if err != nil {
+		return
+	}
+	s.broadcastRoomEvent(roomID, socketEnvelope{
+		Type:      "room.leaderboard.updated",
+		RequestID: requestID,
+		RoomID:    roomID,
+		Payload:   mustJSON(map[string]any{"items": items}),
+		SentAt:    time.Now().UTC().Format(time.RFC3339),
+	})
+}
+
+func (s *Server) scheduleActionTimeout(roomID, handID string, seatNo int) {
+	if seatNo == 0 || handID == "" {
+		return
+	}
+	timeout := s.actionTimeout
+	if timeout <= 0 {
+		timeout = 30 * time.Second
+	}
+	version := s.hub.nextTimerVersion(roomID)
+	go func() {
+		time.Sleep(timeout)
+		if s.hub.currentTimerVersion(roomID) != version {
+			return
+		}
+		s.applyTimeoutAction(roomID, handID, seatNo, version)
+	}()
+}
+
+func (s *Server) applyTimeoutAction(roomID, handID string, seatNo, version int) {
+	s.hub.withRoomLock(roomID, func() {
+		if s.hub.currentTimerVersion(roomID) != version {
+			return
+		}
+		room, err := s.store.RoomByID(roomID)
+		if err != nil || room.CurrentGameID != handID {
+			return
+		}
+		g, err := s.store.Load(handID)
+		if err != nil || g.CurrentSeat != seatNo || g.Stage == game.StageFinished {
+			return
+		}
+		action := string(game.ActionFold)
+		for _, candidate := range g.LegalActions() {
+			if candidate == game.ActionCheck {
+				action = string(game.ActionCheck)
+				break
+			}
+		}
+		result, apiErr := s.applyRoomActionForSeat(roomID, g, action, 0)
+		if apiErr != nil {
+			return
+		}
+		s.broadcastRoomEvent(roomID, socketEnvelope{
+			Type:   "hand.timeout_applied",
+			RoomID: roomID,
+			Payload: mustJSON(map[string]any{
+				"handId":    handID,
+				"seatNo":    seatNo,
+				"action":    action,
+				"source":    "timeout",
+				"appliedAt": time.Now().UTC().Format(time.RFC3339Nano),
+			}),
+			SentAt: time.Now().UTC().Format(time.RFC3339),
+		})
+		entry := s.hub.appendActionLog(roomID, roomActionLogEntry{
+			HandID: handID,
+			Kind:   "timeout_action",
+			Street: stringFromMap(result.State, "status"),
+			SeatNo: seatNo,
+			Action: action,
+			Source: "timeout",
+		})
+		s.broadcastRoomEvent(roomID, socketEnvelope{
+			Type:    "hand.log.appended",
+			RoomID:  roomID,
+			Payload: mustJSON(map[string]any{"entry": entry}),
+			SentAt:  time.Now().UTC().Format(time.RFC3339),
+		})
+		if result.Settled && result.Result != nil {
+			s.broadcastRoomEvent(roomID, socketEnvelope{
+				Type:    "hand.settled",
+				RoomID:  roomID,
+				Payload: mustJSON(map[string]any{"hand": result.Result}),
+				SentAt:  time.Now().UTC().Format(time.RFC3339),
+			})
+			s.sendWalletUpdates(roomID, "", result.Result.Participants, result.Result.HandID)
+			s.broadcastLeaderboard(roomID, "")
+			return
+		}
+		s.broadcastRoomEvent(roomID, socketEnvelope{
+			Type:    "hand.updated",
+			RoomID:  roomID,
+			Payload: mustJSON(map[string]any{"hand": result.State}),
+			SentAt:  time.Now().UTC().Format(time.RFC3339),
+		})
+	})
+}
+
+func stringFromMap(value map[string]any, key string) string {
+	if text, ok := value[key].(string); ok {
+		return text
+	}
+	return ""
+}
+
+func intFromMap(value map[string]any, key string) int {
+	switch raw := value[key].(type) {
+	case int:
+		return raw
+	case float64:
+		return int(raw)
+	default:
+		return 0
 	}
 }
 

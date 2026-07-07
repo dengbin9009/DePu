@@ -1409,7 +1409,8 @@ h1 {
 .room-shell-fullscreen {
   min-height: 100dvh;
   padding: 0;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .room-shell-fullscreen .room-stage {
@@ -1422,7 +1423,7 @@ h1 {
 }
 
 .room-shell-fullscreen .casino-table {
-  min-height: 100dvh;
+  min-height: min(780px, calc(100dvh - 170px));
   border: 0;
   border-radius: 0;
 }
@@ -1434,14 +1435,15 @@ h1 {
   top: 12px;
   z-index: 4;
   display: grid;
-  grid-template-columns: minmax(70px, auto) minmax(82px, auto) 1fr minmax(70px, auto);
+  grid-template-columns: minmax(58px, auto) minmax(82px, auto) minmax(92px, auto) minmax(130px, 1fr) minmax(64px, auto) minmax(82px, auto);
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .topbar-float {
   min-width: 82px;
   min-height: 38px;
+  padding: 8px 10px;
   border-radius: 14px;
   background: rgba(9, 24, 31, 0.72);
   border-color: rgba(143, 204, 224, 0.16);
@@ -1465,7 +1467,7 @@ h1 {
 }
 
 .room-shell-fullscreen .ultra-clean-table {
-  min-height: 100dvh;
+  min-height: min(780px, calc(100dvh - 170px));
 }
 
 .subtle-strip {
@@ -1502,9 +1504,103 @@ h1 {
   right: 12px;
   bottom: 18px;
   justify-content: center;
+  align-items: center;
   padding: 10px;
   border-radius: 20px;
   background: rgba(6, 18, 24, 0.72);
+}
+
+.action-amount-control {
+  display: grid;
+  grid-template-columns: auto minmax(120px, 260px) minmax(82px, 110px);
+  align-items: center;
+  gap: 8px;
+  width: min(100%, 520px);
+  padding: 6px 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #dff8ff;
+}
+
+.action-amount-control label {
+  white-space: nowrap;
+}
+
+.action-amount-control input[type="number"] {
+  min-width: 0;
+  height: 34px;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+
+.text-link-button {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #9fb8ff;
+  font-weight: 700;
+}
+
+.v11-table-tools {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0 12px 16px;
+  padding: 10px;
+  border-radius: 16px;
+  border: 1px solid rgba(143, 204, 224, 0.16);
+  background: rgba(6, 18, 24, 0.88);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(10px);
+}
+
+.v11-table-tools section {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.v11-table-tools h2 {
+  margin: 0;
+  color: #f2c55c;
+  font-size: 13px;
+}
+
+.compact-list {
+  min-height: 32px;
+  max-height: 108px;
+  margin: 0;
+  padding-left: 18px;
+  overflow-y: auto;
+  color: rgba(222, 241, 235, 0.82);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.compact-list li {
+  overflow-wrap: anywhere;
+}
+
+.chat-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  gap: 8px;
+}
+
+.chat-actions input {
+  min-width: 0;
+  height: 38px;
+  padding: 0 10px;
+  border-radius: 10px;
+}
+
+.chat-actions button {
+  min-height: 38px;
+  padding: 6px 10px;
 }
 
 .player-panel-page {
@@ -1769,6 +1865,11 @@ h1 {
 }
 
 @media (max-width: 760px) {
+  .room-shell-fullscreen .casino-table,
+  .room-shell-fullscreen .ultra-clean-table {
+    min-height: calc(100dvh - 220px);
+  }
+
   .clean-board-zone {
     top: 26%;
   }
@@ -1806,6 +1907,54 @@ h1 {
   .seat-ring-casino .casino-seat-node:nth-child(4) { right: 5%; bottom: 10%; }
   .seat-ring-casino .casino-seat-node:nth-child(6) { left: 5%; bottom: 10%; }
   .seat-ring-casino .casino-seat-node:nth-child(8) { left: 4%; top: 13%; }
+
+  .minimal-topbar {
+    left: 8px;
+    right: 8px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .topbar-float {
+    min-width: 0;
+    min-height: 34px;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+
+  .table-invite-code {
+    max-width: none;
+  }
+
+  .hero-actions-dock {
+    left: 8px;
+    right: 8px;
+    bottom: 12px;
+    padding: 8px;
+  }
+
+  .action-amount-control {
+    grid-template-columns: 1fr minmax(78px, 112px);
+    width: 100%;
+  }
+
+  .action-amount-control input[type="range"] {
+    grid-column: 1 / -1;
+  }
+
+  .v11-table-tools {
+    grid-template-columns: 1fr;
+    margin: 0 8px 12px;
+    padding: 8px;
+  }
+
+  .compact-list {
+    max-height: 84px;
+  }
+
+  .chat-actions {
+    grid-template-columns: minmax(0, 1fr) repeat(3, minmax(52px, auto));
+  }
 
   .spectator-grid-avatar,
   .side-seat-grid {

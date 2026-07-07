@@ -70,6 +70,21 @@ func TestCreateRoomJoinAndTakeSeat(t *testing.T) {
 	if takeRes.Code != http.StatusOK {
 		t.Fatalf("take seat status=%d body=%s", takeRes.Code, takeRes.Body.String())
 	}
+
+	takeAgainReq := httptest.NewRequest(http.MethodPost, "/api/rooms/"+roomID+"/seats/2", bytes.NewReader([]byte(`{"buyInChips":1000}`)))
+	takeAgainReq.Header.Set("Authorization", "Bearer "+ownerToken)
+	takeAgainRes := httptest.NewRecorder()
+	server.Routes().ServeHTTP(takeAgainRes, takeAgainReq)
+	if takeAgainRes.Code != http.StatusConflict {
+		t.Fatalf("duplicate take seat status=%d body=%s", takeAgainRes.Code, takeAgainRes.Body.String())
+	}
+	var errBody ErrorResponse
+	if err := json.Unmarshal(takeAgainRes.Body.Bytes(), &errBody); err != nil {
+		t.Fatal(err)
+	}
+	if errBody.Code != "already_seated" {
+		t.Fatalf("duplicate seat code=%s, want already_seated", errBody.Code)
+	}
 }
 
 func TestJoinRejectsInvalidInviteCodeAndSeatTaken(t *testing.T) {

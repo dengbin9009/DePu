@@ -5,6 +5,7 @@ import RoomPage from '../pages/RoomPage.vue';
 import RoomInfoPage from '../pages/RoomInfoPage.vue';
 import RoomPlayersPage from '../pages/RoomPlayersPage.vue';
 import HistoryPage from '../pages/HistoryPage.vue';
+import HandReplayPage from '../pages/HandReplayPage.vue';
 import MePage from '../pages/MePage.vue';
 import PlaceholderPage from '../pages/PlaceholderPage.vue';
 import RulesTestPage from '../pages/RulesTestPage.vue';
@@ -17,6 +18,7 @@ const routes = [
   { path: '/room/:roomId', component: RoomPage },
   { path: '/room/:roomId/info', component: RoomInfoPage },
   { path: '/room/:roomId/players', component: RoomPlayersPage },
+  { path: '/room/:roomId/hands/:handId/replay', component: HandReplayPage },
   { path: '/history', component: HistoryPage },
   { path: '/me', component: MePage },
   { path: '/match', component: PlaceholderPage, props: { title: '约赛', description: '约赛功能先留空展位。' } },

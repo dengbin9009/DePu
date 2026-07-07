@@ -10,7 +10,7 @@ DePu 是一个德州扑克项目，当前目标是基于 Vue 前端和 Go 后端
 - 支持房主建房、邀请码加入、多人同房间轮流操作
 - 支持每手牌结果保存、房间历史和个人战绩展示
 - 将正式多人房间从 HTTP 轮询/HTTP 动作提交升级为 socket 实时同步
-- 生产默认使用 MySQL，开发/测试允许 SQLite
+- 运行、开发和测试统一使用 MySQL
 
 ## 当前版本范围
 
@@ -31,7 +31,7 @@ DePu 是一个德州扑克项目，当前目标是基于 Vue 前端和 Go 后端
 - 长牌与短牌德州扑克规则支持
 - 随机发牌与调试指定牌
 - 牌局推进、摊牌结算、主池边池和平分底池
-- SQLite 保存牌局快照、行动历史和只读回放
+- 保存牌局快照、行动历史和只读回放
 - 面向本地规则验证、回归测试和牌局复盘
 
 ## OpenSpec 文档
@@ -76,7 +76,6 @@ go run ./cmd/depu-server
 
 - 优先尝试本机 MySQL：`root@tcp(127.0.0.1:3306)/depu_multiplayer?parseTime=true&multiStatements=true`
 - 如果你显式设置了 `DEPU_DB_DRIVER` 和 `DEPU_DSN`，则使用你的配置
-- 如果 MySQL 启动失败且你显式设置了 `DEPU_DB_PATH`，则回退到该 SQLite 路径
 
 前端：
 
@@ -86,11 +85,13 @@ npm install
 npm run dev
 ```
 
-如果需要显式指定后端地址或数据库路径：
+如果需要显式指定后端地址或数据库：
 
 ```bash
 cd backend
-DEPU_ADDR=:18080 DEPU_DB_PATH=/tmp/depu.sqlite go run ./cmd/depu-server
+DEPU_ADDR=:18080 \
+DEPU_DSN='root@tcp(127.0.0.1:3306)/depu_multiplayer?parseTime=true&multiStatements=true' \
+go run ./cmd/depu-server
 ```
 
 如果前端需要指向非默认后端地址：
@@ -114,34 +115,27 @@ env PATH="$HOME/.nvm/versions/node/v20.19.4/bin:$PATH" npm run dev
 - 正式多人流程使用独立的 `/api/auth/*`、`/api/me/*`、`/api/recharge*`、`/api/rooms*` 路由和 `/api/socket` 实时通道，不复用测试页调试能力
 - 正式多人当前已支持：注册登录、昵称修改、模拟充值、建房/加入/入座/开局、轮流操作、房间最近牌局、个人战绩
 - 当前 OpenSpec 版本已将正式房间实时同步、开局和玩家动作迁移到 socket；`/api/rooms/{roomId}/current-hand` 保留为重连、调试或手动兜底读取接口
-- 当前多人版本仍为本地开发态，不包含真实支付、大厅匹配、超时托管
+- V1.1 已增加服务端行动倒计时、超时自动 `check/fold`、在线状态、实时动作日志、正式手牌回放、房间战绩榜、房间聊天与预设表情
+- 当前多人版本仍为本地开发态，不包含真实支付、大厅匹配、机器人或复杂托管
 
 ### 已实现的多人页面体验
 
 - 登录后可查看资料摘要：昵称、金币余额、总手数、总收益、最近对局时间
 - 可查看钱包流水，区分“模拟充值 / 买入冻结 / 离座返还 / 牌局结算”
-- 房间区可看到我的座位、买入金额、当前是否轮到我操作
+- 房间区可看到我的座位、买入金额、当前是否轮到我操作、行动倒计时和成员在线/离线
+- 牌桌侧边区可查看动作日志、房间战绩榜，并发送短文本聊天或预设表情
 - 房间历史可展示每手牌公共牌、赢家摘要、参与者投入/返奖/净输赢
+- 房间历史可进入正式多人手牌回放，按公开步骤查看公共牌、底池、行动和结算过程
 - 个人战绩区可展示最近正式多人对局记录
 
 ## 数据库模式
 
-### 默认开发模式：SQLite
+### 默认开发模式：MySQL
 
-后端默认使用本地 SQLite 文件，适合单机开发和规则测试：
-
-```bash
-cd backend
-DEPU_DB_PATH=./data/depu.db go run ./cmd/depu-server
-```
-
-### 多人模式验证：MySQL
-
-如果要验证 002 多人 v1 的生产目标数据库语义，可切换到 MySQL DSN。当前实现目标是业务语义一致，仅配置不同。
+后端默认连接本机 MySQL 的 `depu_multiplayer` database。也可以显式提供 DSN：
 
 ```bash
 cd backend
-DEPU_DB_DRIVER=mysql \
 DEPU_DSN='root@tcp(127.0.0.1:3306)/depu_multiplayer?parseTime=true&multiStatements=true' \
 go run ./cmd/depu-server
 ```
@@ -152,9 +146,17 @@ go run ./cmd/depu-server
 CREATE DATABASE depu_multiplayer CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-### 测试环境优先使用 MySQL
+### 测试环境
 
-如果希望后端测试优先跑在 MySQL 上，可在执行测试前设置：
+后端测试默认通过本机 MySQL 管理连接创建临时 database，并在测试结束后删除。可在执行测试前设置：
+
+```bash
+export DEPU_TEST_MYSQL_ADMIN_DSN='root@tcp(127.0.0.1:3306)/?parseTime=true&multiStatements=true'
+cd backend
+go test ./... -count=1
+```
+
+如果需要固定使用某个测试 database，可设置：
 
 ```bash
 export DEPU_TEST_MYSQL_DSN='root@tcp(127.0.0.1:3306)/depu_multiplayer?parseTime=true&multiStatements=true'
@@ -162,7 +164,7 @@ cd backend
 go test ./internal/api ./internal/storage ./internal/game -count=1
 ```
 
-如果该环境变量未设置，或 MySQL 不可用，测试会自动回退到 SQLite 内存库。
+如果 MySQL 不可用，依赖数据库的后端测试会跳过，不会回退到其他存储引擎。
 
 ## 002 手动验收提要
 

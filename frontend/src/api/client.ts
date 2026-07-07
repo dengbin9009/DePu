@@ -2,10 +2,12 @@ import type {
   ActionLog,
   CreateGameRequest,
   GameSnapshot,
+  HandReplayResponse,
   ProfileResponse,
   RechargeOption,
   RechargeResponse,
   RoomHandHistoryRecord,
+  RoomLeaderboardItem,
   RoomHandState,
   RoomResponse,
   RuleSet,
@@ -117,6 +119,16 @@ export async function fetchUserHands(token: string): Promise<{ items: UserHandRe
 
 export async function fetchRoomHands(token: string, roomId: string): Promise<{ items: RoomHandHistoryRecord[] }> {
   const res = await fetch(apiUrl(`/api/rooms/${roomId}/hands/recent`), { headers: authHeaders(token) });
+  return readJSON(res);
+}
+
+export async function fetchRoomLeaderboard(token: string, roomId: string): Promise<{ items: RoomLeaderboardItem[] }> {
+  const res = await fetch(apiUrl(`/api/rooms/${roomId}/leaderboard`), { headers: authHeaders(token) });
+  return readJSON(res);
+}
+
+export async function fetchRoomHandReplay(token: string, roomId: string, handId: string): Promise<HandReplayResponse> {
+  const res = await fetch(apiUrl(`/api/rooms/${roomId}/hands/${handId}/replay`), { headers: authHeaders(token) });
   return readJSON(res);
 }
 

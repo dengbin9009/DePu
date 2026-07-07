@@ -44,4 +44,10 @@ describe('history page contract', () => {
       expect(appStateSource).toContain(token);
     }
   });
+
+  it('links archived formal hands to a dedicated multiplayer replay route', () => {
+    for (const token of ['查看回放', '`/room/${hand.roomId}/hands/${hand.handId}/replay`']) {
+      expect(historySource).toContain(token);
+    }
+  });
 });

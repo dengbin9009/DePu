@@ -46,6 +46,19 @@ function seatLabel(seatNo: number) {
 	return `已占 #${seatNo} ${seat.nickname || ''}`;
 }
 
+function seatButtonState(seatNo: number) {
+	const seat = room.value?.seats.find((item) => item.seatNo === seatNo);
+	if (myRoomSeat.value && (!seat?.userId || seat.userId !== myRoomSeat.value?.userId)) {
+		return {
+			label: seat?.userId ? `已占 #${seatNo} ${seat.nickname || ''}` : '你已在其他座位',
+			disabled: true,
+		};
+	}
+	if (!seat?.userId) return { label: `坐下 #${seatNo}`, disabled: false };
+	if (seat.userId === myRoomSeat.value?.userId) return { label: `离座 #${seatNo} ${seat.nickname || ''}`, disabled: false };
+	return { label: `已占 #${seatNo} ${seat.nickname || ''}`, disabled: true };
+}
+
 async function sitCurrentUserAtFirstOpenSeat() {
 	const seatNo = firstOpenSeatNo();
 	if (!seatNo) return;
@@ -142,9 +155,10 @@ onMounted(async () => {
             type="button"
             class="seat-button seat-button-panel side-seat-button"
 						:class="{ occupied: !!room.seats.find(seat => seat.seatNo === seatNo)?.userId, mine: room.seats.find(seat => seat.seatNo === seatNo)?.userId === myRoomSeat?.userId }"
+						:disabled="seatButtonState(seatNo).disabled"
 						@click="toggleSeat(seatNo)"
 					>
-            {{ seatLabel(seatNo) }}
+            {{ seatButtonState(seatNo).label }}
           </button>
         </div>
       </div>
