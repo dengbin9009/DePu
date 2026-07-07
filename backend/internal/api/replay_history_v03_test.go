@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/dengbin9009/DePu/backend/internal/game"
-	"github.com/dengbin9009/DePu/backend/internal/storage"
 )
 
 func TestReplayReturnsReadOnlySnapshotAndRejectsOutOfRange(t *testing.T) {
@@ -68,7 +67,7 @@ func TestReplayReturnsReadOnlySnapshotAndRejectsOutOfRange(t *testing.T) {
 }
 
 func TestHistoryReturnsStructuredStateSummaryAndSystemActions(t *testing.T) {
-	store, err := storage.Open(":memory:")
+	store, err := openTestStore(t)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -42,12 +42,16 @@ type Store interface {
 	ArchiveHandResult(roomID string, g *game.Game) error
 	RecentHandResultsByRoom(roomID string, limit int) ([]storage.HandResultRecord, error)
 	UserHands(userID string, limit int) ([]storage.UserHandRecord, error)
+	RoomLeaderboard(roomID string, limit int) ([]storage.RoomLeaderboardRecord, error)
+	FormalHandReplay(roomID, handID string) (*storage.HandReplayRecord, error)
 }
 
 type Server struct {
-	store    Store
-	sessions map[string]string
-	mu       sync.RWMutex
+	store         Store
+	sessions      map[string]string
+	hub           *socketHub
+	actionTimeout time.Duration
+	mu            sync.RWMutex
 }
 
 func NewServer() *Server {
@@ -61,19 +65,13 @@ func NewServer() *Server {
 	}
 	store, err := storage.OpenWithConfig(storage.Config{Driver: storage.Driver(driver), DSN: dsn})
 	if err != nil {
-		// fallback for existing local setups that still rely on sqlite path
-		if dbPath := strings.TrimSpace(os.Getenv("DEPU_DB_PATH")); dbPath != "" {
-			store, err = storage.Open(dbPath)
-		}
-		if err != nil {
-			panic(err)
-		}
+		panic(err)
 	}
-	return &Server{store: store, sessions: map[string]string{}}
+	return &Server{store: store, sessions: map[string]string{}, hub: newSocketHub(), actionTimeout: 30 * time.Second}
 }
 
 func NewServerWithStore(store Store) *Server {
-	return &Server{store: store, sessions: map[string]string{}}
+	return &Server{store: store, sessions: map[string]string{}, hub: newSocketHub(), actionTimeout: 30 * time.Second}
 }
 
 func (s *Server) Routes() http.Handler {
@@ -88,6 +86,7 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("/api/me/hands", s.myHands)
 	mux.HandleFunc("/api/recharge/options", s.rechargeOptions)
 	mux.HandleFunc("/api/recharge", s.recharge)
+	mux.HandleFunc("/api/socket", s.socketEndpoint)
 	mux.HandleFunc("/api/rooms", s.rooms)
 	mux.HandleFunc("/api/rooms/join", s.joinRoom)
 	mux.HandleFunc("/api/rooms/", s.roomByID)
@@ -435,6 +434,19 @@ func writeError(w http.ResponseWriter, status int, code, message, field string) 
 	writeJSON(w, status, ErrorResponse{Code: code, Message: message, Field: field})
 }
 
+type apiError struct {
+	Status  int
+	Code    string
+	Message string
+	Field   string
+}
+
+type roomActionResult struct {
+	State   map[string]any
+	Settled bool
+	Result  *storage.HandResultRecord
+}
+
 func itoa(n int) string {
 	return strconv.Itoa(n)
 }
@@ -696,6 +708,7 @@ func (s *Server) joinRoom(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "storage_error", err.Error(), "")
 		return
 	}
+	s.broadcastRoomUpdate(room.ID, room)
 	writeJSON(w, http.StatusOK, room)
 }
 
@@ -727,39 +740,12 @@ func (s *Server) roomByID(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusUnauthorized, "unauthorized", "authentication required", "")
 			return
 		}
-		room, err := s.store.RoomByID(roomID)
-		if err != nil {
-			writeError(w, http.StatusNotFound, "room_not_found", "room not found", "")
+		state, apiErr := s.startRoomHandForUser(roomID, currentUser.ID)
+		if apiErr != nil {
+			writeError(w, apiErr.Status, apiErr.Code, apiErr.Message, apiErr.Field)
 			return
 		}
-		if room.OwnerUserID != currentUser.ID {
-			writeError(w, http.StatusForbidden, "not_room_owner", "only room owner can start", "")
-			return
-		}
-		var seats []game.SeatConfig
-		for _, seat := range room.Seats {
-			if seat.UserID != nil && seat.Nickname != nil && seat.BuyInChips != nil {
-				seats = append(seats, game.SeatConfig{SeatNo: seat.SeatNo, Name: *seat.Nickname, Stack: *seat.BuyInChips})
-			}
-		}
-		if len(seats) < room.MinPlayersToStart {
-			writeError(w, http.StatusForbidden, "insufficient_coins", "not enough players to start", "")
-			return
-		}
-		g, err := game.New(game.Config{RuleSetID: room.RuleSetID, ButtonSeat: 1, SmallBlind: 50, BigBlind: 100, Seats: seats, DealMode: game.DealRandom})
-		if err != nil {
-			writeError(w, http.StatusInternalServerError, "storage_error", err.Error(), "")
-			return
-		}
-		if err := s.store.Save(g); err != nil {
-			writeError(w, http.StatusInternalServerError, "storage_error", err.Error(), "")
-			return
-		}
-		if err := s.store.SetRoomCurrentGame(roomID, g.ID); err != nil {
-			writeError(w, http.StatusInternalServerError, "storage_error", err.Error(), "")
-			return
-		}
-		writeJSON(w, http.StatusOK, map[string]any{"roomId": roomID, "handId": g.ID, "status": string(g.Stage), "currentSeat": g.CurrentSeat, "pot": g.CurrentBet, "boardCards": g.Board, "players": snapshot(g).Seats, "availableActions": g.LegalActions()})
+		writeJSON(w, http.StatusOK, state)
 		return
 	}
 	if len(parts) == 2 && parts[1] == "current-hand" && r.Method == http.MethodGet {
@@ -773,34 +759,13 @@ func (s *Server) roomByID(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusNotFound, "room_not_found", "current hand not found", "")
 			return
 		}
-		writeJSON(w, http.StatusOK, map[string]any{"roomId": roomID, "handId": g.ID, "status": string(g.Stage), "currentSeat": g.CurrentSeat, "pot": g.CurrentBet, "boardCards": g.Board, "players": snapshot(g).Seats, "availableActions": g.LegalActions()})
+		writeJSON(w, http.StatusOK, s.roomHandState(roomID, g))
 		return
 	}
 	if len(parts) == 2 && parts[1] == "actions" && r.Method == http.MethodPost {
 		currentUser, err := s.requireUser(r)
 		if err != nil {
 			writeError(w, http.StatusUnauthorized, "unauthorized", "authentication required", "")
-			return
-		}
-		room, err := s.store.RoomByID(roomID)
-		if err != nil || room.CurrentGameID == "" {
-			writeError(w, http.StatusNotFound, "room_not_found", "current hand not found", "")
-			return
-		}
-		g, err := s.store.Load(room.CurrentGameID)
-		if err != nil {
-			writeError(w, http.StatusNotFound, "room_not_found", "current hand not found", "")
-			return
-		}
-		allowed := false
-		for _, seat := range room.Seats {
-			if seat.SeatNo == g.CurrentSeat && seat.UserID != nil && *seat.UserID == currentUser.ID {
-				allowed = true
-				break
-			}
-		}
-		if !allowed {
-			writeError(w, http.StatusForbidden, "not_your_turn", "not your turn", "")
 			return
 		}
 		var req struct {
@@ -811,21 +776,12 @@ func (s *Server) roomByID(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusBadRequest, "bad_json", err.Error(), "")
 			return
 		}
-		if err := g.Apply(game.Command{SeatNo: g.CurrentSeat, Type: game.ActionType(req.Action), Amount: req.Amount}); err != nil {
-			writeError(w, http.StatusConflict, "invalid_action", err.Error(), "")
+		result, apiErr := s.applyRoomActionForUser(roomID, currentUser.ID, req.Action, req.Amount)
+		if apiErr != nil {
+			writeError(w, apiErr.Status, apiErr.Code, apiErr.Message, apiErr.Field)
 			return
 		}
-		if g.Stage == game.StageFinished {
-			if err := s.store.ArchiveHandResult(roomID, g); err != nil {
-				writeError(w, http.StatusInternalServerError, "storage_error", err.Error(), "")
-				return
-			}
-		}
-		if err := s.store.Save(g); err != nil {
-			writeError(w, http.StatusInternalServerError, "storage_error", err.Error(), "")
-			return
-		}
-		writeJSON(w, http.StatusOK, map[string]any{"roomId": roomID, "handId": g.ID, "status": string(g.Stage), "currentSeat": g.CurrentSeat, "pot": g.CurrentBet, "boardCards": g.Board, "players": snapshot(g).Seats, "availableActions": g.LegalActions()})
+		writeJSON(w, http.StatusOK, result.State)
 		return
 	}
 	if len(parts) == 3 && parts[1] == "hands" && parts[2] == "recent" && r.Method == http.MethodGet {
@@ -841,6 +797,42 @@ func (s *Server) roomByID(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]any{"items": items})
 		return
 	}
+	if len(parts) == 2 && parts[1] == "leaderboard" && r.Method == http.MethodGet {
+		room, err := s.store.RoomByID(roomID)
+		if err != nil {
+			writeError(w, http.StatusNotFound, "room_not_found", "room not found", "")
+			return
+		}
+		if !roomHasMember(room, user.ID) {
+			writeError(w, http.StatusForbidden, "forbidden", "room membership required", "")
+			return
+		}
+		items, err := s.store.RoomLeaderboard(roomID, 10)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, "storage_error", err.Error(), "")
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]any{"items": items})
+		return
+	}
+	if len(parts) == 4 && parts[1] == "hands" && parts[3] == "replay" && r.Method == http.MethodGet {
+		room, err := s.store.RoomByID(roomID)
+		if err != nil {
+			writeError(w, http.StatusNotFound, "room_not_found", "room not found", "")
+			return
+		}
+		if !roomHasMember(room, user.ID) {
+			writeError(w, http.StatusForbidden, "forbidden", "room membership required", "")
+			return
+		}
+		replay, err := s.store.FormalHandReplay(roomID, parts[2])
+		if err != nil {
+			writeError(w, http.StatusNotFound, "replay_not_found", "hand replay not found", "")
+			return
+		}
+		writeJSON(w, http.StatusOK, replay)
+		return
+	}
 	if len(parts) == 3 && parts[1] == "seats" && r.Method == http.MethodDelete {
 		seatNo, _ := strconv.Atoi(parts[2])
 		currentUser, err := s.requireUser(r)
@@ -853,6 +845,8 @@ func (s *Server) roomByID(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusInternalServerError, "storage_error", err.Error(), "")
 			return
 		}
+		s.broadcastRoomUpdate(roomID, room)
+		s.broadcastRoomLog(roomID, "seat_left", currentUser.ID, seatNo)
 		writeJSON(w, http.StatusOK, room)
 		return
 	}
@@ -872,6 +866,10 @@ func (s *Server) roomByID(w http.ResponseWriter, r *http.Request) {
 		}
 		room, err := s.store.TakeSeat(roomID, currentUser.ID, seatNo, req.BuyInChips)
 		if err != nil {
+			if strings.Contains(err.Error(), "already seated") {
+				writeError(w, http.StatusConflict, "already_seated", "user already seated", "seatNo")
+				return
+			}
 			if strings.Contains(err.Error(), "taken") {
 				writeError(w, http.StatusConflict, "seat_taken", "seat already taken", "seatNo")
 				return
@@ -883,6 +881,8 @@ func (s *Server) roomByID(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusInternalServerError, "storage_error", err.Error(), "")
 			return
 		}
+		s.broadcastRoomUpdate(roomID, room)
+		s.broadcastRoomLog(roomID, "seat_taken", currentUser.ID, seatNo)
 		writeJSON(w, http.StatusOK, room)
 		return
 	}
@@ -905,4 +905,122 @@ func (s *Server) myHands(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"items": items})
+}
+
+func roomHandState(roomID string, g *game.Game) map[string]any {
+	serverTime := time.Now().UTC()
+	return roomHandStateWithTimeout(roomID, g, 30*time.Second, serverTime)
+}
+
+func roomHandStateWithTimeout(roomID string, g *game.Game, timeout time.Duration, serverTime time.Time) map[string]any {
+	actionStartedAt := g.UpdatedAt
+	if actionStartedAt.IsZero() {
+		actionStartedAt = g.CreatedAt
+	}
+	if timeout <= 0 {
+		timeout = 30 * time.Second
+	}
+	timeoutSeconds := int(timeout.Seconds())
+	if timeoutSeconds <= 0 {
+		timeoutSeconds = 1
+	}
+	return map[string]any{
+		"roomId":               roomID,
+		"handId":               g.ID,
+		"status":               string(g.Stage),
+		"currentSeat":          g.CurrentSeat,
+		"pot":                  g.CurrentBet,
+		"currentBet":           g.CurrentBet,
+		"minRaise":             g.MinRaise,
+		"boardCards":           g.Board,
+		"players":              snapshot(g).Seats,
+		"availableActions":     g.LegalActions(),
+		"actingSeatNo":         g.CurrentSeat,
+		"actionStartedAt":      actionStartedAt.UTC().Format(time.RFC3339Nano),
+		"actionDeadlineAt":     actionStartedAt.UTC().Add(timeout).Format(time.RFC3339Nano),
+		"actionTimeoutSeconds": timeoutSeconds,
+		"serverTime":           serverTime.Format(time.RFC3339Nano),
+	}
+}
+
+func (s *Server) startRoomHandForUser(roomID, userID string) (map[string]any, *apiError) {
+	room, err := s.store.RoomByID(roomID)
+	if err != nil {
+		return nil, &apiError{Status: http.StatusNotFound, Code: "room_not_found", Message: "room not found"}
+	}
+	if room.OwnerUserID != userID {
+		return nil, &apiError{Status: http.StatusForbidden, Code: "not_room_owner", Message: "only room owner can start"}
+	}
+	var seats []game.SeatConfig
+	for _, seat := range room.Seats {
+		if seat.UserID != nil && seat.Nickname != nil && seat.BuyInChips != nil {
+			seats = append(seats, game.SeatConfig{SeatNo: seat.SeatNo, Name: *seat.Nickname, Stack: *seat.BuyInChips})
+		}
+	}
+	if len(seats) < room.MinPlayersToStart {
+		return nil, &apiError{Status: http.StatusForbidden, Code: "insufficient_coins", Message: "not enough players to start"}
+	}
+	g, err := game.New(game.Config{RuleSetID: room.RuleSetID, ButtonSeat: 1, SmallBlind: 50, BigBlind: 100, Seats: seats, DealMode: game.DealRandom})
+	if err != nil {
+		return nil, &apiError{Status: http.StatusInternalServerError, Code: "storage_error", Message: err.Error()}
+	}
+	if err := s.store.Save(g); err != nil {
+		return nil, &apiError{Status: http.StatusInternalServerError, Code: "storage_error", Message: err.Error()}
+	}
+	if err := s.store.SetRoomCurrentGame(roomID, g.ID); err != nil {
+		return nil, &apiError{Status: http.StatusInternalServerError, Code: "storage_error", Message: err.Error()}
+	}
+	state := s.roomHandState(roomID, g)
+	s.scheduleActionTimeout(roomID, g.ID, g.CurrentSeat)
+	return state, nil
+}
+
+func (s *Server) applyRoomActionForUser(roomID, userID, action string, amount int) (*roomActionResult, *apiError) {
+	room, err := s.store.RoomByID(roomID)
+	if err != nil || room.CurrentGameID == "" {
+		return nil, &apiError{Status: http.StatusNotFound, Code: "room_not_found", Message: "current hand not found"}
+	}
+	g, err := s.store.Load(room.CurrentGameID)
+	if err != nil {
+		return nil, &apiError{Status: http.StatusNotFound, Code: "room_not_found", Message: "current hand not found"}
+	}
+	allowed := false
+	for _, seat := range room.Seats {
+		if seat.SeatNo == g.CurrentSeat && seat.UserID != nil && *seat.UserID == userID {
+			allowed = true
+			break
+		}
+	}
+	if !allowed {
+		return nil, &apiError{Status: http.StatusForbidden, Code: "not_your_turn", Message: "not your turn"}
+	}
+	return s.applyRoomActionForSeat(roomID, g, action, amount)
+}
+
+func (s *Server) applyRoomActionForSeat(roomID string, g *game.Game, action string, amount int) (*roomActionResult, *apiError) {
+	if err := g.Apply(game.Command{SeatNo: g.CurrentSeat, Type: game.ActionType(action), Amount: amount}); err != nil {
+		return nil, &apiError{Status: http.StatusConflict, Code: "invalid_action", Message: err.Error()}
+	}
+	result := &roomActionResult{State: s.roomHandState(roomID, g), Settled: g.Stage == game.StageFinished}
+	if g.Stage == game.StageFinished {
+		if err := s.store.ArchiveHandResult(roomID, g); err != nil {
+			return nil, &apiError{Status: http.StatusInternalServerError, Code: "storage_error", Message: err.Error()}
+		}
+		if results, err := s.store.RecentHandResultsByRoom(roomID, 1); err == nil && len(results) > 0 {
+			result.Result = &results[0]
+		}
+	}
+	if err := s.store.Save(g); err != nil {
+		return nil, &apiError{Status: http.StatusInternalServerError, Code: "storage_error", Message: err.Error()}
+	}
+	if g.Stage != game.StageFinished {
+		s.scheduleActionTimeout(roomID, g.ID, g.CurrentSeat)
+	} else {
+		s.hub.nextTimerVersion(roomID)
+	}
+	return result, nil
+}
+
+func (s *Server) roomHandState(roomID string, g *game.Game) map[string]any {
+	return roomHandStateWithTimeout(roomID, g, s.actionTimeout, time.Now().UTC())
 }

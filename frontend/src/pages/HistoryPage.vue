@@ -2,8 +2,10 @@
 import { onMounted } from 'vue';
 import { cardAltText, cardImagePath } from '../cardAssets';
 import { useAppState } from '../composables/useAppState';
+import { useRouter } from 'vue-router';
 
 const { me, roomHistory, recentRoomHands, refreshHistoryDetails } = useAppState();
+const router = useRouter();
 
 function formatDateTime(value?: string | null) {
   if (!value) return '暂无';
@@ -45,6 +47,7 @@ onMounted(async () => {
         <ol class="history" v-else>
           <li v-for="hand in recentRoomHands" :key="hand.handId">
             <strong>#{{ hand.handNo }}</strong> · {{ formatDateTime(hand.completedAt) }} · 赢家 {{ hand.winnerSummary }} · {{ hand.potSummary }}
+            <button type="button" class="ghost" @click="router.push(`/room/${hand.roomId}/hands/${hand.handId}/replay`)">查看回放</button>
             <div class="history-card-block">
               <span class="history-card-label">公共牌</span>
               <span class="history-card-row" aria-label="公共牌">

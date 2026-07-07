@@ -4,6 +4,7 @@ import { createGame, submitAction } from './client';
 describe('api client', () => {
   it('sends the selected betting structure when creating a game', async () => {
     const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
+      expect(_url).toBe('/api/games');
       const body = JSON.parse(String(init?.body));
       expect(body.bettingStructure).toEqual({ type: 'ante', ante: 10, buttonBlind: 50 });
       return new Response(

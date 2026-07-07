@@ -2,11 +2,13 @@ package api
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -27,14 +29,44 @@ func testServer(t *testing.T) *Server {
 
 func openTestStore(t *testing.T) (*storage.Store, error) {
 	t.Helper()
-	if dsn := os.Getenv("DEPU_TEST_MYSQL_DSN"); dsn != "" {
-		store, err := storage.OpenWithConfig(storage.Config{Driver: storage.DriverMySQL, DSN: dsn})
-		if err == nil {
-			return store, nil
-		}
-		t.Logf("fallback to sqlite test store, mysql unavailable: %v", err)
+	dsn := strings.TrimSpace(os.Getenv("DEPU_TEST_MYSQL_DSN"))
+	if dsn == "" {
+		dsn = createMySQLTestDatabase(t)
 	}
-	return storage.Open(fmt.Sprintf("file:depu_test_%d?mode=memory&cache=shared", time.Now().UnixNano()))
+	store, err := storage.OpenWithConfig(storage.Config{Driver: storage.DriverMySQL, DSN: dsn})
+	if err != nil {
+		t.Skipf("mysql test store unavailable: %v", err)
+	}
+	return store, nil
+}
+
+func createMySQLTestDatabase(t *testing.T) string {
+	t.Helper()
+	adminDSN := strings.TrimSpace(os.Getenv("DEPU_TEST_MYSQL_ADMIN_DSN"))
+	if adminDSN == "" {
+		adminDSN = "root@tcp(127.0.0.1:3306)/?parseTime=true&multiStatements=true"
+	}
+	adminDB, err := sql.Open("mysql", adminDSN)
+	if err != nil {
+		t.Skipf("mysql admin connection unavailable: %v", err)
+		return ""
+	}
+	if err := adminDB.Ping(); err != nil {
+		_ = adminDB.Close()
+		t.Skipf("mysql admin ping failed: %v", err)
+		return ""
+	}
+	dbName := fmt.Sprintf("depu_api_test_%d", time.Now().UTC().UnixNano())
+	if _, err := adminDB.Exec("create database `" + dbName + "` character set utf8mb4 collate utf8mb4_unicode_ci"); err != nil {
+		_ = adminDB.Close()
+		t.Skipf("create mysql test database failed: %v", err)
+		return ""
+	}
+	t.Cleanup(func() {
+		_, _ = adminDB.Exec("drop database if exists `" + dbName + "`")
+		_ = adminDB.Close()
+	})
+	return "root@tcp(127.0.0.1:3306)/" + dbName + "?parseTime=true&multiStatements=true"
 }
 
 func TestRulesetsEndpoint(t *testing.T) {
