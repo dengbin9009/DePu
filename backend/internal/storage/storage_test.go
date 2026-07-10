@@ -131,6 +131,9 @@ func TestTakeSeatConflictReleasesTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if _, err := store.JoinRoomByInviteCode(player.ID, room.InviteCode); err != nil {
+		t.Fatal(err)
+	}
 	if _, err := store.TakeSeat(room.ID, owner.ID, 1, 1000); err != nil {
 		t.Fatal(err)
 	}

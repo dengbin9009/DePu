@@ -2,9 +2,14 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { actionLabel, statusLabel } from '../displayLabels';
-import { cardBackImagePath, cardImagePath } from '../cardAssets';
 import { isRedCard } from '../pokerVisuals';
 import { emptyRoom, useAppState } from '../composables/useAppState';
+import BuyInModal from '../components/BuyInModal.vue';
+import TableDrawer from '../components/TableDrawer.vue';
+import TableChatPanel from '../components/TableChatPanel.vue';
+import TableScorePanel from '../components/TableScorePanel.vue';
+import TableReplayPanel from '../components/TableReplayPanel.vue';
+import TableSettingsPanel from '../components/TableSettingsPanel.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -15,8 +20,10 @@ const {
   myRoomHandPlayer,
   isMyTurn,
   loading,
+  error,
   token,
   me,
+  wallet,
   roomPresence,
   actionLog,
   chatMessages,
@@ -27,21 +34,34 @@ const {
   refreshRoom,
   doTakeSeat,
   doLeaveSeat,
+  doLeaveRoom,
+  doStartRoomHand,
   doRoomAction,
   connectRoomSocket,
   sendRoomChat,
-  sendRoomEmoji
+  sendRoomEmoji,
+  setShopReturnTo
 } = useAppState();
 
 const chatInput = ref('');
+const activePanel = ref<'chat' | 'score' | 'replay' | 'settings' | null>(null);
+const pendingSeatNo = ref<number | null>(null);
+const shortDeckRulesOpen = ref(false);
 const nowMs = ref(Date.now());
 const actionClockOffsetMs = ref(0);
 const actionAmount = ref(0);
 const amountActions = ['bet', 'raise'];
+const tableLatencyMs = ref(43);
+const tableNotice = ref('');
 let countdownTimer: number | null = null;
 
 const occupiedSeatCount = computed(() => room.value?.seats.filter((seat) => seat.userId).length ?? 0);
 const defaultBuyIn = computed(() => room.value?.seats.find((seat) => seat.buyInChips)?.buyInChips ?? 1000);
+const isRoomOwner = computed(() => !!room.value && room.value.ownerUserId === me.value?.id);
+const buyInModalOpen = computed(() => pendingSeatNo.value !== null);
+const roomMinBuyIn = computed(() => room.value?.minBuyIn ?? defaultBuyIn.value ?? 1000);
+const roomMaxBuyIn = computed(() => room.value?.maxBuyIn ?? Math.max(roomMinBuyIn.value, 6000));
+const walletBalance = computed(() => wallet.value?.balance ?? me.value?.walletBalance ?? 0);
 const firstOpenSeatNo = computed(() => {
 	if (!room.value?.seatCount) return null;
 	for (let seatNo = 1; seatNo <= room.value.seatCount; seatNo += 1) {
@@ -68,10 +88,20 @@ function displayCards(cards?: string[] | null) {
   return cards;
 }
 
-function hideBrokenCardImage(event: Event) {
-  if (event.target instanceof HTMLImageElement) {
-    event.target.style.display = 'none';
-  }
+function cardRankLabel(card: string) {
+  const normalized = card.trim().toUpperCase();
+  if (!normalized) return '';
+  const rank = normalized.slice(0, -1);
+  return rank === 'T' ? '10' : rank;
+}
+
+function cardSuitSymbol(card: string) {
+  const suit = card.trim().slice(-1).toLowerCase();
+  if (suit === 's') return '♠';
+  if (suit === 'h') return '♥';
+  if (suit === 'd') return '♦';
+  if (suit === 'c') return '♣';
+  return suit.toUpperCase();
 }
 
 const remainingActionSeconds = computed(() => {
@@ -108,6 +138,65 @@ function logText(entry: { kind: string; action?: string; seatNo?: number; source
   return entry.kind;
 }
 
+function openPanel(panel: 'chat' | 'score' | 'replay' | 'settings') {
+  activePanel.value = panel;
+}
+
+function closePanel() {
+  activePanel.value = null;
+}
+
+function roomVariantLabel() {
+  if (room.value?.variant === 'short_holdem' || room.value?.ruleSetId === 'short-deck') return '短牌';
+  if (room.value?.variant === 'omaha') return '奥马哈';
+  return '国际扑克';
+}
+
+function roomDisplayNo() {
+  return room.value?.id.replace('room_', '').slice(-3) || '121';
+}
+
+function openBuyInModal(seatNo: number) {
+  if (roomSeat(seatNo)?.userId) return;
+  pendingSeatNo.value = seatNo;
+}
+
+function closeBuyInModal() {
+  pendingSeatNo.value = null;
+}
+
+async function confirmBuyIn(amount: number) {
+  if (!pendingSeatNo.value) return;
+  await doTakeSeat(pendingSeatNo.value, amount);
+  closeBuyInModal();
+  await refreshRoom();
+  await refreshCurrentRoomHand();
+}
+
+function goToShopFromBuyIn() {
+  setShopReturnTo(router.currentRoute.value.fullPath);
+  router.push('/shop');
+}
+
+async function startHandFromTable() {
+  tableNotice.value = '';
+  await doStartRoomHand();
+  await refreshCurrentRoomHand();
+  tableNotice.value = '牌局已开始';
+}
+
+async function inviteFriendFromTable() {
+  if (!room.value) return;
+  const inviteCode = room.value.inviteCode || room.value.id;
+  const inviteText = `房间邀请码 ${inviteCode}`;
+  try {
+    await navigator.clipboard.writeText(inviteText);
+    tableNotice.value = `邀请码已复制：${inviteCode}`;
+  } catch {
+    tableNotice.value = `邀请码：${inviteCode}`;
+  }
+}
+
 async function sendChat() {
   const text = chatInput.value;
   chatInput.value = '';
@@ -123,17 +212,12 @@ async function sitAtFirstOpenSeat() {
     if (room.value) router.push(`/room/${room.value.id}/players`);
     return;
   }
-  await doTakeSeat(firstOpenSeatNo.value, defaultBuyIn.value);
-  await refreshRoom();
-  await refreshCurrentRoomHand();
+  openBuyInModal(firstOpenSeatNo.value);
 }
 
 async function leaveTable() {
   try {
-    if (myRoomSeat.value) {
-      await doLeaveSeat(myRoomSeat.value.seatNo);
-      await refreshRoom();
-    }
+    await doLeaveRoom();
   } finally {
     router.push('/lobby');
   }
@@ -182,9 +266,11 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <main class="page-shell room-shell room-shell-minimal room-shell-fullscreen">
-    <section class="room-stage panel" v-if="room">
-      <header class="table-topbar minimal-topbar">
+  <main class="page-shell room-shell room-shell-minimal room-shell-fullscreen room-mobile-screen">
+    <section class="room-stage panel mock-table-felt" v-if="room">
+      <div class="responsible-gaming">绿色竞技 远离赌博 · 谨防诈骗 健康生活</div>
+      <div class="latency-badge">网络延时<br><strong>{{ tableLatencyMs }}ms</strong></div>
+      <header class="table-topbar minimal-topbar table-topbar-compact">
         <button type="button" class="topbar-float table-back-button" @click="router.back()">返回</button>
         <button type="button" class="topbar-float" data-testid="table-leave-button" @click="leaveTable">离开牌桌</button>
         <button type="button" class="topbar-float" @click="router.push(`/room/${room.id}/players`)">
@@ -198,6 +284,19 @@ onBeforeUnmount(() => {
       </header>
 
       <div class="table-area bare-table ultra-clean-table casino-table">
+        <div class="owner-action-row owner-action-row-dock" v-if="!currentRoomHand">
+          <button type="button" :disabled="!isRoomOwner">解散比赛</button>
+          <button type="button" @click="inviteFriendFromTable">邀请好友</button>
+          <button type="button" :disabled="!isRoomOwner || loading" @click="startHandFromTable">开 始</button>
+        </div>
+        <p v-if="tableNotice || error" class="table-feedback" :class="{ 'table-feedback-error': !!error }">{{ error || tableNotice }}</p>
+        <section class="table-room-center table-room-watermark">
+          <span>训练赛◆{{ roomVariantLabel() }} 第 {{ recentRoomHands[0]?.handNo ? recentRoomHands[0].handNo + 1 : 1 }} 手</span>
+          <strong>{{ room.name || '德扑之星' }}</strong>
+          <span>◎ {{ room.ante ?? 20 }}　级别:{{ room.level ?? 1 }}</span>
+          <span>&lt; {{ roomDisplayNo() }} &gt;</span>
+          <span>邀请码:{{ room.inviteCode || '加载中' }}</span>
+        </section>
         <div class="minimal-strip subtle-strip" v-if="currentRoomHand">
           <span>{{ currentRoomHand.status }}</span>
           <span>底池 {{ currentRoomHand.pot }}</span>
@@ -207,11 +306,11 @@ onBeforeUnmount(() => {
           <span v-if="remainingActionSeconds !== null">行动倒计时 {{ remainingActionSeconds }}s</span>
         </div>
 
-        <div class="board-zone clean-board-zone table-center-stack">
+        <div class="board-zone clean-board-zone table-center-stack table-center-stack-compact">
           <div class="community-cards">
-            <span v-for="card in displayCards(currentRoomHand?.boardCards)" :key="card" class="board-card" :class="{ red: isRedCard(card) }">
-              <img v-if="cardImagePath(card)" :src="cardImagePath(card) || undefined" :alt="card" class="playing-card-image" @error="hideBrokenCardImage" />
-              <template v-else>{{ card }}</template>
+            <span v-for="card in displayCards(currentRoomHand?.boardCards)" :key="card" class="board-card table-card-face" :class="{ red: isRedCard(card) }" :aria-label="card">
+              <span class="card-rank">{{ cardRankLabel(card) }}</span>
+              <span class="card-suit">{{ cardSuitSymbol(card) }}</span>
             </span>
             <span v-if="!displayCards(currentRoomHand?.boardCards).length" class="muted">等待公共牌</span>
           </div>
@@ -224,10 +323,12 @@ onBeforeUnmount(() => {
             :key="seatNo"
             type="button"
             class="seat-node seat-node-clean casino-seat-node"
+            :data-testid="`table-seat-${seatNo}`"
+            :aria-label="roomSeat(seatNo)?.userId ? `座位 ${seatNo} ${roomSeat(seatNo)?.nickname}` : `坐下 座位 ${seatNo}`"
 					:class="{ mine: myRoomSeat?.seatNo === seatNo, acting: currentRoomHand?.currentSeat === seatNo, empty: !roomSeat(seatNo)?.userId }"
-					@click="router.push(`/room/${room.id}/players`)">
+					@click="openBuyInModal(seatNo)">
 					<span class="seat-index">#{{ seatNo }}</span>
-					<span class="seat-name">{{ roomSeat(seatNo)?.nickname || '空位' }}</span>
+					<span class="seat-name">{{ roomSeat(seatNo)?.nickname || (myRoomSeat ? '坐下' : '空座') }}</span>
           <span v-if="roomSeat(seatNo)?.userId" class="seat-presence">{{ presenceForUser(roomSeat(seatNo)?.userId)?.status === 'online' ? '在线' : '离线' }}</span>
 					<span class="seat-stack" v-if="seatPlayer(seatNo)">{{ seatPlayer(seatNo)?.stack }}</span>
 				</button>
@@ -235,12 +336,12 @@ onBeforeUnmount(() => {
 
 			<div class="hero-panel hero-panel-clean" v-if="myRoomSeat">
 				<div class="hero-cards">
-					<span v-for="card in displayCards(myRoomHandPlayer?.holeCards)" :key="card" class="hole-card" :class="{ red: isRedCard(card) }">
-						<img v-if="cardImagePath(card)" :src="cardImagePath(card) || undefined" :alt="card" class="playing-card-image hero-card-image" @error="hideBrokenCardImage" />
-						<template v-else>{{ card }}</template>
+					<span v-for="card in displayCards(myRoomHandPlayer?.holeCards)" :key="card" class="hole-card table-card-face hero-card-face" :class="{ red: isRedCard(card) }" :aria-label="card">
+            <span class="card-rank">{{ cardRankLabel(card) }}</span>
+            <span class="card-suit">{{ cardSuitSymbol(card) }}</span>
 					</span>
-					<span v-if="!displayCards(myRoomHandPlayer?.holeCards).length" class="hole-card back-card">
-						<img :src="cardBackImagePath" alt="card back" class="playing-card-image hero-card-image" @error="hideBrokenCardImage" />
+					<span v-if="!displayCards(myRoomHandPlayer?.holeCards).length" class="hole-card back-card table-card-back" aria-label="card back">
+            <span class="card-back-grid"></span>
 					</span>
 				</div>
 				<div class="hero-meta">
@@ -260,7 +361,7 @@ onBeforeUnmount(() => {
           </div>
         </div>
 
-        <div class="actions hero-actions hero-actions-dock" v-if="currentRoomHand">
+        <div class="actions hero-actions hero-actions-dock hero-actions-safe" v-if="currentRoomHand">
           <div class="action-amount-control" v-if="canChooseActionAmount">
             <label>下注金额 <strong>{{ actionAmount }}</strong></label>
             <input v-model.number="actionAmount" type="range" :min="minActionAmount" :max="maxActionAmount" :step="50" />
@@ -273,6 +374,57 @@ onBeforeUnmount(() => {
           <button type="button" class="ghost" :disabled="loading" @click="refreshCurrentRoomHand">刷新</button>
         </div>
 
+      </div>
+
+      <nav class="mock-bottom-toolbar mock-bottom-toolbar-safe" aria-label="底部工具栏">
+        <button type="button" class="tool-settings" @click="openPanel('settings')">▦</button>
+        <button type="button" @click="leaveTable">↩</button>
+        <button type="button" class="tool-score" @click="openPanel('score')">战绩</button>
+        <button type="button" class="tool-replay" @click="openPanel('replay')">牌谱</button>
+        <button type="button" class="tool-chat" @click="openPanel('chat')">▤</button>
+        <button type="button" class="tool-mic" disabled>麦克风关</button>
+      </nav>
+
+      <BuyInModal
+        :open="buyInModalOpen"
+        :min="roomMinBuyIn"
+        :max="roomMaxBuyIn"
+        :wallet-balance="walletBalance"
+        @close="closeBuyInModal"
+        @confirm="confirmBuyIn"
+        @shop="goToShopFromBuyIn"
+      />
+
+      <TableDrawer :open="activePanel === 'chat'" placement="bottom" @close="closePanel">
+        <TableChatPanel :messages="chatMessages" :loading="loading" @send="sendRoomChat" />
+      </TableDrawer>
+
+      <TableDrawer :open="activePanel === 'score'" placement="left" @close="closePanel">
+        <TableScorePanel :leaderboard="roomLeaderboard" :members="room.members" :seats="room.seats" :duration-minutes="room.durationMinutes" />
+      </TableDrawer>
+
+      <TableDrawer :open="activePanel === 'replay'" placement="right" @close="closePanel">
+        <TableReplayPanel :room-id="room.id" :hands="recentRoomHands" :token="token" />
+      </TableDrawer>
+
+      <TableDrawer :open="activePanel === 'settings'" placement="bottom" @close="closePanel">
+        <TableSettingsPanel
+          @stand="myRoomSeat && doLeaveSeat(myRoomSeat.seatNo)"
+          @buy-in="myRoomSeat ? openBuyInModal(myRoomSeat.seatNo) : firstOpenSeatNo && openBuyInModal(firstOpenSeatNo)"
+          @leave="leaveTable"
+          @short-deck-rules="shortDeckRulesOpen = true"
+        />
+      </TableDrawer>
+
+      <div v-if="shortDeckRulesOpen" class="modal-backdrop" role="dialog" aria-modal="true" aria-label="短牌规则说明">
+        <section class="short-deck-rules-modal">
+          <h2>短牌规则说明</h2>
+          <p>短牌使用 36 张牌，只保留 6 到 A。</p>
+          <p>A 可以作为高牌，也可以组成 A6789 顺子。</p>
+          <p>本房间短牌规则为同花大于葫芦，底注为 {{ room.ante ?? 20 }}。</p>
+          <p>当前玩法：{{ roomVariantLabel() }} · {{ room.seatCount || 0 }} 人桌</p>
+          <button type="button" @click="shortDeckRulesOpen = false">关闭</button>
+        </section>
       </div>
 
       <aside class="table-side-panel v11-table-tools" aria-label="牌桌工具">

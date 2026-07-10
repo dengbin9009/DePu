@@ -82,7 +82,7 @@ function logoutNow() {
       <div class="menu-list">
         <button type="button" @click="router.push('/history')">历史战绩</button>
         <button type="button" @click="router.push('/rules-test')">规则测试页</button>
-        <button type="button" disabled>商城</button>
+        <button type="button" @click="router.push('/shop')">商城</button>
         <button type="button" disabled>背包</button>
         <button type="button" disabled>客服</button>
         <button type="button" disabled>生涯</button>

@@ -52,7 +52,8 @@ async function joinRoomNow() {
         <label>房间人数 <input v-model.number="roomSeatCount" min="2" max="10" type="number" /></label>
         <label>最少开局 <input v-model.number="roomMinPlayers" min="2" max="10" type="number" /></label>
         <label>买入 <input v-model.number="roomBuyIn" min="1" type="number" /></label>
-        <button type="button" :disabled="loading" @click="createRoomNow">创建房间</button>
+        <button type="button" :disabled="loading" @click="router.push('/create-match')">创建比赛</button>
+        <button type="button" class="ghost" :disabled="loading" @click="createRoomNow">快速创建旧版房间</button>
       </article>
 
       <article class="panel card-panel">

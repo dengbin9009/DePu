@@ -1015,6 +1015,95 @@ func TestSocketSettledHandBroadcastsSettlementAndWalletUpdates(t *testing.T) {
 	}
 }
 
+func TestSocketSettlementBroadcastsRoomUpdateAndAutoStartsNextHand(t *testing.T) {
+	server := testServer(t)
+	server.actionTimeout = 5 * time.Second
+	server.autoNextDelay = 20 * time.Millisecond
+	roomID, ownerToken, playerToken := setupRoomWithSeats(t, server)
+	ts := httptest.NewServer(server.Routes())
+	defer ts.Close()
+	ownerClient := dialSocket(t, ts.URL, "/api/socket?token="+ownerToken)
+	defer ownerClient.Close()
+	playerClient := dialSocket(t, ts.URL, "/api/socket?token="+playerToken)
+	defer playerClient.Close()
+	subscribeSocket(t, ownerClient, roomID, "req_owner_sub")
+	subscribeSocket(t, playerClient, roomID, "req_player_sub")
+	startHandViaSocket(t, ownerClient, playerClient, roomID)
+
+	var sawSettled bool
+	for i := 0; i < 12; i++ {
+		current, ok := tryCurrentHandViaHTTP(t, server, roomID, ownerToken)
+		if !ok {
+			break
+		}
+		action := preferredAction(current.AvailableActions)
+		actor := ownerClient
+		if current.CurrentSeat == 2 {
+			actor = playerClient
+		}
+		if err := writeClientTextFrame(actor, []byte(`{"type":"room.action","requestId":"req_auto_next_`+itoa(i)+`","roomId":"`+roomID+`","payload":{"action":"`+action+`","amount":0}}`)); err != nil {
+			t.Fatal(err)
+		}
+		readSocketMessageSkipping(t, actor, "ack", map[string]bool{
+			"hand.log.appended":        true,
+			"hand.updated":             true,
+			"hand.settled":             true,
+			"wallet.updated":           true,
+			"room.leaderboard.updated": true,
+			"room.updated":             true,
+		})
+		for _, msg := range readSocketMessagesUntilUpdate(t, actor) {
+			if msg.Type == "hand.settled" {
+				sawSettled = true
+			}
+		}
+		if sawSettled {
+			break
+		}
+	}
+	if !sawSettled {
+		t.Fatal("expected hand.settled before auto-start verification")
+	}
+
+	roomUpdate := readSocketMessageSkipping(t, ownerClient, "room.updated", map[string]bool{
+		"hand.log.appended":        true,
+		"wallet.updated":           true,
+		"room.leaderboard.updated": true,
+		"hand.settled":             true,
+		"player.presence.updated":  true,
+	})
+	var updatedPayload struct {
+		Room struct {
+			ID     string `json:"id"`
+			Status string `json:"status"`
+		} `json:"room"`
+	}
+	if err := json.Unmarshal(roomUpdate.Payload, &updatedPayload); err != nil {
+		t.Fatal(err)
+	}
+	if updatedPayload.Room.ID != roomID || updatedPayload.Room.Status != "waiting" {
+		t.Fatalf("room.updated payload=%#v, want waiting room %s", updatedPayload.Room, roomID)
+	}
+
+	nextStarted := readSocketMessageSkipping(t, ownerClient, "hand.started", map[string]bool{
+		"hand.log.appended":        true,
+		"wallet.updated":           true,
+		"room.leaderboard.updated": true,
+		"room.updated":             true,
+	})
+	var nextPayload struct {
+		Hand struct {
+			HandID string `json:"handId"`
+		} `json:"hand"`
+	}
+	if err := json.Unmarshal(nextStarted.Payload, &nextPayload); err != nil {
+		t.Fatal(err)
+	}
+	if nextPayload.Hand.HandID == "" {
+		t.Fatalf("next hand payload incomplete: %#v", nextPayload.Hand)
+	}
+}
+
 func TestSocketStorageFailureDoesNotBroadcastSuccess(t *testing.T) {
 	base := testServer(t)
 	roomID, ownerToken, playerToken := setupRoomWithSeats(t, base)

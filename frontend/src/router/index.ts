@@ -1,12 +1,14 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import LoginPage from '../pages/LoginPage.vue';
 import LobbyPage from '../pages/LobbyPage.vue';
+import CreateMatchPage from '../pages/CreateMatchPage.vue';
 import RoomPage from '../pages/RoomPage.vue';
 import RoomInfoPage from '../pages/RoomInfoPage.vue';
 import RoomPlayersPage from '../pages/RoomPlayersPage.vue';
 import HistoryPage from '../pages/HistoryPage.vue';
 import HandReplayPage from '../pages/HandReplayPage.vue';
 import MePage from '../pages/MePage.vue';
+import ShopPage from '../pages/ShopPage.vue';
 import PlaceholderPage from '../pages/PlaceholderPage.vue';
 import RulesTestPage from '../pages/RulesTestPage.vue';
 import { useAppState } from '../composables/useAppState';
@@ -15,6 +17,8 @@ const routes = [
   { path: '/', redirect: '/lobby' },
   { path: '/login', component: LoginPage },
   { path: '/lobby', component: LobbyPage },
+  { path: '/create-match', component: CreateMatchPage },
+  { path: '/shop', component: ShopPage },
   { path: '/room/:roomId', component: RoomPage },
   { path: '/room/:roomId/info', component: RoomInfoPage },
   { path: '/room/:roomId/players', component: RoomPlayersPage },

@@ -1,5 +1,6 @@
 import type {
   ActionLog,
+  CreateRoomPayload,
   CreateGameRequest,
   GameSnapshot,
   HandReplayResponse,
@@ -66,7 +67,7 @@ export async function recharge(token: string, optionCode: string): Promise<Recha
   return readJSON(res);
 }
 
-export async function createRoom(token: string, payload: { ruleSetId: string; seatCount: number; minPlayersToStart: number }): Promise<RoomResponse> {
+export async function createRoom(token: string, payload: CreateRoomPayload): Promise<RoomResponse> {
   const res = await fetch(apiUrl('/api/rooms'), { method: 'POST', headers: authHeaders(token), body: JSON.stringify(payload) });
   return readJSON(res);
 }
@@ -88,6 +89,11 @@ export async function takeSeat(token: string, roomId: string, seatNo: number, bu
 
 export async function leaveSeat(token: string, roomId: string, seatNo: number): Promise<RoomResponse> {
   const res = await fetch(apiUrl(`/api/rooms/${roomId}/seats/${seatNo}`), { method: 'DELETE', headers: authHeaders(token) });
+  return readJSON(res);
+}
+
+export async function leaveRoom(token: string, roomId: string): Promise<RoomResponse> {
+  const res = await fetch(apiUrl(`/api/rooms/${roomId}/members/me`), { method: 'DELETE', headers: authHeaders(token) });
   return readJSON(res);
 }
 

@@ -444,6 +444,8 @@ func (c *socketClient) handleMessage(payload []byte) {
 		c.handleStartHand(message)
 	case "room.action":
 		c.handleAction(message)
+	case "room.leave":
+		c.handleLeaveRoom(message)
 	case "chat.send":
 		c.handleChatSend(message)
 	default:
@@ -502,6 +504,20 @@ func (c *socketClient) handleStartHand(message socketEnvelope) {
 	})
 }
 
+func (c *socketClient) handleLeaveRoom(message socketEnvelope) {
+	c.server.hub.withRoomLock(message.RoomID, func() {
+		room, apiErr := c.server.leaveRoomForUser(message.RoomID, c.userID)
+		if apiErr != nil {
+			c.writeAPIError(message, apiErr)
+			return
+		}
+		c.writeAck(message)
+		c.server.broadcastRoomUpdate(message.RoomID, room)
+		c.server.broadcastRoomLog(message.RoomID, "room_left", c.userID, 0)
+		c.server.hub.unsubscribe(c, message.RoomID)
+	})
+}
+
 func (c *socketClient) handleAction(message socketEnvelope) {
 	var req struct {
 		Action string `json:"action"`
@@ -528,6 +544,10 @@ func (c *socketClient) handleAction(message socketEnvelope) {
 			})
 			c.server.sendWalletUpdates(message.RoomID, message.RequestID, result.Result.Participants, result.Result.HandID)
 			c.server.broadcastLeaderboard(message.RoomID, message.RequestID)
+			if room, err := c.server.store.RoomByID(message.RoomID); err == nil {
+				c.server.broadcastRoomUpdate(message.RoomID, room)
+				c.server.scheduleAutoNextHand(message.RoomID, room.OwnerUserID)
+			}
 			return
 		}
 		c.server.broadcastRoomEvent(message.RoomID, socketEnvelope{
@@ -863,6 +883,10 @@ func (s *Server) applyTimeoutAction(roomID, handID string, seatNo, version int) 
 			})
 			s.sendWalletUpdates(roomID, "", result.Result.Participants, result.Result.HandID)
 			s.broadcastLeaderboard(roomID, "")
+			if room, roomErr := s.store.RoomByID(roomID); roomErr == nil {
+				s.broadcastRoomUpdate(roomID, room)
+				s.scheduleAutoNextHand(roomID, room.OwnerUserID)
+			}
 			return
 		}
 		s.broadcastRoomEvent(roomID, socketEnvelope{

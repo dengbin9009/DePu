@@ -5,7 +5,7 @@ import { emptyRoom, useAppState } from '../composables/useAppState';
 
 const route = useRoute();
 const router = useRouter();
-const { room, myRoomSeat, loading, token, refreshRoom, doStartRoomHand } = useAppState();
+const { room, myRoomSeat, loading, error, token, refreshProfile, refreshRoom, refreshCurrentRoomHand, doStartRoomHand, connectRoomSocket } = useAppState();
 
 const ownerNickname = computed(() => {
   if (!room.value) return '';
@@ -17,8 +17,17 @@ async function ensureRouteRoom() {
     if (!room.value || room.value.id !== route.params.roomId) {
       room.value = emptyRoom(route.params.roomId);
     }
+    await refreshProfile();
     await refreshRoom();
+    await connectRoomSocket(room.value.id);
   }
+}
+
+async function startRoomFromInfo() {
+  if (!room.value) return;
+  await doStartRoomHand();
+  await refreshCurrentRoomHand();
+  router.push(`/room/${room.value.id}`);
 }
 
 onMounted(async () => {
@@ -41,10 +50,11 @@ onMounted(async () => {
 
       <div class="action-grid two-col">
         <button type="button" :disabled="loading" @click="refreshRoom">刷新房间</button>
-        <button type="button" :disabled="loading" @click="doStartRoomHand">房主开局</button>
+        <button type="button" :disabled="loading" @click="startRoomFromInfo">房主开局</button>
         <button type="button" class="ghost" @click="router.push(`/room/${room.id}`)">返回牌桌</button>
         <button type="button" class="ghost" @click="router.push(`/room/${room.id}/players`)">查看玩家</button>
       </div>
+      <p v-if="error" class="inline-error">{{ error }}</p>
     </section>
   </main>
 </template>

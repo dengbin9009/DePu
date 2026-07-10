@@ -1,0 +1,27 @@
+{
+  "generatedAt": "2026-07-07T14:05:58.482Z",
+  "checks": [
+    {
+      "name": "room page available for overlap retest",
+      "status": "PASS",
+      "detail": {
+        "scrollY": 0,
+        "text": "绿色竞技 远离赌博 · 谨防诈骗 健康生活\n网络延时\n43ms\n返回\n离开牌桌\n玩家 1/9\n邀请码 R732000\n房间\n返回大厅\n解散比赛\n邀请好友\n开 始\n训练赛◆短牌 第 1 手\n验收短牌局7884\n◎ 20　级别:1\n< 000 >\n邀请码:R732000\n等待公共牌\n底池 0\n#1\nUI房主1783433027884\n在线\n#2\n坐下\n#3\n坐下\n#4\n坐下\n#5\n坐下\n#6\n坐下\n#7\n坐下\n#8\n坐下\n#9\n坐下\nUI房主1783433027884 · 座位 #1\n等待开局\n▦\n↩\n战绩\n牌谱\n▤\n麦克风关",
+        "url": "http://127.0.0.1:5191/room/room_1783433059975690000"
+      }
+    },
+    {
+      "name": "table controls no major overlap after waiting CTA adjustment",
+      "status": "PASS",
+      "detail": {
+        "bad": []
+      }
+    }
+  ],
+  "screenshot": "/Users/dengbin/Code/github/DePu/docs/qa/ui-room-overlap-retest-mobile.png",
+  "summary": {
+    "total": 2,
+    "pass": 2,
+    "fail": 0
+  }
+}

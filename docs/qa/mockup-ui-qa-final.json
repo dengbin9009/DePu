@@ -1,0 +1,3261 @@
+{
+  "generatedAt": "2026-07-07T14:09:48.190Z",
+  "base": "http://127.0.0.1:5191",
+  "viewport": {
+    "width": 430,
+    "height": 932
+  },
+  "results": [
+    {
+      "name": "登录页展示且无底部 Tab",
+      "status": "PASS",
+      "detail": {
+        "buttons": [
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 40,
+            "tag": "INPUT",
+            "text": "",
+            "visible": true,
+            "width": 376,
+            "x": 27,
+            "y": 414
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 40,
+            "tag": "INPUT",
+            "text": "",
+            "visible": true,
+            "width": 376,
+            "x": 27,
+            "y": 494
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 44,
+            "tag": "BUTTON",
+            "text": "登录",
+            "visible": true,
+            "width": 376,
+            "x": 27,
+            "y": 546
+          },
+          {
+            "cls": "ghost auth-switch",
+            "disabled": false,
+            "height": 44,
+            "tag": "BUTTON",
+            "text": "去注册",
+            "visible": true,
+            "width": 376,
+            "x": 27,
+            "y": 602
+          }
+        ],
+        "hasBottomTabs": false,
+        "label": "login",
+        "text": "登录\n\n使用账号进入大厅与多人房间。\n\n用户名\n密码\n登录\n去注册",
+        "url": "http://127.0.0.1:5191/login",
+        "viewport": {
+          "height": 932,
+          "scrollHeight": 1022,
+          "scrollY": 0,
+          "width": 430
+        }
+      }
+    },
+    {
+      "name": "注册后进入大厅且底部 Tab 可见",
+      "status": "PASS",
+      "detail": {
+        "buttons": [
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "SELECT",
+            "text": "长牌德州扑克 · 小盲/大盲 短牌德州扑克 · 小盲/大盲 / 前注 + 按钮盲注",
+            "visible": true,
+            "width": 346,
+            "x": 42,
+            "y": 180
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 40,
+            "tag": "INPUT",
+            "text": "",
+            "visible": true,
+            "width": 346,
+            "x": 42,
+            "y": 256
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 40,
+            "tag": "INPUT",
+            "text": "",
+            "visible": true,
+            "width": 346,
+            "x": 42,
+            "y": 330
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 40,
+            "tag": "INPUT",
+            "text": "",
+            "visible": true,
+            "width": 346,
+            "x": 42,
+            "y": 404
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 44,
+            "tag": "BUTTON",
+            "text": "创建比赛",
+            "visible": true,
+            "width": 346,
+            "x": 42,
+            "y": 456
+          },
+          {
+            "cls": "ghost",
+            "disabled": false,
+            "height": 44,
+            "tag": "BUTTON",
+            "text": "快速创建旧版房间",
+            "visible": true,
+            "width": 346,
+            "x": 42,
+            "y": 512
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 40,
+            "tag": "INPUT",
+            "text": "",
+            "visible": true,
+            "width": 346,
+            "x": 42,
+            "y": 654
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 44,
+            "tag": "BUTTON",
+            "text": "加入房间",
+            "visible": true,
+            "width": 346,
+            "x": 42,
+            "y": 706
+          },
+          {
+            "cls": "tab-item",
+            "disabled": false,
+            "height": 46,
+            "tag": "A",
+            "text": "约赛",
+            "visible": true,
+            "width": 71.1875,
+            "x": 21,
+            "y": 867
+          },
+          {
+            "cls": "tab-item",
+            "disabled": false,
+            "height": 46,
+            "tag": "A",
+            "text": "发现",
+            "visible": true,
+            "width": 71.203125,
+            "x": 100.1875,
+            "y": 867
+          },
+          {
+            "cls": "router-link-active router-link-exact-active tab-item active",
+            "disabled": false,
+            "height": 46,
+            "tag": "A",
+            "text": "大厅",
+            "visible": true,
+            "width": 71.203125,
+            "x": 179.390625,
+            "y": 867
+          },
+          {
+            "cls": "tab-item",
+            "disabled": false,
+            "height": 46,
+            "tag": "A",
+            "text": "战队",
+            "visible": true,
+            "width": 71.203125,
+            "x": 258.59375,
+            "y": 867
+          },
+          {
+            "cls": "tab-item",
+            "disabled": false,
+            "height": 46,
+            "tag": "A",
+            "text": "我的",
+            "visible": true,
+            "width": 71.1875,
+            "x": 337.796875,
+            "y": 867
+          }
+        ],
+        "hasBottomTabs": true,
+        "label": "lobby",
+        "text": "房间大厅\n创建房间\n游戏模式 \n长牌德州扑克 · 小盲/大盲\n短牌德州扑克 · 小盲/大盲 / 前注 + 按钮盲注\n房间人数 \n最少开局 \n买入 \n创建比赛\n快速创建旧版房间\n邀请码加入\n邀请码 \n加入房间\n历史战绩\n\n查看个人战绩与房间最近牌局。\n\n规则测试页\n\n进入独立规则引擎测试与回放页面。\n\n约赛\n发现\n大厅\n战队\n我的",
+        "url": "http://127.0.0.1:5191/lobby",
+        "viewport": {
+          "height": 932,
+          "scrollHeight": 1130,
+          "scrollY": 0,
+          "width": 430
+        }
+      }
+    },
+    {
+      "name": "创建比赛页包含核心配置并隐藏底部 Tab",
+      "status": "PASS",
+      "detail": {
+        "buttons": [
+          {
+            "cls": "icon-text-button",
+            "disabled": false,
+            "height": 44,
+            "tag": "BUTTON",
+            "text": "返回",
+            "visible": true,
+            "width": 72,
+            "x": 22,
+            "y": 30
+          },
+          {
+            "cls": "active",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "训练赛",
+            "visible": true,
+            "width": 189,
+            "x": 22,
+            "y": 92
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "SNG",
+            "visible": true,
+            "width": 189,
+            "x": 219,
+            "y": 92
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "国际扑克",
+            "visible": true,
+            "width": 119.328125,
+            "x": 28,
+            "y": 156
+          },
+          {
+            "cls": "active",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "短牌",
+            "visible": true,
+            "width": 119.328125,
+            "x": 155.328125,
+            "y": 156
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "奥马哈",
+            "visible": true,
+            "width": 119.34375,
+            "x": 282.65625,
+            "y": 156
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 46,
+            "tag": "INPUT",
+            "text": "请输入比赛名字",
+            "visible": true,
+            "width": 354,
+            "x": 38,
+            "y": 266
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "10",
+            "visible": true,
+            "width": 64.390625,
+            "x": 38,
+            "y": 393
+          },
+          {
+            "cls": "active",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "20",
+            "visible": true,
+            "width": 64.40625,
+            "x": 110.390625,
+            "y": 393
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "30",
+            "visible": true,
+            "width": 64.390625,
+            "x": 182.796875,
+            "y": 393
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "50",
+            "visible": true,
+            "width": 64.40625,
+            "x": 255.1875,
+            "y": 393
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "100",
+            "visible": true,
+            "width": 64.40625,
+            "x": 327.59375,
+            "y": 393
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "200",
+            "visible": true,
+            "width": 64.390625,
+            "x": 38,
+            "y": 443
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "300",
+            "visible": true,
+            "width": 64.40625,
+            "x": 110.390625,
+            "y": 443
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "500",
+            "visible": true,
+            "width": 64.390625,
+            "x": 182.796875,
+            "y": 443
+          },
+          {
+            "cls": "active",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "2K",
+            "visible": true,
+            "width": 82.5,
+            "x": 38,
+            "y": 566
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "4K",
+            "visible": true,
+            "width": 82.5,
+            "x": 128.5,
+            "y": 566
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "6K",
+            "visible": true,
+            "width": 82.5,
+            "x": 219,
+            "y": 566
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "8K",
+            "visible": true,
+            "width": 82.5,
+            "x": 309.5,
+            "y": 566
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 64,
+            "tag": "BUTTON",
+            "text": "无限制",
+            "visible": true,
+            "width": 64.390625,
+            "x": 38,
+            "y": 689
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 64,
+            "tag": "BUTTON",
+            "text": "16K",
+            "visible": true,
+            "width": 64.40625,
+            "x": 110.390625,
+            "y": 689
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 64,
+            "tag": "BUTTON",
+            "text": "24K",
+            "visible": true,
+            "width": 64.390625,
+            "x": 182.796875,
+            "y": 689
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 64,
+            "tag": "BUTTON",
+            "text": "32K",
+            "visible": true,
+            "width": 64.40625,
+            "x": 255.1875,
+            "y": 689
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 64,
+            "tag": "BUTTON",
+            "text": "40K",
+            "visible": true,
+            "width": 64.40625,
+            "x": 327.59375,
+            "y": 689
+          },
+          {
+            "cls": "active",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "60K",
+            "visible": true,
+            "width": 64.390625,
+            "x": 38,
+            "y": 761
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "0.5",
+            "visible": true,
+            "width": 64.390625,
+            "x": 38,
+            "y": 884
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "1",
+            "visible": true,
+            "width": 64.40625,
+            "x": 110.390625,
+            "y": 884
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "1.5",
+            "visible": true,
+            "width": 64.390625,
+            "x": 182.796875,
+            "y": 884
+          },
+          {
+            "cls": "active",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "2",
+            "visible": true,
+            "width": 64.40625,
+            "x": 255.1875,
+            "y": 884
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "3",
+            "visible": true,
+            "width": 64.40625,
+            "x": 327.59375,
+            "y": 884
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "4",
+            "visible": true,
+            "width": 64.390625,
+            "x": 38,
+            "y": 934
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "5",
+            "visible": true,
+            "width": 64.40625,
+            "x": 110.390625,
+            "y": 934
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "6",
+            "visible": true,
+            "width": 64.390625,
+            "x": 182.796875,
+            "y": 934
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "2",
+            "visible": true,
+            "width": 64.390625,
+            "x": 38,
+            "y": 1057
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "3",
+            "visible": true,
+            "width": 64.40625,
+            "x": 110.390625,
+            "y": 1057
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "4",
+            "visible": true,
+            "width": 64.390625,
+            "x": 182.796875,
+            "y": 1057
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "5",
+            "visible": true,
+            "width": 64.40625,
+            "x": 255.1875,
+            "y": 1057
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "6",
+            "visible": true,
+            "width": 64.40625,
+            "x": 327.59375,
+            "y": 1057
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "7",
+            "visible": true,
+            "width": 64.390625,
+            "x": 38,
+            "y": 1107
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "8",
+            "visible": true,
+            "width": 64.40625,
+            "x": 110.390625,
+            "y": 1107
+          },
+          {
+            "cls": "active",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "9",
+            "visible": true,
+            "width": 64.390625,
+            "x": 182.796875,
+            "y": 1107
+          },
+          {
+            "cls": "create-submit-button",
+            "disabled": false,
+            "height": 56,
+            "tag": "BUTTON",
+            "text": "确 定 创 建",
+            "visible": true,
+            "width": 386,
+            "x": 22,
+            "y": 1183
+          }
+        ],
+        "hasBottomTabs": false,
+        "label": "create all",
+        "text": "返回\n创建比赛\n训练赛\nSNG\n国际扑克\n短牌\n奥马哈\n比赛牌局名字: \nAnte设置 20\n10\n20\n30\n50\n100\n200\n300\n500\n单次最小带入 2,000\n2K\n4K\n6K\n8K\n带入记分牌上限 60K\n无限制\n16K\n24K\n32K\n40K\n60K\n训练时长 2h\n0.5\n1\n1.5\n2\n3\n4\n5\n6\n单桌最大人数 9人\n2\n3\n4\n5\n6\n7\n8\n9\n确 定 创 建",
+        "url": "http://127.0.0.1:5191/create-match",
+        "viewport": {
+          "height": 932,
+          "scrollHeight": 1357,
+          "scrollY": 0,
+          "width": 430
+        }
+      }
+    },
+    {
+      "name": "默认短牌训练赛可提交",
+      "status": "PASS",
+      "detail": {
+        "submit": {
+          "cls": "create-submit-button",
+          "disabled": false,
+          "height": 56,
+          "tag": "BUTTON",
+          "text": "确 定 创 建",
+          "visible": true,
+          "width": 386,
+          "x": 22,
+          "y": 1183
+        }
+      }
+    },
+    {
+      "name": "SNG 暂未开放且禁用提交",
+      "status": "PASS",
+      "detail": {
+        "submit": {
+          "cls": "create-submit-button",
+          "disabled": true,
+          "height": 56,
+          "tag": "BUTTON",
+          "text": "确 定 创 建",
+          "visible": true,
+          "width": 386,
+          "x": 22,
+          "y": 1243
+        }
+      }
+    },
+    {
+      "name": "奥马哈暂未开放且禁用提交",
+      "status": "PASS",
+      "detail": {
+        "submit": {
+          "cls": "create-submit-button",
+          "disabled": true,
+          "height": 56,
+          "tag": "BUTTON",
+          "text": "确 定 创 建",
+          "visible": true,
+          "width": 386,
+          "x": 22,
+          "y": 1243
+        }
+      }
+    },
+    {
+      "name": "切回短牌后恢复可提交",
+      "status": "PASS",
+      "detail": {
+        "submit": {
+          "cls": "create-submit-button",
+          "disabled": false,
+          "height": 56,
+          "tag": "BUTTON",
+          "text": "确 定 创 建",
+          "visible": true,
+          "width": 386,
+          "x": 22,
+          "y": 1183
+        }
+      }
+    },
+    {
+      "name": "创建页底部无明显交互重叠",
+      "status": "PASS",
+      "detail": {
+        "bad": []
+      }
+    },
+    {
+      "name": "牌桌等待态展示房间信息和底部工具栏",
+      "status": "PASS",
+      "detail": {
+        "buttons": [
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 68,
+            "tag": "BUTTON",
+            "text": "解散比赛",
+            "visible": true,
+            "width": 88,
+            "x": 75,
+            "y": 226.875
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 68,
+            "tag": "BUTTON",
+            "text": "邀请好友",
+            "visible": true,
+            "width": 88,
+            "x": 171,
+            "y": 226.875
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 68,
+            "tag": "BUTTON",
+            "text": "开 始",
+            "visible": true,
+            "width": 88,
+            "x": 267,
+            "y": 226.875
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#1 空座",
+            "visible": true,
+            "width": 70,
+            "x": 180,
+            "y": 0
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#2 空座",
+            "visible": true,
+            "width": 70,
+            "x": 340.96875,
+            "y": 86.828125
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#3 空座",
+            "visible": true,
+            "width": 70,
+            "x": 358,
+            "y": 287.234375
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#4 空座",
+            "visible": true,
+            "width": 70,
+            "x": 336.703125,
+            "y": 543.203125
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#5 空座",
+            "visible": true,
+            "width": 70,
+            "x": 180,
+            "y": 610
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#6 空座",
+            "visible": true,
+            "width": 70,
+            "x": 23.296875,
+            "y": 543.203125
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#7 空座",
+            "visible": true,
+            "width": 70,
+            "x": 2,
+            "y": 287.234375
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#8 空座",
+            "visible": true,
+            "width": 70,
+            "x": 19.03125,
+            "y": 86.828125
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#9 空座",
+            "visible": true,
+            "width": 70,
+            "x": 121.265625,
+            "y": 20.03125
+          },
+          {
+            "cls": "seat-cta-button",
+            "disabled": false,
+            "height": 40,
+            "tag": "BUTTON",
+            "text": "坐下 #1",
+            "visible": true,
+            "width": 96,
+            "x": 215,
+            "y": 676
+          },
+          {
+            "cls": "ghost seat-secondary-button",
+            "disabled": false,
+            "height": 36,
+            "tag": "BUTTON",
+            "text": "选座位",
+            "visible": true,
+            "width": 88,
+            "x": 219,
+            "y": 726
+          },
+          {
+            "cls": "tool-settings",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "▦",
+            "visible": true,
+            "width": 61,
+            "x": 12,
+            "y": 774
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "↩",
+            "visible": true,
+            "width": 61,
+            "x": 81,
+            "y": 774
+          },
+          {
+            "cls": "tool-score",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "战绩",
+            "visible": true,
+            "width": 61,
+            "x": 150,
+            "y": 774
+          },
+          {
+            "cls": "tool-replay",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "牌谱",
+            "visible": true,
+            "width": 61,
+            "x": 219,
+            "y": 774
+          },
+          {
+            "cls": "tool-chat",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "▤",
+            "visible": true,
+            "width": 61,
+            "x": 288,
+            "y": 774
+          },
+          {
+            "cls": "tool-mic",
+            "disabled": true,
+            "height": 64,
+            "tag": "BUTTON",
+            "text": "麦克风关",
+            "visible": true,
+            "width": 61,
+            "x": 357,
+            "y": 758
+          }
+        ],
+        "hasBottomTabs": false,
+        "label": "room waiting",
+        "text": "绿色竞技 远离赌博 · 谨防诈骗 健康生活\n网络延时\n43ms\n返回\n离开牌桌\n玩家 0/9\n邀请码 R355000\n房间\n返回大厅\n解散比赛\n邀请好友\n开 始\n训练赛◆短牌 第 1 手\n终验短牌局9131\n◎ 20　级别:1\n< 000 >\n邀请码:R355000\n等待公共牌\n底池 0\n#1\n空座\n#2\n空座\n#3\n空座\n#4\n空座\n#5\n空座\n#6\n空座\n#7\n空座\n#8\n空座\n#9\n空座\n当前为旁观视角\n坐下 #1\n选座位\n▦\n↩\n战绩\n牌谱\n▤\n麦克风关",
+        "url": "http://127.0.0.1:5191/room/room_1783433435821342000",
+        "viewport": {
+          "height": 932,
+          "scrollHeight": 1022,
+          "scrollY": 90,
+          "width": 430
+        }
+      }
+    },
+    {
+      "name": "牌桌等待态无明显交互重叠",
+      "status": "PASS",
+      "detail": {
+        "bad": []
+      }
+    },
+    {
+      "name": "买入弹窗包含金额、余额、商城、取消和确定",
+      "status": "PASS",
+      "detail": {
+        "buttons": [
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 68,
+            "tag": "BUTTON",
+            "text": "解散比赛",
+            "visible": true,
+            "width": 88,
+            "x": 75,
+            "y": 226.875
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 68,
+            "tag": "BUTTON",
+            "text": "邀请好友",
+            "visible": true,
+            "width": 88,
+            "x": 171,
+            "y": 226.875
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 68,
+            "tag": "BUTTON",
+            "text": "开 始",
+            "visible": true,
+            "width": 88,
+            "x": 267,
+            "y": 226.875
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#1 空座",
+            "visible": true,
+            "width": 70,
+            "x": 180,
+            "y": 0
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#2 空座",
+            "visible": true,
+            "width": 70,
+            "x": 340.96875,
+            "y": 86.828125
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#3 空座",
+            "visible": true,
+            "width": 70,
+            "x": 358,
+            "y": 287.234375
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#4 空座",
+            "visible": true,
+            "width": 70,
+            "x": 336.703125,
+            "y": 543.203125
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#5 空座",
+            "visible": true,
+            "width": 70,
+            "x": 180,
+            "y": 610
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#6 空座",
+            "visible": true,
+            "width": 70,
+            "x": 23.296875,
+            "y": 543.203125
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#7 空座",
+            "visible": true,
+            "width": 70,
+            "x": 2,
+            "y": 287.234375
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#8 空座",
+            "visible": true,
+            "width": 70,
+            "x": 19.03125,
+            "y": 86.828125
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#9 空座",
+            "visible": true,
+            "width": 70,
+            "x": 121.265625,
+            "y": 20.03125
+          },
+          {
+            "cls": "seat-cta-button",
+            "disabled": false,
+            "height": 40,
+            "tag": "BUTTON",
+            "text": "坐下 #1",
+            "visible": true,
+            "width": 96,
+            "x": 215,
+            "y": 676
+          },
+          {
+            "cls": "ghost seat-secondary-button",
+            "disabled": false,
+            "height": 36,
+            "tag": "BUTTON",
+            "text": "选座位",
+            "visible": true,
+            "width": 88,
+            "x": 219,
+            "y": 726
+          },
+          {
+            "cls": "tool-settings",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "▦",
+            "visible": true,
+            "width": 61,
+            "x": 12,
+            "y": 774
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "↩",
+            "visible": true,
+            "width": 61,
+            "x": 81,
+            "y": 774
+          },
+          {
+            "cls": "tool-score",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "战绩",
+            "visible": true,
+            "width": 61,
+            "x": 150,
+            "y": 774
+          },
+          {
+            "cls": "tool-replay",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "牌谱",
+            "visible": true,
+            "width": 61,
+            "x": 219,
+            "y": 774
+          },
+          {
+            "cls": "tool-chat",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "▤",
+            "visible": true,
+            "width": 61,
+            "x": 288,
+            "y": 774
+          },
+          {
+            "cls": "tool-mic",
+            "disabled": true,
+            "height": 64,
+            "tag": "BUTTON",
+            "text": "麦克风关",
+            "visible": true,
+            "width": 61,
+            "x": 357,
+            "y": 758
+          },
+          {
+            "cls": "active",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "2K",
+            "visible": true,
+            "width": 55.1875,
+            "x": 69,
+            "y": 458.5
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "3K",
+            "visible": true,
+            "width": 55.203125,
+            "x": 128.1875,
+            "y": 458.5
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "4K",
+            "visible": true,
+            "width": 55.203125,
+            "x": 187.390625,
+            "y": 458.5
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "5K",
+            "visible": true,
+            "width": 55.203125,
+            "x": 246.59375,
+            "y": 458.5
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 42,
+            "tag": "BUTTON",
+            "text": "8K",
+            "visible": true,
+            "width": 55.203125,
+            "x": 305.796875,
+            "y": 458.5
+          },
+          {
+            "cls": "shop-link-button",
+            "disabled": false,
+            "height": 45,
+            "tag": "BUTTON",
+            "text": "前往商城购买金币 >",
+            "visible": true,
+            "width": 192.3125,
+            "x": 118.84375,
+            "y": 568.5
+          },
+          {
+            "cls": "ghost",
+            "disabled": false,
+            "height": 44,
+            "tag": "BUTTON",
+            "text": "取消",
+            "visible": true,
+            "width": 150,
+            "x": 59,
+            "y": 631.5
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 44,
+            "tag": "BUTTON",
+            "text": "确定",
+            "visible": true,
+            "width": 150,
+            "x": 221,
+            "y": 631.5
+          }
+        ],
+        "hasBottomTabs": false,
+        "label": "buyin",
+        "text": "绿色竞技 远离赌博 · 谨防诈骗 健康生活\n网络延时\n43ms\n返回\n离开牌桌\n玩家 0/9\n邀请码 R355000\n房间\n返回大厅\n解散比赛\n邀请好友\n开 始\n训练赛◆短牌 第 1 手\n终验短牌局9131\n◎ 20　级别:1\n< 000 >\n邀请码:R355000\n等待公共牌\n底池 0\n#1\n空座\n#2\n空座\n#3\n空座\n#4\n空座\n#5\n空座\n#6\n空座\n#7\n空座\n#8\n空座\n#9\n空座\n当前为旁观视角\n坐下 #1\n选座位\n▦\n↩\n战绩\n牌谱\n▤\n麦克风关\n补充记分牌\n\n在下一手开始前，为您补充记分牌\n\n2,000\n带入记分牌\n2K\n3K\n4K\n5K\n8K\n消耗 2000\n可用 5000\n前往商城购买金币 >\n取消\n确定",
+        "url": "http://127.0.0.1:5191/room/room_1783433435821342000",
+        "viewport": {
+          "height": 932,
+          "scrollHeight": 1022,
+          "scrollY": 90,
+          "width": 430
+        }
+      }
+    },
+    {
+      "name": "商城金币页展示资产和模拟充值档位",
+      "status": "PASS",
+      "detail": {
+        "buttons": [
+          {
+            "cls": "active",
+            "disabled": false,
+            "height": 67,
+            "tag": "BUTTON",
+            "text": "金币",
+            "visible": true,
+            "width": 61,
+            "x": 22,
+            "y": 2
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 67,
+            "tag": "BUTTON",
+            "text": "钻石",
+            "visible": true,
+            "width": 61,
+            "x": 87,
+            "y": 2
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 67,
+            "tag": "BUTTON",
+            "text": "VIP卡",
+            "visible": true,
+            "width": 61,
+            "x": 152,
+            "y": 2
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 67,
+            "tag": "BUTTON",
+            "text": "装扮",
+            "visible": true,
+            "width": 61,
+            "x": 217,
+            "y": 2
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 67,
+            "tag": "BUTTON",
+            "text": "道具",
+            "visible": true,
+            "width": 61,
+            "x": 282,
+            "y": 2
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 67,
+            "tag": "BUTTON",
+            "text": "课程",
+            "visible": true,
+            "width": 61,
+            "x": 347,
+            "y": 2
+          },
+          {
+            "cls": "shop-product",
+            "disabled": false,
+            "height": 166,
+            "tag": "BUTTON",
+            "text": "♠ 1000金币 额外赠送28金币 ¥ 6",
+            "visible": true,
+            "width": 187,
+            "x": 22,
+            "y": 191
+          },
+          {
+            "cls": "shop-product",
+            "disabled": false,
+            "height": 166,
+            "tag": "BUTTON",
+            "text": "♠ 5000金币 额外赠送218金币 ¥ 30",
+            "visible": true,
+            "width": 187,
+            "x": 221,
+            "y": 191
+          },
+          {
+            "cls": "shop-product",
+            "disabled": false,
+            "height": 166,
+            "tag": "BUTTON",
+            "text": "♠ 10000金币 额外赠送618金币 ¥ 68",
+            "visible": true,
+            "width": 187,
+            "x": 22,
+            "y": 369
+          }
+        ],
+        "hasBottomTabs": false,
+        "label": "shop",
+        "text": "返回\n商城\n金币\n钻石\nVIP卡\n装扮\n道具\n课程\n金币\n5000\n钻石\n0\n积分\n0\n普通卡\n未激活\n♠\n1000金币\n额外赠送28金币\n¥ 6\n♠\n5000金币\n额外赠送218金币\n¥ 30\n♠\n10000金币\n额外赠送618金币\n¥ 68",
+        "url": "http://127.0.0.1:5191/shop",
+        "viewport": {
+          "height": 932,
+          "scrollHeight": 1034,
+          "scrollY": 90,
+          "width": 430
+        }
+      }
+    },
+    {
+      "name": "商城页无明显交互重叠",
+      "status": "PASS",
+      "detail": {
+        "bad": []
+      }
+    },
+    {
+      "name": "未开放商城分类显示占位",
+      "status": "PASS",
+      "detail": {
+        "buttons": [
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 67,
+            "tag": "BUTTON",
+            "text": "金币",
+            "visible": true,
+            "width": 61,
+            "x": 22,
+            "y": 2
+          },
+          {
+            "cls": "active",
+            "disabled": false,
+            "height": 67,
+            "tag": "BUTTON",
+            "text": "钻石",
+            "visible": true,
+            "width": 61,
+            "x": 87,
+            "y": 2
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 67,
+            "tag": "BUTTON",
+            "text": "VIP卡",
+            "visible": true,
+            "width": 61,
+            "x": 152,
+            "y": 2
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 67,
+            "tag": "BUTTON",
+            "text": "装扮",
+            "visible": true,
+            "width": 61,
+            "x": 217,
+            "y": 2
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 67,
+            "tag": "BUTTON",
+            "text": "道具",
+            "visible": true,
+            "width": 61,
+            "x": 282,
+            "y": 2
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 67,
+            "tag": "BUTTON",
+            "text": "课程",
+            "visible": true,
+            "width": 61,
+            "x": 347,
+            "y": 2
+          }
+        ],
+        "hasBottomTabs": false,
+        "label": "diamond",
+        "text": "返回\n商城\n金币\n钻石\nVIP卡\n装扮\n道具\n课程\n金币\n5000\n钻石\n0\n积分\n0\n普通卡\n未激活\n钻石\n该分类暂未开放",
+        "url": "http://127.0.0.1:5191/shop",
+        "viewport": {
+          "height": 932,
+          "scrollHeight": 1034,
+          "scrollY": 90,
+          "width": 430
+        }
+      }
+    },
+    {
+      "name": "商城返回保持原牌桌上下文",
+      "status": "PASS",
+      "detail": {
+        "url": "http://127.0.0.1:5191/room/room_1783433435821342000",
+        "text": "绿色竞技 远离赌博 · 谨防诈骗 健康生活\n网络延时\n43ms\n返回\n离开牌桌\n玩家 0/9\n邀请码 R355000\n房间\n返回大厅\n解散比赛\n邀请好友\n开 始\n训练赛◆短牌 第 1 手\n终验短牌局9131\n◎ 20　级别:1\n< 000 >\n邀请码:R355000\n等待公共牌\n底池 0\n#1\n空座\n#2\n空座\n#3\n空座\n#4\n空座\n#5\n空座\n#6\n空座\n#7\n空座\n#8\n空座\n#9\n空座\n当前为旁观视角\n坐下 #1\n选座位\n▦\n↩\n战绩\n牌谱\n▤\n麦克风关"
+      }
+    },
+    {
+      "name": "确认买入后玩家入座并展示个人区域",
+      "status": "PASS",
+      "detail": {
+        "buttons": [
+          {
+            "cls": "topbar-float table-back-button",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "返回",
+            "visible": true,
+            "width": 42.515625,
+            "x": 8,
+            "y": 12
+          },
+          {
+            "cls": "topbar-float",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "离开牌桌",
+            "visible": true,
+            "width": 134,
+            "x": 148,
+            "y": 12
+          },
+          {
+            "cls": "topbar-float",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "玩家 1/9",
+            "visible": true,
+            "width": 134,
+            "x": 288,
+            "y": 12
+          },
+          {
+            "cls": "topbar-float table-invite-code",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "邀请码 R355000",
+            "visible": true,
+            "width": 111.34375,
+            "x": 19.328125,
+            "y": 52
+          },
+          {
+            "cls": "topbar-float",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "房间",
+            "visible": true,
+            "width": 134,
+            "x": 148,
+            "y": 52
+          },
+          {
+            "cls": "topbar-float",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "返回大厅",
+            "visible": true,
+            "width": 134,
+            "x": 288,
+            "y": 52
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 68,
+            "tag": "BUTTON",
+            "text": "解散比赛",
+            "visible": true,
+            "width": 88,
+            "x": 75,
+            "y": 316.875
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 68,
+            "tag": "BUTTON",
+            "text": "邀请好友",
+            "visible": true,
+            "width": 88,
+            "x": 171,
+            "y": 316.875
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 68,
+            "tag": "BUTTON",
+            "text": "开 始",
+            "visible": true,
+            "width": 88,
+            "x": 267,
+            "y": 316.875
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node mine",
+            "disabled": false,
+            "height": 95,
+            "tag": "BUTTON",
+            "text": "#1 终验房主1783433399131 在线",
+            "visible": true,
+            "width": 70,
+            "x": 180,
+            "y": 90
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#2 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 340.96875,
+            "y": 176.828125
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#3 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 358,
+            "y": 377.234375
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#4 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 336.703125,
+            "y": 633.203125
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#5 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 180,
+            "y": 700
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#6 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 23.296875,
+            "y": 633.203125
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#7 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 2,
+            "y": 377.234375
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#8 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 19.03125,
+            "y": 176.828125
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#9 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 121.265625,
+            "y": 110.03125
+          },
+          {
+            "cls": "tool-settings",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "▦",
+            "visible": true,
+            "width": 61,
+            "x": 12,
+            "y": 864
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "↩",
+            "visible": true,
+            "width": 61,
+            "x": 81,
+            "y": 864
+          },
+          {
+            "cls": "tool-score",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "战绩",
+            "visible": true,
+            "width": 61,
+            "x": 150,
+            "y": 864
+          },
+          {
+            "cls": "tool-replay",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "牌谱",
+            "visible": true,
+            "width": 61,
+            "x": 219,
+            "y": 864
+          },
+          {
+            "cls": "tool-chat",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "▤",
+            "visible": true,
+            "width": 61,
+            "x": 288,
+            "y": 864
+          },
+          {
+            "cls": "tool-mic",
+            "disabled": true,
+            "height": 64,
+            "tag": "BUTTON",
+            "text": "麦克风关",
+            "visible": true,
+            "width": 61,
+            "x": 357,
+            "y": 848
+          }
+        ],
+        "hasBottomTabs": false,
+        "label": "seated",
+        "text": "绿色竞技 远离赌博 · 谨防诈骗 健康生活\n网络延时\n43ms\n返回\n离开牌桌\n玩家 1/9\n邀请码 R355000\n房间\n返回大厅\n解散比赛\n邀请好友\n开 始\n训练赛◆短牌 第 1 手\n终验短牌局9131\n◎ 20　级别:1\n< 000 >\n邀请码:R355000\n等待公共牌\n底池 0\n#1\n终验房主1783433399131\n在线\n#2\n坐下\n#3\n坐下\n#4\n坐下\n#5\n坐下\n#6\n坐下\n#7\n坐下\n#8\n坐下\n#9\n坐下\n终验房主1783433399131 · 座位 #1\n等待开局\n▦\n↩\n战绩\n牌谱\n▤\n麦克风关",
+        "url": "http://127.0.0.1:5191/room/room_1783433435821342000",
+        "viewport": {
+          "height": 932,
+          "scrollHeight": 1022,
+          "scrollY": 0,
+          "width": 430
+        }
+      }
+    },
+    {
+      "name": "牌桌已坐下态无明显交互重叠",
+      "status": "PASS",
+      "detail": {
+        "bad": []
+      }
+    },
+    {
+      "name": "聊天 抽屉内容正确",
+      "status": "PASS",
+      "detail": {
+        "buttons": [
+          {
+            "cls": "topbar-float table-back-button",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "返回",
+            "visible": true,
+            "width": 42.515625,
+            "x": 8,
+            "y": 12
+          },
+          {
+            "cls": "topbar-float",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "离开牌桌",
+            "visible": true,
+            "width": 134,
+            "x": 148,
+            "y": 12
+          },
+          {
+            "cls": "topbar-float",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "玩家 1/9",
+            "visible": true,
+            "width": 134,
+            "x": 288,
+            "y": 12
+          },
+          {
+            "cls": "topbar-float table-invite-code",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "邀请码 R355000",
+            "visible": true,
+            "width": 111.34375,
+            "x": 19.328125,
+            "y": 52
+          },
+          {
+            "cls": "topbar-float",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "房间",
+            "visible": true,
+            "width": 134,
+            "x": 148,
+            "y": 52
+          },
+          {
+            "cls": "topbar-float",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "返回大厅",
+            "visible": true,
+            "width": 134,
+            "x": 288,
+            "y": 52
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 68,
+            "tag": "BUTTON",
+            "text": "解散比赛",
+            "visible": true,
+            "width": 88,
+            "x": 75,
+            "y": 316.875
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 68,
+            "tag": "BUTTON",
+            "text": "邀请好友",
+            "visible": true,
+            "width": 88,
+            "x": 171,
+            "y": 316.875
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 68,
+            "tag": "BUTTON",
+            "text": "开 始",
+            "visible": true,
+            "width": 88,
+            "x": 267,
+            "y": 316.875
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node mine",
+            "disabled": false,
+            "height": 95,
+            "tag": "BUTTON",
+            "text": "#1 终验房主1783433399131 在线",
+            "visible": true,
+            "width": 70,
+            "x": 180,
+            "y": 90
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#2 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 340.96875,
+            "y": 176.828125
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#3 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 358,
+            "y": 377.234375
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#4 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 336.703125,
+            "y": 633.203125
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#5 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 180,
+            "y": 700
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#6 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 23.296875,
+            "y": 633.203125
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#7 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 2,
+            "y": 377.234375
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#8 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 19.03125,
+            "y": 176.828125
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#9 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 121.265625,
+            "y": 110.03125
+          },
+          {
+            "cls": "tool-settings",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "▦",
+            "visible": true,
+            "width": 61,
+            "x": 12,
+            "y": 864
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "↩",
+            "visible": true,
+            "width": 61,
+            "x": 81,
+            "y": 864
+          },
+          {
+            "cls": "tool-score",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "战绩",
+            "visible": true,
+            "width": 61,
+            "x": 150,
+            "y": 864
+          },
+          {
+            "cls": "tool-replay",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "牌谱",
+            "visible": true,
+            "width": 61,
+            "x": 219,
+            "y": 864
+          },
+          {
+            "cls": "tool-chat",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "▤",
+            "visible": true,
+            "width": 61,
+            "x": 288,
+            "y": 864
+          },
+          {
+            "cls": "tool-mic",
+            "disabled": true,
+            "height": 64,
+            "tag": "BUTTON",
+            "text": "麦克风关",
+            "visible": true,
+            "width": 61,
+            "x": 357,
+            "y": 848
+          },
+          {
+            "cls": "drawer-close",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "×",
+            "visible": true,
+            "width": 34,
+            "x": 384,
+            "y": 627.125
+          },
+          {
+            "cls": "quick-chat-tab",
+            "disabled": false,
+            "height": 44,
+            "tag": "BUTTON",
+            "text": "常用语",
+            "visible": true,
+            "width": 78.96875,
+            "x": 18,
+            "y": 633.125
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 48,
+            "tag": "INPUT",
+            "text": "请输入聊天内容，上限40个汉字",
+            "visible": true,
+            "width": 296,
+            "x": 18,
+            "y": 765.125
+          },
+          {
+            "cls": "",
+            "disabled": true,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "发送",
+            "visible": true,
+            "width": 88,
+            "x": 324,
+            "y": 765.125
+          }
+        ],
+        "hasBottomTabs": false,
+        "label": "聊天",
+        "text": "绿色竞技 远离赌博 · 谨防诈骗 健康生活\n网络延时\n43ms\n返回\n离开牌桌\n玩家 1/9\n邀请码 R355000\n房间\n返回大厅\n解散比赛\n邀请好友\n开 始\n训练赛◆短牌 第 1 手\n终验短牌局9131\n◎ 20　级别:1\n< 000 >\n邀请码:R355000\n等待公共牌\n底池 0\n#1\n终验房主1783433399131\n在线\n#2\n坐下\n#3\n坐下\n#4\n坐下\n#5\n坐下\n#6\n坐下\n#7\n坐下\n#8\n坐下\n#9\n坐下\n终验房主1783433399131 · 座位 #1\n等待开局\n▦\n↩\n战绩\n牌谱\n▤\n麦克风关\n×\n常用语\n聊天记录\n暂无聊天记录\n发送",
+        "url": "http://127.0.0.1:5191/room/room_1783433435821342000",
+        "viewport": {
+          "height": 932,
+          "scrollHeight": 1022,
+          "scrollY": 0,
+          "width": 430
+        }
+      }
+    },
+    {
+      "name": "聊天 抽屉可关闭",
+      "status": "PASS",
+      "detail": {
+        "closed": true
+      }
+    },
+    {
+      "name": "战绩 抽屉内容正确",
+      "status": "PASS",
+      "detail": {
+        "buttons": [
+          {
+            "cls": "topbar-float table-back-button",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "返回",
+            "visible": true,
+            "width": 42.515625,
+            "x": 8,
+            "y": 12
+          },
+          {
+            "cls": "topbar-float",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "离开牌桌",
+            "visible": true,
+            "width": 134,
+            "x": 148,
+            "y": 12
+          },
+          {
+            "cls": "topbar-float",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "玩家 1/9",
+            "visible": true,
+            "width": 134,
+            "x": 288,
+            "y": 12
+          },
+          {
+            "cls": "topbar-float table-invite-code",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "邀请码 R355000",
+            "visible": true,
+            "width": 111.34375,
+            "x": 19.328125,
+            "y": 52
+          },
+          {
+            "cls": "topbar-float",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "房间",
+            "visible": true,
+            "width": 134,
+            "x": 148,
+            "y": 52
+          },
+          {
+            "cls": "topbar-float",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "返回大厅",
+            "visible": true,
+            "width": 134,
+            "x": 288,
+            "y": 52
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 68,
+            "tag": "BUTTON",
+            "text": "解散比赛",
+            "visible": true,
+            "width": 88,
+            "x": 75,
+            "y": 316.875
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 68,
+            "tag": "BUTTON",
+            "text": "邀请好友",
+            "visible": true,
+            "width": 88,
+            "x": 171,
+            "y": 316.875
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 68,
+            "tag": "BUTTON",
+            "text": "开 始",
+            "visible": true,
+            "width": 88,
+            "x": 267,
+            "y": 316.875
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node mine",
+            "disabled": false,
+            "height": 95,
+            "tag": "BUTTON",
+            "text": "#1 终验房主1783433399131 在线",
+            "visible": true,
+            "width": 70,
+            "x": 180,
+            "y": 90
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#2 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 340.96875,
+            "y": 176.828125
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#3 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 358,
+            "y": 377.234375
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#4 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 336.703125,
+            "y": 633.203125
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#5 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 180,
+            "y": 700
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#6 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 23.296875,
+            "y": 633.203125
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#7 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 2,
+            "y": 377.234375
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#8 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 19.03125,
+            "y": 176.828125
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#9 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 121.265625,
+            "y": 110.03125
+          },
+          {
+            "cls": "tool-settings",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "▦",
+            "visible": true,
+            "width": 61,
+            "x": 12,
+            "y": 864
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "↩",
+            "visible": true,
+            "width": 61,
+            "x": 81,
+            "y": 864
+          },
+          {
+            "cls": "tool-score",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "战绩",
+            "visible": true,
+            "width": 61,
+            "x": 150,
+            "y": 864
+          },
+          {
+            "cls": "tool-replay",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "牌谱",
+            "visible": true,
+            "width": 61,
+            "x": 219,
+            "y": 864
+          },
+          {
+            "cls": "tool-chat",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "▤",
+            "visible": true,
+            "width": 61,
+            "x": 288,
+            "y": 864
+          },
+          {
+            "cls": "tool-mic",
+            "disabled": true,
+            "height": 64,
+            "tag": "BUTTON",
+            "text": "麦克风关",
+            "visible": true,
+            "width": 61,
+            "x": 357,
+            "y": 848
+          },
+          {
+            "cls": "drawer-close",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "×",
+            "visible": true,
+            "width": 34,
+            "x": 306.59375,
+            "y": 12
+          }
+        ],
+        "hasBottomTabs": false,
+        "label": "战绩",
+        "text": "绿色竞技 远离赌博 · 谨防诈骗 健康生活\n网络延时\n43ms\n返回\n离开牌桌\n玩家 1/9\n邀请码 R355000\n房间\n返回大厅\n解散比赛\n邀请好友\n开 始\n训练赛◆短牌 第 1 手\n终验短牌局9131\n◎ 20　级别:1\n< 000 >\n邀请码:R355000\n等待公共牌\n底池 0\n#1\n终验房主1783433399131\n在线\n#2\n坐下\n#3\n坐下\n#4\n坐下\n#5\n坐下\n#6\n坐下\n#7\n坐下\n#8\n坐下\n#9\n坐下\n终验房主1783433399131 · 座位 #1\n等待开局\n▦\n↩\n战绩\n牌谱\n▤\n麦克风关\n×\n当前战绩剩余时间 02:00:00\n昵称\t带入\t手数\t战绩\n\n观众(0/1)",
+        "url": "http://127.0.0.1:5191/room/room_1783433435821342000",
+        "viewport": {
+          "height": 932,
+          "scrollHeight": 1022,
+          "scrollY": 0,
+          "width": 430
+        }
+      }
+    },
+    {
+      "name": "战绩 抽屉可关闭",
+      "status": "PASS",
+      "detail": {
+        "closed": true
+      }
+    },
+    {
+      "name": "牌谱 抽屉内容正确",
+      "status": "PASS",
+      "detail": {
+        "buttons": [
+          {
+            "cls": "topbar-float table-back-button",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "返回",
+            "visible": true,
+            "width": 42.515625,
+            "x": 8,
+            "y": 12
+          },
+          {
+            "cls": "topbar-float",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "离开牌桌",
+            "visible": true,
+            "width": 134,
+            "x": 148,
+            "y": 12
+          },
+          {
+            "cls": "topbar-float",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "玩家 1/9",
+            "visible": true,
+            "width": 134,
+            "x": 288,
+            "y": 12
+          },
+          {
+            "cls": "topbar-float table-invite-code",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "邀请码 R355000",
+            "visible": true,
+            "width": 111.34375,
+            "x": 19.328125,
+            "y": 52
+          },
+          {
+            "cls": "topbar-float",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "房间",
+            "visible": true,
+            "width": 134,
+            "x": 148,
+            "y": 52
+          },
+          {
+            "cls": "topbar-float",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "返回大厅",
+            "visible": true,
+            "width": 134,
+            "x": 288,
+            "y": 52
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 68,
+            "tag": "BUTTON",
+            "text": "解散比赛",
+            "visible": true,
+            "width": 88,
+            "x": 75,
+            "y": 316.875
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 68,
+            "tag": "BUTTON",
+            "text": "邀请好友",
+            "visible": true,
+            "width": 88,
+            "x": 171,
+            "y": 316.875
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 68,
+            "tag": "BUTTON",
+            "text": "开 始",
+            "visible": true,
+            "width": 88,
+            "x": 267,
+            "y": 316.875
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node mine",
+            "disabled": false,
+            "height": 95,
+            "tag": "BUTTON",
+            "text": "#1 终验房主1783433399131 在线",
+            "visible": true,
+            "width": 70,
+            "x": 180,
+            "y": 90
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#2 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 340.96875,
+            "y": 176.828125
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#3 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 358,
+            "y": 377.234375
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#4 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 336.703125,
+            "y": 633.203125
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#5 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 180,
+            "y": 700
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#6 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 23.296875,
+            "y": 633.203125
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#7 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 2,
+            "y": 377.234375
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#8 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 19.03125,
+            "y": 176.828125
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#9 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 121.265625,
+            "y": 110.03125
+          },
+          {
+            "cls": "tool-settings",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "▦",
+            "visible": true,
+            "width": 61,
+            "x": 12,
+            "y": 864
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "↩",
+            "visible": true,
+            "width": 61,
+            "x": 81,
+            "y": 864
+          },
+          {
+            "cls": "tool-score",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "战绩",
+            "visible": true,
+            "width": 61,
+            "x": 150,
+            "y": 864
+          },
+          {
+            "cls": "tool-replay",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "牌谱",
+            "visible": true,
+            "width": 61,
+            "x": 219,
+            "y": 864
+          },
+          {
+            "cls": "tool-chat",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "▤",
+            "visible": true,
+            "width": 61,
+            "x": 288,
+            "y": 864
+          },
+          {
+            "cls": "tool-mic",
+            "disabled": true,
+            "height": 64,
+            "tag": "BUTTON",
+            "text": "麦克风关",
+            "visible": true,
+            "width": 61,
+            "x": 357,
+            "y": 848
+          },
+          {
+            "cls": "drawer-close",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "×",
+            "visible": true,
+            "width": 34,
+            "x": 384,
+            "y": 12
+          },
+          {
+            "cls": "",
+            "disabled": true,
+            "height": 44,
+            "tag": "BUTTON",
+            "text": "回放",
+            "visible": true,
+            "width": 62.640625,
+            "x": 70,
+            "y": 40
+          },
+          {
+            "cls": "",
+            "disabled": true,
+            "height": 44,
+            "tag": "BUTTON",
+            "text": "收藏",
+            "visible": true,
+            "width": 62.640625,
+            "x": 70,
+            "y": 138
+          },
+          {
+            "cls": "",
+            "disabled": true,
+            "height": 44,
+            "tag": "BUTTON",
+            "text": "上一手",
+            "visible": true,
+            "width": 78.96875,
+            "x": 132.640625,
+            "y": 138
+          },
+          {
+            "cls": "",
+            "disabled": true,
+            "height": 44,
+            "tag": "BUTTON",
+            "text": "下一手",
+            "visible": true,
+            "width": 78.96875,
+            "x": 250.890625,
+            "y": 138
+          },
+          {
+            "cls": "",
+            "disabled": true,
+            "height": 44,
+            "tag": "BUTTON",
+            "text": "投诉",
+            "visible": true,
+            "width": 62.640625,
+            "x": 329.859375,
+            "y": 138
+          }
+        ],
+        "hasBottomTabs": false,
+        "label": "牌谱",
+        "text": "绿色竞技 远离赌博 · 谨防诈骗 健康生活\n网络延时\n43ms\n返回\n离开牌桌\n玩家 1/9\n邀请码 R355000\n房间\n返回大厅\n解散比赛\n邀请好友\n开 始\n训练赛◆短牌 第 1 手\n终验短牌局9131\n◎ 20　级别:1\n< 000 >\n邀请码:R355000\n等待公共牌\n底池 0\n#1\n终验房主1783433399131\n在线\n#2\n坐下\n#3\n坐下\n#4\n坐下\n#5\n坐下\n#6\n坐下\n#7\n坐下\n#8\n坐下\n#9\n坐下\n终验房主1783433399131 · 座位 #1\n等待开局\n▦\n↩\n战绩\n牌谱\n▤\n麦克风关\n×\n牌谱回顾 - -\n回放\n\n暂无任何数据\n\n收藏上一手第1手下一手投诉",
+        "url": "http://127.0.0.1:5191/room/room_1783433435821342000",
+        "viewport": {
+          "height": 932,
+          "scrollHeight": 1022,
+          "scrollY": 0,
+          "width": 430
+        }
+      }
+    },
+    {
+      "name": "牌谱 抽屉可关闭",
+      "status": "PASS",
+      "detail": {
+        "closed": true
+      }
+    },
+    {
+      "name": "设置 抽屉内容正确",
+      "status": "PASS",
+      "detail": {
+        "buttons": [
+          {
+            "cls": "topbar-float table-back-button",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "返回",
+            "visible": true,
+            "width": 42.515625,
+            "x": 8,
+            "y": 12
+          },
+          {
+            "cls": "topbar-float",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "离开牌桌",
+            "visible": true,
+            "width": 134,
+            "x": 148,
+            "y": 12
+          },
+          {
+            "cls": "topbar-float",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "玩家 1/9",
+            "visible": true,
+            "width": 134,
+            "x": 288,
+            "y": 12
+          },
+          {
+            "cls": "topbar-float table-invite-code",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "邀请码 R355000",
+            "visible": true,
+            "width": 111.34375,
+            "x": 19.328125,
+            "y": 52
+          },
+          {
+            "cls": "topbar-float",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "房间",
+            "visible": true,
+            "width": 134,
+            "x": 148,
+            "y": 52
+          },
+          {
+            "cls": "topbar-float",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "返回大厅",
+            "visible": true,
+            "width": 134,
+            "x": 288,
+            "y": 52
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 68,
+            "tag": "BUTTON",
+            "text": "解散比赛",
+            "visible": true,
+            "width": 88,
+            "x": 75,
+            "y": 316.875
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 68,
+            "tag": "BUTTON",
+            "text": "邀请好友",
+            "visible": true,
+            "width": 88,
+            "x": 171,
+            "y": 316.875
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 68,
+            "tag": "BUTTON",
+            "text": "开 始",
+            "visible": true,
+            "width": 88,
+            "x": 267,
+            "y": 316.875
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node mine",
+            "disabled": false,
+            "height": 95,
+            "tag": "BUTTON",
+            "text": "#1 终验房主1783433399131 在线",
+            "visible": true,
+            "width": 70,
+            "x": 180,
+            "y": 90
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#2 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 340.96875,
+            "y": 176.828125
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#3 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 358,
+            "y": 377.234375
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#4 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 336.703125,
+            "y": 633.203125
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#5 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 180,
+            "y": 700
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#6 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 23.296875,
+            "y": 633.203125
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#7 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 2,
+            "y": 377.234375
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#8 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 19.03125,
+            "y": 176.828125
+          },
+          {
+            "cls": "seat-node seat-node-clean casino-seat-node empty",
+            "disabled": false,
+            "height": 58,
+            "tag": "BUTTON",
+            "text": "#9 坐下",
+            "visible": true,
+            "width": 70,
+            "x": 121.265625,
+            "y": 110.03125
+          },
+          {
+            "cls": "tool-settings",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "▦",
+            "visible": true,
+            "width": 61,
+            "x": 12,
+            "y": 864
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "↩",
+            "visible": true,
+            "width": 61,
+            "x": 81,
+            "y": 864
+          },
+          {
+            "cls": "tool-score",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "战绩",
+            "visible": true,
+            "width": 61,
+            "x": 150,
+            "y": 864
+          },
+          {
+            "cls": "tool-replay",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "牌谱",
+            "visible": true,
+            "width": 61,
+            "x": 219,
+            "y": 864
+          },
+          {
+            "cls": "tool-chat",
+            "disabled": false,
+            "height": 48,
+            "tag": "BUTTON",
+            "text": "▤",
+            "visible": true,
+            "width": 61,
+            "x": 288,
+            "y": 864
+          },
+          {
+            "cls": "tool-mic",
+            "disabled": true,
+            "height": 64,
+            "tag": "BUTTON",
+            "text": "麦克风关",
+            "visible": true,
+            "width": 61,
+            "x": 357,
+            "y": 848
+          },
+          {
+            "cls": "drawer-close",
+            "disabled": false,
+            "height": 34,
+            "tag": "BUTTON",
+            "text": "×",
+            "visible": true,
+            "width": 34,
+            "x": 384,
+            "y": 627.125
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 68,
+            "tag": "BUTTON",
+            "text": "桌面设置",
+            "visible": true,
+            "width": 91,
+            "x": 18,
+            "y": 633.125
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 68,
+            "tag": "BUTTON",
+            "text": "站起围观",
+            "visible": true,
+            "width": 91,
+            "x": 119,
+            "y": 633.125
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 68,
+            "tag": "BUTTON",
+            "text": "带入记分牌",
+            "visible": true,
+            "width": 91,
+            "x": 220,
+            "y": 633.125
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 68,
+            "tag": "BUTTON",
+            "text": "比赛设置",
+            "visible": true,
+            "width": 91,
+            "x": 321,
+            "y": 633.125
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 68,
+            "tag": "BUTTON",
+            "text": "短牌规则",
+            "visible": true,
+            "width": 91,
+            "x": 18,
+            "y": 711.125
+          },
+          {
+            "cls": "",
+            "disabled": true,
+            "height": 68,
+            "tag": "BUTTON",
+            "text": "保位离座",
+            "visible": true,
+            "width": 91,
+            "x": 119,
+            "y": 711.125
+          },
+          {
+            "cls": "",
+            "disabled": true,
+            "height": 68,
+            "tag": "BUTTON",
+            "text": "降落伞说明",
+            "visible": true,
+            "width": 91,
+            "x": 220,
+            "y": 711.125
+          },
+          {
+            "cls": "",
+            "disabled": false,
+            "height": 68,
+            "tag": "BUTTON",
+            "text": "退出比赛",
+            "visible": true,
+            "width": 91,
+            "x": 321,
+            "y": 711.125
+          }
+        ],
+        "hasBottomTabs": false,
+        "label": "设置",
+        "text": "绿色竞技 远离赌博 · 谨防诈骗 健康生活\n网络延时\n43ms\n返回\n离开牌桌\n玩家 1/9\n邀请码 R355000\n房间\n返回大厅\n解散比赛\n邀请好友\n开 始\n训练赛◆短牌 第 1 手\n终验短牌局9131\n◎ 20　级别:1\n< 000 >\n邀请码:R355000\n等待公共牌\n底池 0\n#1\n终验房主1783433399131\n在线\n#2\n坐下\n#3\n坐下\n#4\n坐下\n#5\n坐下\n#6\n坐下\n#7\n坐下\n#8\n坐下\n#9\n坐下\n终验房主1783433399131 · 座位 #1\n等待开局\n▦\n↩\n战绩\n牌谱\n▤\n麦克风关\n×\n桌面设置\n站起围观\n带入记分牌\n比赛设置\n短牌规则\n保位离座\n降落伞说明\n退出比赛",
+        "url": "http://127.0.0.1:5191/room/room_1783433435821342000",
+        "viewport": {
+          "height": 932,
+          "scrollHeight": 1022,
+          "scrollY": 0,
+          "width": 430
+        }
+      }
+    },
+    {
+      "name": "设置 抽屉可关闭",
+      "status": "PASS",
+      "detail": {
+        "closed": true
+      }
+    },
+    {
+      "name": "浏览器控制台无应用未处理错误",
+      "status": "PASS",
+      "detail": {
+        "errors": [],
+        "rawErrorCount": 0
+      }
+    }
+  ],
+  "artifacts": {
+    "final-login-mobile": "/Users/dengbin/Code/github/DePu/docs/qa/final-login-mobile.png",
+    "final-create-bottom-mobile": "/Users/dengbin/Code/github/DePu/docs/qa/final-create-bottom-mobile.png",
+    "final-room-waiting-mobile": "/Users/dengbin/Code/github/DePu/docs/qa/final-room-waiting-mobile.png",
+    "final-room-seated-mobile": "/Users/dengbin/Code/github/DePu/docs/qa/final-room-seated-mobile.png"
+  },
+  "roomUrl": "http://127.0.0.1:5191/room/room_1783433435821342000",
+  "summary": {
+    "total": 26,
+    "pass": 26,
+    "fail": 0
+  },
+  "fatal": null
+}

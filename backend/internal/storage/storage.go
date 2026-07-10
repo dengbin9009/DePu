@@ -78,11 +78,52 @@ type RoomRecord struct {
 	OwnerUserID       string             `json:"ownerUserId"`
 	Status            string             `json:"status"`
 	RuleSetID         string             `json:"ruleSetId,omitempty"`
+	Name              string             `json:"name,omitempty"`
+	Mode              string             `json:"mode,omitempty"`
+	Variant           string             `json:"variant,omitempty"`
+	Ante              int                `json:"ante,omitempty"`
+	MinBuyIn          int                `json:"minBuyIn,omitempty"`
+	MaxBuyIn          int                `json:"maxBuyIn,omitempty"`
+	BuyInCap          int                `json:"buyInCap,omitempty"`
+	DurationMinutes   int                `json:"durationMinutes,omitempty"`
+	Level             int                `json:"level,omitempty"`
 	SeatCount         int                `json:"seatCount,omitempty"`
 	MinPlayersToStart int                `json:"minPlayersToStart,omitempty"`
 	Members           []RoomMemberRecord `json:"members"`
 	Seats             []RoomSeatRecord   `json:"seats"`
 	CurrentGameID     string             `json:"-"`
+}
+
+type CreateRoomOptions struct {
+	RuleSetID         string
+	Name              string
+	Mode              string
+	Variant           string
+	Ante              int
+	HasAnte           bool
+	MinBuyIn          int
+	HasMinBuyIn       bool
+	MaxBuyIn          int
+	HasMaxBuyIn       bool
+	BuyInCap          int
+	HasBuyInCap       bool
+	DurationMinutes   int
+	HasDuration       bool
+	SeatCount         int
+	HasSeatCount      bool
+	MinPlayersToStart int
+	HasMinPlayers     bool
+}
+
+type FieldError struct {
+	Code  string
+	Field string
+}
+
+func (e FieldError) Error() string { return e.Code }
+
+func fieldError(code, field string) FieldError {
+	return FieldError{Code: code, Field: field}
 }
 
 type HandParticipantRecord struct {
@@ -329,11 +370,89 @@ func (s *Store) AddWalletTransaction(userID, typ string, amount int, referenceTy
 }
 
 func (s *Store) CreateRoom(ownerUserID, ruleSetID string, seatCount, minPlayersToStart int) (*RoomRecord, error) {
-	if seatCount == 0 {
-		seatCount = 6
+	return s.CreateRoomWithOptions(ownerUserID, CreateRoomOptions{
+		RuleSetID:         ruleSetID,
+		SeatCount:         seatCount,
+		MinPlayersToStart: minPlayersToStart,
+	})
+}
+
+func normalizeCreateRoomOptions(opt CreateRoomOptions) (CreateRoomOptions, error) {
+	opt.RuleSetID = strings.TrimSpace(opt.RuleSetID)
+	opt.Name = strings.TrimSpace(opt.Name)
+	opt.Mode = strings.TrimSpace(opt.Mode)
+	opt.Variant = strings.TrimSpace(opt.Variant)
+	if opt.RuleSetID == "" {
+		opt.RuleSetID = "short-deck"
 	}
-	if minPlayersToStart == 0 {
-		minPlayersToStart = 2
+	if opt.Name == "" {
+		opt.Name = "德扑之星"
+	}
+	if opt.Mode == "" {
+		opt.Mode = "training"
+	}
+	if opt.Variant == "" {
+		if opt.RuleSetID == "short-deck" {
+			opt.Variant = "short_holdem"
+		} else {
+			opt.Variant = "holdem"
+		}
+	}
+	if opt.SeatCount == 0 && !opt.HasSeatCount {
+		opt.SeatCount = 6
+	}
+	if opt.MinPlayersToStart == 0 && !opt.HasMinPlayers {
+		opt.MinPlayersToStart = 2
+	}
+	if opt.Ante == 0 && !opt.HasAnte {
+		opt.Ante = 20
+	}
+	if opt.MinBuyIn == 0 && !opt.HasMinBuyIn {
+		opt.MinBuyIn = 1000
+	}
+	if opt.MaxBuyIn == 0 && !opt.HasMaxBuyIn {
+		opt.MaxBuyIn = 1000000
+	}
+	if opt.BuyInCap == 0 && !opt.HasBuyInCap {
+		opt.BuyInCap = 1000000
+	}
+	if opt.DurationMinutes == 0 && !opt.HasDuration {
+		opt.DurationMinutes = 120
+	}
+	if opt.Mode != "training" {
+		return opt, fieldError("unsupported_room_mode", "mode")
+	}
+	if opt.Variant != "short_holdem" && opt.Variant != "holdem" {
+		return opt, fieldError("unsupported_variant", "variant")
+	}
+	if opt.SeatCount < 2 || opt.SeatCount > 9 {
+		return opt, fieldError("invalid_room_config", "seatCount")
+	}
+	if opt.MinPlayersToStart < 2 || opt.MinPlayersToStart > opt.SeatCount {
+		return opt, fieldError("invalid_room_config", "minPlayersToStart")
+	}
+	if opt.Ante <= 0 {
+		return opt, fieldError("invalid_room_config", "ante")
+	}
+	if opt.MinBuyIn <= 0 {
+		return opt, fieldError("invalid_room_config", "minBuyIn")
+	}
+	if opt.MaxBuyIn <= 0 || opt.MaxBuyIn < opt.MinBuyIn {
+		return opt, fieldError("invalid_room_config", "maxBuyIn")
+	}
+	if opt.BuyInCap < opt.MaxBuyIn {
+		return opt, fieldError("invalid_room_config", "buyInCap")
+	}
+	if opt.DurationMinutes <= 0 {
+		return opt, fieldError("invalid_room_config", "durationMinutes")
+	}
+	return opt, nil
+}
+
+func (s *Store) CreateRoomWithOptions(ownerUserID string, opt CreateRoomOptions) (*RoomRecord, error) {
+	opt, err := normalizeCreateRoomOptions(opt)
+	if err != nil {
+		return nil, err
 	}
 	roomID := fmt.Sprintf("room_%d", time.Now().UTC().UnixNano())
 	inviteCode := fmt.Sprintf("R%06d", time.Now().UTC().UnixNano()%1000000)
@@ -347,13 +466,13 @@ func (s *Store) CreateRoom(ownerUserID, ruleSetID string, seatCount, minPlayersT
 		return nil, err
 	}
 	defer tx.Rollback()
-	if _, err = tx.Exec(`insert into rooms(id, invite_code, owner_user_id, status, rule_set_id, seat_count, min_players_to_start, created_at, updated_at) values(?, ?, ?, ?, ?, ?, ?, ?, ?)`, roomID, inviteCode, ownerUserID, "waiting", ruleSetID, seatCount, minPlayersToStart, now, now); err != nil {
+	if _, err = tx.Exec(`insert into rooms(id, invite_code, owner_user_id, status, rule_set_id, name, mode, variant, ante, min_buy_in, max_buy_in, buy_in_cap, duration_minutes, level, seat_count, min_players_to_start, created_at, updated_at) values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, roomID, inviteCode, ownerUserID, "waiting", opt.RuleSetID, opt.Name, opt.Mode, opt.Variant, opt.Ante, opt.MinBuyIn, opt.MaxBuyIn, opt.BuyInCap, opt.DurationMinutes, 1, opt.SeatCount, opt.MinPlayersToStart, now, now); err != nil {
 		return nil, err
 	}
 	if _, err = tx.Exec(`insert into room_members(room_id, user_id, role, joined_at) values(?, ?, ?, ?)`, roomID, ownerUserID, "owner", now); err != nil {
 		return nil, err
 	}
-	for seatNo := 1; seatNo <= seatCount; seatNo++ {
+	for seatNo := 1; seatNo <= opt.SeatCount; seatNo++ {
 		if _, err = tx.Exec(`insert into room_seats(room_id, seat_no, seat_status, updated_at) values(?, ?, ?, ?)`, roomID, seatNo, "empty", now); err != nil {
 			return nil, err
 		}
@@ -367,12 +486,6 @@ func (s *Store) CreateRoom(ownerUserID, ruleSetID string, seatCount, minPlayersT
 	}
 	if len(room.Members) == 0 {
 		room.Members = []RoomMemberRecord{{UserID: ownerUserID, Nickname: owner.Nickname, Role: "owner", JoinedAt: now}}
-	}
-	if room.Seats == nil {
-		room.Seats = make([]RoomSeatRecord, 0, seatCount)
-		for seatNo := 1; seatNo <= seatCount; seatNo++ {
-			room.Seats = append(room.Seats, RoomSeatRecord{SeatNo: seatNo, SeatStatus: "empty"})
-		}
 	}
 	return room, nil
 }
@@ -400,7 +513,7 @@ func (s *Store) RoomByInviteCode(inviteCode string) (*RoomRecord, error) {
 
 func (s *Store) RoomByID(roomID string) (*RoomRecord, error) {
 	var room RoomRecord
-	if err := s.db.QueryRow(`select id, invite_code, owner_user_id, status, rule_set_id, seat_count, min_players_to_start, coalesce(current_game_id, '') from rooms where id = ?`, roomID).Scan(&room.ID, &room.InviteCode, &room.OwnerUserID, &room.Status, &room.RuleSetID, &room.SeatCount, &room.MinPlayersToStart, &room.CurrentGameID); err != nil {
+	if err := s.db.QueryRow(`select id, invite_code, owner_user_id, status, rule_set_id, name, mode, variant, ante, min_buy_in, max_buy_in, buy_in_cap, duration_minutes, level, seat_count, min_players_to_start, coalesce(current_game_id, '') from rooms where id = ?`, roomID).Scan(&room.ID, &room.InviteCode, &room.OwnerUserID, &room.Status, &room.RuleSetID, &room.Name, &room.Mode, &room.Variant, &room.Ante, &room.MinBuyIn, &room.MaxBuyIn, &room.BuyInCap, &room.DurationMinutes, &room.Level, &room.SeatCount, &room.MinPlayersToStart, &room.CurrentGameID); err != nil {
 		return nil, err
 	}
 	membersRows, err := s.db.Query(`select m.user_id, p.nickname, m.role, m.joined_at from room_members m join user_profiles p on p.user_id = m.user_id where m.room_id = ? order by m.joined_at asc`, roomID)
@@ -436,12 +549,26 @@ func (s *Store) TakeSeat(roomID, userID string, seatNo, buyInChips int) (*RoomRe
 		return nil, err
 	}
 	defer tx.Rollback()
+	var membership string
+	if err = tx.QueryRow(`select user_id from room_members where room_id = ? and user_id = ?`, roomID, userID).Scan(&membership); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, errors.New("room membership required")
+		}
+		return nil, err
+	}
 	var balance int
 	if err = tx.QueryRow(`select balance from wallets where user_id = ?`, userID).Scan(&balance); err != nil {
 		return nil, err
 	}
 	if buyInChips <= 0 {
 		return nil, errors.New("invalid buy-in")
+	}
+	var minBuyIn, maxBuyIn int
+	if err = tx.QueryRow(`select min_buy_in, max_buy_in from rooms where id = ?`, roomID).Scan(&minBuyIn, &maxBuyIn); err != nil {
+		return nil, err
+	}
+	if buyInChips < minBuyIn || buyInChips > maxBuyIn {
+		return nil, fieldError("invalid_buy_in", "buyInChips")
 	}
 	if balance < buyInChips {
 		return nil, errors.New("insufficient coins")
@@ -484,6 +611,13 @@ func (s *Store) LeaveSeat(roomID, userID string, seatNo int) (*RoomRecord, error
 		return nil, err
 	}
 	defer tx.Rollback()
+	var roomStatus string
+	if err = tx.QueryRow(`select status from rooms where id = ?`, roomID).Scan(&roomStatus); err != nil {
+		return nil, err
+	}
+	if roomStatus != "waiting" {
+		return nil, errors.New("room is not waiting")
+	}
 	var currentUser sql.NullString
 	if err = tx.QueryRow(`select user_id from room_seats where room_id = ? and seat_no = ?`, roomID, seatNo).Scan(&currentUser); err != nil {
 		return nil, err
@@ -514,32 +648,95 @@ func (s *Store) LeaveSeat(roomID, userID string, seatNo int) (*RoomRecord, error
 	if _, err = tx.Exec(`update room_seats set user_id = null, buy_in_chips = null, seat_status = ?, updated_at = ? where room_id = ? and seat_no = ?`, "empty", now, roomID, seatNo); err != nil {
 		return nil, err
 	}
+	if _, err = tx.Exec(`update rooms set updated_at = ? where id = ?`, now, roomID); err != nil {
+		return nil, err
+	}
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+	return s.RoomByID(roomID)
+}
+
+func (s *Store) LeaveRoom(roomID, userID string) (*RoomRecord, error) {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	var roomStatus, ownerUserID string
+	var seatCount int
+	if err = tx.QueryRow(`select status, owner_user_id, seat_count from rooms where id = ?`, roomID).Scan(&roomStatus, &ownerUserID, &seatCount); err != nil {
+		return nil, err
+	}
+	if roomStatus == "playing" {
+		return nil, errors.New("room is not waiting")
+	}
+
+	var currentSeatNo int
+	var buyIn sql.NullInt64
+	if err = tx.QueryRow(`select seat_no, buy_in_chips from room_seats where room_id = ? and user_id = ? limit 1`, roomID, userID).Scan(&currentSeatNo, &buyIn); err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, err
+	}
+	now := time.Now().UTC().Format(time.RFC3339Nano)
+	if currentSeatNo > 0 {
+		if buyIn.Valid && buyIn.Int64 > 0 {
+			var balance int
+			if err = tx.QueryRow(`select balance from wallets where user_id = ?`, userID).Scan(&balance); err != nil {
+				return nil, err
+			}
+			balance += int(buyIn.Int64)
+			if _, err = tx.Exec(`update wallets set balance = ?, updated_at = ? where user_id = ?`, balance, now, userID); err != nil {
+				return nil, err
+			}
+			txnID := fmt.Sprintf("txn_%d", time.Now().UTC().UnixNano())
+			note := fmt.Sprintf("room leave refund %s seat %d", roomID, currentSeatNo)
+			if _, err = tx.Exec(`insert into wallet_transactions(id, user_id, type, amount, balance_after, reference_type, reference_id, note, created_at) values(?, ?, ?, ?, ?, ?, ?, ?, ?)`, txnID, userID, "leave_refund", int(buyIn.Int64), balance, "room", roomID, note, now); err != nil {
+				return nil, err
+			}
+		}
+		if _, err = tx.Exec(`update room_seats set user_id = null, buy_in_chips = null, seat_status = ?, updated_at = ? where room_id = ? and seat_no = ?`, "empty", now, roomID, currentSeatNo); err != nil {
+			return nil, err
+		}
+	}
+
 	if _, err = tx.Exec(`delete from room_members where room_id = ? and user_id = ?`, roomID, userID); err != nil {
 		return nil, err
 	}
-	var ownerUserID string
-	if err = tx.QueryRow(`select owner_user_id from rooms where id = ?`, roomID).Scan(&ownerUserID); err != nil {
+
+	nextOwnerID := ownerUserID
+	nextStatus := roomStatus
+	if ownerUserID == userID {
+		nextOwnerID = ""
+		if currentSeatNo == 0 {
+			currentSeatNo = 1
+		}
+		for offset := 1; offset <= seatCount; offset++ {
+			candidateSeatNo := ((currentSeatNo - 1 + offset) % seatCount) + 1
+			var candidate sql.NullString
+			if err = tx.QueryRow(`select user_id from room_seats where room_id = ? and seat_no = ?`, roomID, candidateSeatNo).Scan(&candidate); err != nil {
+				return nil, err
+			}
+			if candidate.Valid && candidate.String != "" {
+				nextOwnerID = candidate.String
+				break
+			}
+		}
+		if nextOwnerID == "" {
+			nextStatus = "closed"
+		}
+	}
+
+	if _, err = tx.Exec(`update room_members set role = ? where room_id = ?`, "player", roomID); err != nil {
 		return nil, err
 	}
-	var memberCount int
-	if err = tx.QueryRow(`select count(*) from room_members where room_id = ?`, roomID).Scan(&memberCount); err != nil {
-		return nil, err
+	if nextOwnerID != "" {
+		if _, err = tx.Exec(`update room_members set role = ? where room_id = ? and user_id = ?`, "owner", roomID, nextOwnerID); err != nil {
+			return nil, err
+		}
 	}
-	if memberCount == 0 {
-		if _, err = tx.Exec(`update rooms set status = ?, owner_user_id = ?, updated_at = ? where id = ?`, "closed", "", now, roomID); err != nil {
-			return nil, err
-		}
-	} else if ownerUserID == userID {
-		var newOwner string
-		if err = tx.QueryRow(`select user_id from room_members where room_id = ? order by joined_at asc limit 1`, roomID).Scan(&newOwner); err != nil {
-			return nil, err
-		}
-		if _, err = tx.Exec(`update rooms set owner_user_id = ?, updated_at = ? where id = ?`, newOwner, now, roomID); err != nil {
-			return nil, err
-		}
-		if _, err = tx.Exec(`update room_members set role = ? where room_id = ? and user_id = ?`, "owner", roomID, newOwner); err != nil {
-			return nil, err
-		}
+	if _, err = tx.Exec(`update rooms set owner_user_id = ?, status = ?, updated_at = ? where id = ?`, nextOwnerID, nextStatus, now, roomID); err != nil {
+		return nil, err
 	}
 	if err = tx.Commit(); err != nil {
 		return nil, err
@@ -999,7 +1196,7 @@ func (s *Store) migrate() error {
 		`create table if not exists user_profiles (user_id varchar(64) primary key, nickname varchar(128) not null unique, hands_played integer not null default 0, total_profit integer not null default 0, last_played_at varchar(64) null, updated_at varchar(64) not null)`,
 		`create table if not exists wallets (user_id varchar(64) primary key, balance integer not null, updated_at varchar(64) not null)`,
 		`create table if not exists wallet_transactions (id varchar(64) primary key, user_id varchar(64) not null, type varchar(64) not null, amount integer not null, balance_after integer not null, reference_type varchar(64), reference_id varchar(64), note varchar(255), created_at varchar(64) not null)`,
-		`create table if not exists rooms (id varchar(64) primary key, invite_code varchar(32) not null unique, owner_user_id varchar(64) not null, status varchar(32) not null, rule_set_id varchar(64) not null, seat_count integer not null, min_players_to_start integer not null, current_game_id varchar(64) null, created_at varchar(64) not null, updated_at varchar(64) not null)`,
+		`create table if not exists rooms (id varchar(64) primary key, invite_code varchar(32) not null unique, owner_user_id varchar(64) not null, status varchar(32) not null, rule_set_id varchar(64) not null, name varchar(128) not null default '德扑之星', mode varchar(32) not null default 'training', variant varchar(32) not null default 'short_holdem', ante integer not null default 20, min_buy_in integer not null default 1000, max_buy_in integer not null default 1000000, buy_in_cap integer not null default 1000000, duration_minutes integer not null default 120, level integer not null default 1, seat_count integer not null, min_players_to_start integer not null, current_game_id varchar(64) null, created_at varchar(64) not null, updated_at varchar(64) not null)`,
 		`create table if not exists room_members (room_id varchar(64) not null, user_id varchar(64) not null, role varchar(32) not null, joined_at varchar(64) not null, primary key(room_id, user_id))`,
 		`create table if not exists room_seats (room_id varchar(64) not null, seat_no integer not null, user_id varchar(64) null, buy_in_chips integer null, seat_status varchar(32) not null, updated_at varchar(64) not null, primary key(room_id, seat_no))`,
 		`create table if not exists hand_results (id varchar(64) primary key, room_id varchar(64) not null, game_id varchar(64) not null, hand_no integer not null, rule_set_id varchar(64) not null, completed_at varchar(64) not null, winner_summary varchar(255) not null, pot_summary varchar(255) not null, board_cards_json longtext not null, total_pot integer not null)`,
@@ -1007,6 +1204,22 @@ func (s *Store) migrate() error {
 	}
 	for _, stmt := range stmts {
 		if _, err := s.db.Exec(stmt); err != nil {
+			return err
+		}
+	}
+	alterStmts := []string{
+		`alter table rooms add column name varchar(128) not null default '德扑之星'`,
+		`alter table rooms add column mode varchar(32) not null default 'training'`,
+		`alter table rooms add column variant varchar(32) not null default 'short_holdem'`,
+		`alter table rooms add column ante integer not null default 20`,
+		`alter table rooms add column min_buy_in integer not null default 1000`,
+		`alter table rooms add column max_buy_in integer not null default 1000000`,
+		`alter table rooms add column buy_in_cap integer not null default 1000000`,
+		`alter table rooms add column duration_minutes integer not null default 120`,
+		`alter table rooms add column level integer not null default 1`,
+	}
+	for _, stmt := range alterStmts {
+		if _, err := s.db.Exec(stmt); err != nil && !strings.Contains(strings.ToLower(err.Error()), "duplicate column") {
 			return err
 		}
 	}

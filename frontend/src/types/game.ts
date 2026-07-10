@@ -141,6 +141,23 @@ export interface RechargeResponse {
   transaction: WalletTransaction;
 }
 
+export type RoomMode = 'training' | 'sng';
+export type RoomVariant = 'short_holdem' | 'holdem' | 'omaha';
+
+export interface CreateRoomPayload {
+  ruleSetId: string;
+  name?: string;
+  mode?: RoomMode;
+  variant?: RoomVariant;
+  ante?: number;
+  minBuyIn?: number;
+  maxBuyIn?: number;
+  buyInCap?: number;
+  durationMinutes?: number;
+  seatCount: number;
+  minPlayersToStart: number;
+}
+
 export interface RoomMember {
   userId: string;
   nickname: string;
@@ -162,6 +179,15 @@ export interface RoomResponse {
   ownerUserId: string;
   status: 'waiting' | 'playing' | 'closed';
   ruleSetId?: string;
+  name?: string;
+  mode?: RoomMode;
+  variant?: RoomVariant;
+  ante?: number;
+  minBuyIn?: number;
+  maxBuyIn?: number;
+  buyInCap?: number;
+  durationMinutes?: number;
+  level?: number;
   seatCount?: number;
   minPlayersToStart?: number;
   members: RoomMember[];

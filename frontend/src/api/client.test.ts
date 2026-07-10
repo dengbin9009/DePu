@@ -1,7 +1,67 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createGame, submitAction } from './client';
+import { createGame, createRoom, leaveRoom, submitAction } from './client';
 
 describe('api client', () => {
+  it('sends mockup-driven room configuration when creating a room', async () => {
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
+      expect(_url).toBe('/api/rooms');
+      expect(init?.method).toBe('POST');
+      expect((init?.headers as Record<string, string>).Authorization).toBe('Bearer tok_room');
+      const body = JSON.parse(String(init?.body));
+      expect(body).toEqual({
+        ruleSetId: 'short-deck',
+        name: '周末短牌局',
+        mode: 'training',
+        variant: 'short_holdem',
+        ante: 20,
+        minBuyIn: 2000,
+        maxBuyIn: 8000,
+        buyInCap: 60000,
+        durationMinutes: 120,
+        seatCount: 9,
+        minPlayersToStart: 2
+      });
+      return new Response(JSON.stringify({
+        id: 'room_1',
+        inviteCode: 'R123456',
+        ownerUserId: 'user_1',
+        status: 'waiting',
+        ruleSetId: body.ruleSetId,
+        name: body.name,
+        mode: body.mode,
+        variant: body.variant,
+        ante: body.ante,
+        minBuyIn: body.minBuyIn,
+        maxBuyIn: body.maxBuyIn,
+        buyInCap: body.buyInCap,
+        durationMinutes: body.durationMinutes,
+        level: 1,
+        seatCount: body.seatCount,
+        minPlayersToStart: body.minPlayersToStart,
+        members: [],
+        seats: []
+      }), { status: 201, headers: { 'Content-Type': 'application/json' } });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const room = await createRoom('tok_room', {
+      ruleSetId: 'short-deck',
+      name: '周末短牌局',
+      mode: 'training',
+      variant: 'short_holdem',
+      ante: 20,
+      minBuyIn: 2000,
+      maxBuyIn: 8000,
+      buyInCap: 60000,
+      durationMinutes: 120,
+      seatCount: 9,
+      minPlayersToStart: 2
+    });
+
+    expect(room.name).toBe('周末短牌局');
+    expect(room.minBuyIn).toBe(2000);
+  });
+
   it('sends the selected betting structure when creating a game', async () => {
     const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
       expect(_url).toBe('/api/games');
@@ -42,6 +102,28 @@ describe('api client', () => {
     expect(snapshot.bettingStructure.type).toBe('ante');
     expect(snapshot.isReplay).toBe(false);
     expect(snapshot.debugLocked).toBe(false);
+  });
+
+  it('leaves the current room membership through the room leave endpoint', async () => {
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
+      expect(_url).toBe('/api/rooms/room_1/members/me');
+      expect(init?.method).toBe('DELETE');
+      expect((init?.headers as Record<string, string>).Authorization).toBe('Bearer tok_room');
+      return new Response(JSON.stringify({
+        id: 'room_1',
+        inviteCode: 'R123456',
+        ownerUserId: 'user_2',
+        status: 'waiting',
+        members: [{ userId: 'user_2', nickname: '下一位', role: 'owner', joinedAt: '2026-07-10T00:00:00Z' }],
+        seats: []
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const room = await leaveRoom('tok_room', 'room_1');
+
+    expect(room.ownerUserId).toBe('user_2');
+    expect(room.members[0].role).toBe('owner');
   });
 
   it('sends the selected bet or raise amount when submitting an action', async () => {

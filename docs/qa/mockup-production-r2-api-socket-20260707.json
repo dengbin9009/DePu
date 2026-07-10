@@ -1,0 +1,1718 @@
+{
+  "generatedAt": "2026-07-07T15:29:22.417Z",
+  "total": 58,
+  "passed": 58,
+  "failed": 0,
+  "results": [
+    {
+      "name": "健康检查",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "json": {
+          "status": "ok"
+        }
+      }
+    },
+    {
+      "name": "未登录访问 /api/me 被拒绝",
+      "ok": true,
+      "detail": {
+        "status": 401,
+        "json": {
+          "code": "unauthorized",
+          "message": "authentication required"
+        }
+      }
+    },
+    {
+      "name": "短密码注册被拒绝",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "json": {
+          "code": "invalid_password",
+          "message": "password must be at least 8 characters",
+          "field": "password"
+        }
+      }
+    },
+    {
+      "name": "注册 owner_r2_mrat18rp",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "json": {
+          "token": "tok_1783438161860791000",
+          "user": {
+            "id": "user_1783438161858359000",
+            "nickname": "房主r2_mrat18rp",
+            "username": "owner_r2_mrat18rp"
+          }
+        }
+      }
+    },
+    {
+      "name": "注册 player_r2_mrat18rp",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "json": {
+          "token": "tok_1783438161863778000",
+          "user": {
+            "id": "user_1783438161861856000",
+            "nickname": "玩家r2_mrat18rp",
+            "username": "player_r2_mrat18rp"
+          }
+        }
+      }
+    },
+    {
+      "name": "注册 outsider_r2_mrat18rp",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "json": {
+          "token": "tok_1783438161866877000",
+          "user": {
+            "id": "user_1783438161864963000",
+            "nickname": "路人r2_mrat18rp",
+            "username": "outsider_r2_mrat18rp"
+          }
+        }
+      }
+    },
+    {
+      "name": "重复用户名被拒绝",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "json": {
+          "code": "duplicate_username",
+          "message": "username already exists",
+          "field": "username"
+        }
+      }
+    },
+    {
+      "name": "重复昵称被拒绝",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "json": {
+          "code": "duplicate_nickname",
+          "message": "nickname already exists",
+          "field": "nickname"
+        }
+      }
+    },
+    {
+      "name": "错误密码登录被拒绝",
+      "ok": true,
+      "detail": {
+        "status": 401,
+        "json": {
+          "code": "unauthorized",
+          "message": "invalid username or password"
+        }
+      }
+    },
+    {
+      "name": "登录 owner_r2_mrat18rp",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "json": {
+          "token": "tok_1783438161873214000",
+          "user": {
+            "id": "user_1783438161858359000",
+            "nickname": "房主r2_mrat18rp",
+            "username": "owner_r2_mrat18rp"
+          }
+        }
+      }
+    },
+    {
+      "name": "规则集接口返回 holdem/short-deck",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "json": [
+          {
+            "id": "long-holdem",
+            "name": "长牌德州扑克",
+            "ranks": [
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7",
+              "8",
+              "9",
+              "T",
+              "J",
+              "Q",
+              "K",
+              "A"
+            ],
+            "deckSize": 52,
+            "handRanking": [
+              "straight_flush",
+              "four_of_a_kind",
+              "full_house",
+              "flush",
+              "straight",
+              "three_of_a_kind",
+              "two_pair",
+              "one_pair",
+              "high_card"
+            ],
+            "wheel": [
+              14,
+              5,
+              4,
+              3,
+              2
+            ],
+            "bettingStructures": [
+              "blinds"
+            ],
+            "defaultBettingStructure": "blinds",
+            "smallBlind": 50,
+            "bigBlind": 100,
+            "description": ""
+          },
+          {
+            "id": "short-deck",
+            "name": "短牌德州扑克",
+            "ranks": [
+              "6",
+              "7",
+              "8",
+              "9",
+              "T",
+              "J",
+              "Q",
+              "K",
+              "A"
+            ],
+            "deckSize": 36,
+            "handRanking": [
+              "straight_flush",
+              "four_of_a_kind",
+              "flush",
+              "full_house",
+              "straight",
+              "three_of_a_kind",
+              "two_pair",
+              "one_pair",
+              "high_card"
+            ],
+            "wheel": [
+              14,
+              9,
+              8,
+              7,
+              6
+            ],
+            "bettingStructures": [
+              "blinds",
+              "ante"
+            ],
+            "defaultBettingStructure": "blinds",
+            "smallBlind": 50,
+            "bigBlind": 100,
+            "description": "短牌使用 36 张牌，默认同花大于葫芦，并可选择 blinds 或 ante + buttonBlind 下注结构。"
+          }
+        ]
+      }
+    },
+    {
+      "name": "暂不支持 SNG 建房被明确拒绝",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "json": {
+          "code": "unsupported_room_mode",
+          "message": "unsupported_room_mode",
+          "field": "mode"
+        }
+      }
+    },
+    {
+      "name": "超过 9 人建房被拒绝",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "json": {
+          "code": "invalid_room_config",
+          "message": "invalid_room_config",
+          "field": "seatCount"
+        }
+      }
+    },
+    {
+      "name": "最小带入大于最大带入被拒绝",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "json": {
+          "code": "invalid_room_config",
+          "message": "invalid_room_config",
+          "field": "maxBuyIn"
+        }
+      }
+    },
+    {
+      "name": "创建短牌训练赛房间成功",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "json": {
+          "id": "room_1783438161877142000",
+          "inviteCode": "R143000",
+          "ownerUserId": "user_1783438161858359000",
+          "status": "waiting",
+          "ruleSetId": "short-deck",
+          "name": "R2工业验收桌",
+          "mode": "training",
+          "variant": "short_holdem",
+          "ante": 20,
+          "minBuyIn": 2000,
+          "maxBuyIn": 8000,
+          "buyInCap": 60000,
+          "durationMinutes": 120,
+          "level": 1,
+          "seatCount": 9,
+          "minPlayersToStart": 2,
+          "members": [
+            {
+              "userId": "user_1783438161858359000",
+              "nickname": "房主r2_mrat18rp",
+              "role": "owner",
+              "joinedAt": "2026-07-07T15:29:21.877143Z"
+            }
+          ],
+          "seats": [
+            {
+              "seatNo": 1,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 2,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 3,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 4,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 5,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 6,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 7,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 8,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 9,
+              "seatStatus": "empty"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "房间详情返回展示配置",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "json": {
+          "id": "room_1783438161877142000",
+          "inviteCode": "R143000",
+          "ownerUserId": "user_1783438161858359000",
+          "status": "waiting",
+          "ruleSetId": "short-deck",
+          "name": "R2工业验收桌",
+          "mode": "training",
+          "variant": "short_holdem",
+          "ante": 20,
+          "minBuyIn": 2000,
+          "maxBuyIn": 8000,
+          "buyInCap": 60000,
+          "durationMinutes": 120,
+          "level": 1,
+          "seatCount": 9,
+          "minPlayersToStart": 2,
+          "members": [
+            {
+              "userId": "user_1783438161858359000",
+              "nickname": "房主r2_mrat18rp",
+              "role": "owner",
+              "joinedAt": "2026-07-07T15:29:21.877143Z"
+            }
+          ],
+          "seats": [
+            {
+              "seatNo": 1,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 2,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 3,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 4,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 5,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 6,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 7,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 8,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 9,
+              "seatStatus": "empty"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "非成员不能直接入座",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "json": {
+          "code": "forbidden",
+          "message": "room membership required"
+        }
+      }
+    },
+    {
+      "name": "非成员不能查看战绩榜",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "json": {
+          "code": "forbidden",
+          "message": "room membership required"
+        }
+      }
+    },
+    {
+      "name": "低于最小带入被拒绝",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "json": {
+          "code": "invalid_buy_in",
+          "message": "invalid_buy_in",
+          "field": "buyInChips"
+        }
+      }
+    },
+    {
+      "name": "高于带入上限被拒绝",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "json": {
+          "code": "invalid_buy_in",
+          "message": "invalid_buy_in",
+          "field": "buyInChips"
+        }
+      }
+    },
+    {
+      "name": "房主最小带入入座成功",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "json": {
+          "id": "room_1783438161877142000",
+          "inviteCode": "R143000",
+          "ownerUserId": "user_1783438161858359000",
+          "status": "waiting",
+          "ruleSetId": "short-deck",
+          "name": "R2工业验收桌",
+          "mode": "training",
+          "variant": "short_holdem",
+          "ante": 20,
+          "minBuyIn": 2000,
+          "maxBuyIn": 8000,
+          "buyInCap": 60000,
+          "durationMinutes": 120,
+          "level": 1,
+          "seatCount": 9,
+          "minPlayersToStart": 2,
+          "members": [
+            {
+              "userId": "user_1783438161858359000",
+              "nickname": "房主r2_mrat18rp",
+              "role": "owner",
+              "joinedAt": "2026-07-07T15:29:21.877143Z"
+            }
+          ],
+          "seats": [
+            {
+              "seatNo": 1,
+              "seatStatus": "occupied",
+              "userId": "user_1783438161858359000",
+              "nickname": "房主r2_mrat18rp",
+              "buyInChips": 2000
+            },
+            {
+              "seatNo": 2,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 3,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 4,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 5,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 6,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 7,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 8,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 9,
+              "seatStatus": "empty"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "同一用户重复坐其他座位被拒绝",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "json": {
+          "code": "already_seated",
+          "message": "user already seated",
+          "field": "seatNo"
+        }
+      }
+    },
+    {
+      "name": "等待态站起释放座位且保留成员资格",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "json": {
+          "id": "room_1783438161877142000",
+          "inviteCode": "R143000",
+          "ownerUserId": "user_1783438161858359000",
+          "status": "waiting",
+          "ruleSetId": "short-deck",
+          "name": "R2工业验收桌",
+          "mode": "training",
+          "variant": "short_holdem",
+          "ante": 20,
+          "minBuyIn": 2000,
+          "maxBuyIn": 8000,
+          "buyInCap": 60000,
+          "durationMinutes": 120,
+          "level": 1,
+          "seatCount": 9,
+          "minPlayersToStart": 2,
+          "members": [
+            {
+              "userId": "user_1783438161858359000",
+              "nickname": "房主r2_mrat18rp",
+              "role": "owner",
+              "joinedAt": "2026-07-07T15:29:21.877143Z"
+            }
+          ],
+          "seats": [
+            {
+              "seatNo": 1,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 2,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 3,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 4,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 5,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 6,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 7,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 8,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 9,
+              "seatStatus": "empty"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "无效邀请码加入被拒绝",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "json": {
+          "code": "invalid_invite_code",
+          "message": "invalid invite code",
+          "field": "inviteCode"
+        }
+      }
+    },
+    {
+      "name": "邀请码大小写和空格归一化加入成功",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "json": {
+          "id": "room_1783438161877142000",
+          "inviteCode": "R143000",
+          "ownerUserId": "user_1783438161858359000",
+          "status": "waiting",
+          "ruleSetId": "short-deck",
+          "name": "R2工业验收桌",
+          "mode": "training",
+          "variant": "short_holdem",
+          "ante": 20,
+          "minBuyIn": 2000,
+          "maxBuyIn": 8000,
+          "buyInCap": 60000,
+          "durationMinutes": 120,
+          "level": 1,
+          "seatCount": 9,
+          "minPlayersToStart": 2,
+          "members": [
+            {
+              "userId": "user_1783438161858359000",
+              "nickname": "房主r2_mrat18rp",
+              "role": "owner",
+              "joinedAt": "2026-07-07T15:29:21.877143Z"
+            },
+            {
+              "userId": "user_1783438161861856000",
+              "nickname": "玩家r2_mrat18rp",
+              "role": "player",
+              "joinedAt": "2026-07-07T15:29:21.917193Z"
+            }
+          ],
+          "seats": [
+            {
+              "seatNo": 1,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 2,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 3,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 4,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 5,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 6,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 7,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 8,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 9,
+              "seatStatus": "empty"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "重复加入保持幂等",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "json": {
+          "id": "room_1783438161877142000",
+          "inviteCode": "R143000",
+          "ownerUserId": "user_1783438161858359000",
+          "status": "waiting",
+          "ruleSetId": "short-deck",
+          "name": "R2工业验收桌",
+          "mode": "training",
+          "variant": "short_holdem",
+          "ante": 20,
+          "minBuyIn": 2000,
+          "maxBuyIn": 8000,
+          "buyInCap": 60000,
+          "durationMinutes": 120,
+          "level": 1,
+          "seatCount": 9,
+          "minPlayersToStart": 2,
+          "members": [
+            {
+              "userId": "user_1783438161858359000",
+              "nickname": "房主r2_mrat18rp",
+              "role": "owner",
+              "joinedAt": "2026-07-07T15:29:21.877143Z"
+            },
+            {
+              "userId": "user_1783438161861856000",
+              "nickname": "玩家r2_mrat18rp",
+              "role": "player",
+              "joinedAt": "2026-07-07T15:29:21.917193Z"
+            }
+          ],
+          "seats": [
+            {
+              "seatNo": 1,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 2,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 3,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 4,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 5,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 6,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 7,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 8,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 9,
+              "seatStatus": "empty"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "余额不足大额带入被拒绝",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "json": {
+          "code": "insufficient_coins",
+          "message": "insufficient coins",
+          "field": "buyInChips"
+        }
+      }
+    },
+    {
+      "name": "充值档位返回 small/medium/large",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "json": {
+          "options": [
+            {
+              "amount": 1000,
+              "code": "small",
+              "label": "小额金币包"
+            },
+            {
+              "amount": 5000,
+              "code": "medium",
+              "label": "中额金币包"
+            },
+            {
+              "amount": 10000,
+              "code": "large",
+              "label": "大额金币包"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "未确认充值被拒绝",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "json": {
+          "code": "invalid_recharge",
+          "message": "invalid recharge request",
+          "field": "optionCode"
+        }
+      }
+    },
+    {
+      "name": "模拟充值成功并写入交易",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "json": {
+          "status": "simulated_success",
+          "transaction": {
+            "id": "txn_1783438161929226000",
+            "userId": "user_1783438161861856000",
+            "type": "recharge_simulated",
+            "amount": 10000,
+            "balanceAfter": 15000,
+            "referenceType": "recharge",
+            "referenceId": "large",
+            "note": "simulated recharge",
+            "createdAt": "2026-07-07T15:29:21.928597Z"
+          },
+          "walletBalance": 15000
+        }
+      }
+    },
+    {
+      "name": "房主重新入座成功",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "json": {
+          "id": "room_1783438161877142000",
+          "inviteCode": "R143000",
+          "ownerUserId": "user_1783438161858359000",
+          "status": "waiting",
+          "ruleSetId": "short-deck",
+          "name": "R2工业验收桌",
+          "mode": "training",
+          "variant": "short_holdem",
+          "ante": 20,
+          "minBuyIn": 2000,
+          "maxBuyIn": 8000,
+          "buyInCap": 60000,
+          "durationMinutes": 120,
+          "level": 1,
+          "seatCount": 9,
+          "minPlayersToStart": 2,
+          "members": [
+            {
+              "userId": "user_1783438161858359000",
+              "nickname": "房主r2_mrat18rp",
+              "role": "owner",
+              "joinedAt": "2026-07-07T15:29:21.877143Z"
+            },
+            {
+              "userId": "user_1783438161861856000",
+              "nickname": "玩家r2_mrat18rp",
+              "role": "player",
+              "joinedAt": "2026-07-07T15:29:21.917193Z"
+            }
+          ],
+          "seats": [
+            {
+              "seatNo": 1,
+              "seatStatus": "occupied",
+              "userId": "user_1783438161858359000",
+              "nickname": "房主r2_mrat18rp",
+              "buyInChips": 2000
+            },
+            {
+              "seatNo": 2,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 3,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 4,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 5,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 6,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 7,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 8,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 9,
+              "seatStatus": "empty"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "充值后玩家 8K 带入成功",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "json": {
+          "id": "room_1783438161877142000",
+          "inviteCode": "R143000",
+          "ownerUserId": "user_1783438161858359000",
+          "status": "waiting",
+          "ruleSetId": "short-deck",
+          "name": "R2工业验收桌",
+          "mode": "training",
+          "variant": "short_holdem",
+          "ante": 20,
+          "minBuyIn": 2000,
+          "maxBuyIn": 8000,
+          "buyInCap": 60000,
+          "durationMinutes": 120,
+          "level": 1,
+          "seatCount": 9,
+          "minPlayersToStart": 2,
+          "members": [
+            {
+              "userId": "user_1783438161858359000",
+              "nickname": "房主r2_mrat18rp",
+              "role": "owner",
+              "joinedAt": "2026-07-07T15:29:21.877143Z"
+            },
+            {
+              "userId": "user_1783438161861856000",
+              "nickname": "玩家r2_mrat18rp",
+              "role": "player",
+              "joinedAt": "2026-07-07T15:29:21.917193Z"
+            }
+          ],
+          "seats": [
+            {
+              "seatNo": 1,
+              "seatStatus": "occupied",
+              "userId": "user_1783438161858359000",
+              "nickname": "房主r2_mrat18rp",
+              "buyInChips": 2000
+            },
+            {
+              "seatNo": 2,
+              "seatStatus": "occupied",
+              "userId": "user_1783438161861856000",
+              "nickname": "玩家r2_mrat18rp",
+              "buyInChips": 8000
+            },
+            {
+              "seatNo": 3,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 4,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 5,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 6,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 7,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 8,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 9,
+              "seatStatus": "empty"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "未入会路人抢已占座位仍按成员权限拒绝",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "json": {
+          "code": "forbidden",
+          "message": "room membership required"
+        }
+      }
+    },
+    {
+      "name": "非房主不能开局",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "json": {
+          "code": "not_room_owner",
+          "message": "only room owner can start"
+        }
+      }
+    },
+    {
+      "name": "房主开局成功",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "json": {
+          "actingSeatNo": 1,
+          "actionDeadlineAt": "2026-07-07T15:29:51.956826Z",
+          "actionStartedAt": "2026-07-07T15:29:21.956826Z",
+          "actionTimeoutSeconds": 30,
+          "availableActions": [
+            "fold",
+            "all_in",
+            "call",
+            "raise"
+          ],
+          "boardCards": null,
+          "currentBet": 100,
+          "currentSeat": 1,
+          "handId": "game-1783438161956826000",
+          "minRaise": 100,
+          "players": [
+            {
+              "seatNo": 1,
+              "name": "房主r2_mrat18rp",
+              "stack": 1950,
+              "holeCards": [
+                "Ad",
+                "Qc"
+              ],
+              "status": "active",
+              "streetCommitted": 50,
+              "handCommitted": 50,
+              "hasActed": false,
+              "currentHand": null
+            },
+            {
+              "seatNo": 2,
+              "name": "玩家r2_mrat18rp",
+              "stack": 7900,
+              "holeCards": [
+                "Ah",
+                "Qs"
+              ],
+              "status": "active",
+              "streetCommitted": 100,
+              "handCommitted": 100,
+              "hasActed": false,
+              "currentHand": null
+            }
+          ],
+          "pot": 100,
+          "roomId": "room_1783438161877142000",
+          "serverTime": "2026-07-07T15:29:21.962683Z",
+          "status": "preflop"
+        }
+      }
+    },
+    {
+      "name": "当前手牌接口返回开局状态",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "json": {
+          "actingSeatNo": 1,
+          "actionDeadlineAt": "2026-07-07T15:29:51.956826Z",
+          "actionStartedAt": "2026-07-07T15:29:21.956826Z",
+          "actionTimeoutSeconds": 30,
+          "availableActions": [
+            "fold",
+            "all_in",
+            "call",
+            "raise"
+          ],
+          "boardCards": null,
+          "currentBet": 100,
+          "currentSeat": 1,
+          "handId": "game-1783438161956826000",
+          "minRaise": 100,
+          "players": [
+            {
+              "seatNo": 1,
+              "name": "房主r2_mrat18rp",
+              "stack": 1950,
+              "holeCards": [
+                "Ad",
+                "Qc"
+              ],
+              "status": "active",
+              "streetCommitted": 50,
+              "handCommitted": 50,
+              "hasActed": false,
+              "currentHand": null
+            },
+            {
+              "seatNo": 2,
+              "name": "玩家r2_mrat18rp",
+              "stack": 7900,
+              "holeCards": [
+                "Ah",
+                "Qs"
+              ],
+              "status": "active",
+              "streetCommitted": 100,
+              "handCommitted": 100,
+              "hasActed": false,
+              "currentHand": null
+            }
+          ],
+          "pot": 100,
+          "roomId": "room_1783438161877142000",
+          "serverTime": "2026-07-07T15:29:21.966484Z",
+          "status": "preflop"
+        }
+      }
+    },
+    {
+      "name": "游戏中站起被拒绝",
+      "ok": true,
+      "detail": {
+        "status": 409,
+        "json": {
+          "code": "room_not_waiting",
+          "message": "room is not waiting"
+        }
+      }
+    },
+    {
+      "name": "非当前行动玩家不能操作",
+      "ok": true,
+      "detail": {
+        "status": 403,
+        "json": {
+          "code": "not_your_turn",
+          "message": "not your turn"
+        }
+      }
+    },
+    {
+      "name": "当前行动玩家可提交合法动作",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "json": {
+          "actingSeatNo": 2,
+          "actionDeadlineAt": "2026-07-07T15:29:51.974567Z",
+          "actionStartedAt": "2026-07-07T15:29:21.974567Z",
+          "actionTimeoutSeconds": 30,
+          "availableActions": [
+            "fold",
+            "all_in",
+            "check"
+          ],
+          "boardCards": null,
+          "currentBet": 100,
+          "currentSeat": 2,
+          "handId": "game-1783438161956826000",
+          "minRaise": 100,
+          "players": [
+            {
+              "seatNo": 1,
+              "name": "房主r2_mrat18rp",
+              "stack": 1900,
+              "holeCards": [
+                "Ad",
+                "Qc"
+              ],
+              "status": "active",
+              "streetCommitted": 100,
+              "handCommitted": 100,
+              "hasActed": true,
+              "currentHand": null
+            },
+            {
+              "seatNo": 2,
+              "name": "玩家r2_mrat18rp",
+              "stack": 7900,
+              "holeCards": [
+                "Ah",
+                "Qs"
+              ],
+              "status": "active",
+              "streetCommitted": 100,
+              "handCommitted": 100,
+              "hasActed": false,
+              "currentHand": null
+            }
+          ],
+          "pot": 100,
+          "roomId": "room_1783438161877142000",
+          "serverTime": "2026-07-07T15:29:21.974567Z",
+          "status": "preflop"
+        }
+      }
+    },
+    {
+      "name": "成员可查看当前战绩榜",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "json": {
+          "items": []
+        }
+      }
+    },
+    {
+      "name": "牌谱最近记录接口可访问",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "json": {
+          "items": []
+        }
+      }
+    },
+    {
+      "name": "不存在牌谱回放返回 replay_not_found",
+      "ok": true,
+      "detail": {
+        "status": 404,
+        "json": {
+          "code": "replay_not_found",
+          "message": "hand replay not found"
+        }
+      }
+    },
+    {
+      "name": "我的手牌接口可访问",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "json": {
+          "items": []
+        }
+      }
+    },
+    {
+      "name": "钱包接口包含充值和买入交易",
+      "ok": true,
+      "detail": {
+        "status": 200,
+        "json": {
+          "balance": 7000,
+          "transactions": [
+            {
+              "id": "txn_1783438161941735000",
+              "userId": "user_1783438161861856000",
+              "type": "buy_in",
+              "amount": -8000,
+              "balanceAfter": 7000,
+              "referenceType": "room",
+              "referenceId": "room_1783438161877142000",
+              "note": "room buy-in room_1783438161877142000 seat 2",
+              "createdAt": "2026-07-07T15:29:21.941302Z"
+            },
+            {
+              "id": "txn_1783438161929226000",
+              "userId": "user_1783438161861856000",
+              "type": "recharge_simulated",
+              "amount": 10000,
+              "balanceAfter": 15000,
+              "referenceType": "recharge",
+              "referenceId": "large",
+              "note": "simulated recharge",
+              "createdAt": "2026-07-07T15:29:21.928597Z"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "规则测试页 /api/games 创建兼容",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "json": {
+          "id": "game-1783438161988028000",
+          "rulesetId": "short-deck",
+          "bettingStructure": {
+            "type": "ante",
+            "ante": 10,
+            "buttonBlind": 20
+          },
+          "dealMode": "random",
+          "stage": "preflop",
+          "buttonSeat": 1,
+          "currentSeat": 2,
+          "currentBet": 30,
+          "minRaise": 20,
+          "board": null,
+          "seats": [
+            {
+              "seatNo": 1,
+              "name": "A",
+              "stack": 970,
+              "holeCards": [
+                "Ad",
+                "Qc"
+              ],
+              "status": "active",
+              "streetCommitted": 30,
+              "handCommitted": 30,
+              "hasActed": false,
+              "currentHand": null
+            },
+            {
+              "seatNo": 2,
+              "name": "B",
+              "stack": 990,
+              "holeCards": [
+                "Ah",
+                "Qs"
+              ],
+              "status": "active",
+              "streetCommitted": 10,
+              "handCommitted": 10,
+              "hasActed": false,
+              "currentHand": null
+            }
+          ],
+          "pots": [
+            {
+              "id": "pot-1",
+              "amount": 20,
+              "eligibleSeats": [
+                1,
+                2
+              ]
+            },
+            {
+              "id": "pot-2",
+              "amount": 20,
+              "eligibleSeats": [
+                1
+              ]
+            }
+          ],
+          "showdown": null,
+          "legalActions": [
+            "fold",
+            "all_in",
+            "call",
+            "raise"
+          ],
+          "isReplay": false,
+          "debugLocked": false,
+          "version": 4
+        }
+      }
+    },
+    {
+      "name": "规则测试页回放越界返回 replay_out_of_range",
+      "ok": true,
+      "detail": {
+        "status": 400,
+        "json": {
+          "code": "replay_out_of_range",
+          "message": "replay sequence out of range",
+          "field": "toSeq"
+        }
+      }
+    },
+    {
+      "name": "注册 socket_owner_r2_mrat18rp",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "json": {
+          "token": "tok_1783438161993326000",
+          "user": {
+            "id": "user_1783438161992154000",
+            "nickname": "Socket房主r2_mrat18rp",
+            "username": "socket_owner_r2_mrat18rp"
+          }
+        }
+      }
+    },
+    {
+      "name": "注册 socket_player_r2_mrat18rp",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "json": {
+          "token": "tok_1783438161994869000",
+          "user": {
+            "id": "user_1783438161994010000",
+            "nickname": "Socket玩家r2_mrat18rp",
+            "username": "socket_player_r2_mrat18rp"
+          }
+        }
+      }
+    },
+    {
+      "name": "注册 socket_outsider_r2_mrat18rp",
+      "ok": true,
+      "detail": {
+        "status": 201,
+        "json": {
+          "token": "tok_1783438161996484000",
+          "user": {
+            "id": "user_1783438161995470000",
+            "nickname": "Socket路人r2_mrat18rp",
+            "username": "socket_outsider_r2_mrat18rp"
+          }
+        }
+      }
+    },
+    {
+      "name": "Socket 订阅返回房间快照/战绩/聊天/在线状态",
+      "ok": true,
+      "detail": {
+        "hand": null,
+        "leaderboard": [],
+        "presence": [
+          {
+            "userId": "user_1783438161992154000",
+            "seatNo": 1,
+            "status": "online",
+            "lastDisconnectedAt": null
+          },
+          {
+            "userId": "user_1783438161994010000",
+            "seatNo": 2,
+            "status": "offline",
+            "lastDisconnectedAt": null
+          }
+        ],
+        "recentActionLog": [
+          {
+            "seq": 1,
+            "kind": "seat_taken",
+            "seatNo": 1,
+            "nickname": "Socket房主r2_mrat18rp",
+            "source": "system",
+            "createdAt": "2026-07-07T15:29:22.005921Z"
+          },
+          {
+            "seq": 2,
+            "kind": "seat_taken",
+            "seatNo": 2,
+            "nickname": "Socket玩家r2_mrat18rp",
+            "source": "system",
+            "createdAt": "2026-07-07T15:29:22.009135Z"
+          }
+        ],
+        "recentChatMessages": [],
+        "room": {
+          "id": "room_1783438161997094000",
+          "inviteCode": "R095000",
+          "ownerUserId": "user_1783438161992154000",
+          "status": "waiting",
+          "ruleSetId": "long-holdem",
+          "name": "Socket R2",
+          "mode": "training",
+          "variant": "holdem",
+          "ante": 20,
+          "minBuyIn": 1000,
+          "maxBuyIn": 5000,
+          "buyInCap": 1000000,
+          "durationMinutes": 120,
+          "level": 1,
+          "seatCount": 6,
+          "minPlayersToStart": 2,
+          "members": [
+            {
+              "userId": "user_1783438161992154000",
+              "nickname": "Socket房主r2_mrat18rp",
+              "role": "owner",
+              "joinedAt": "2026-07-07T15:29:21.997096Z"
+            },
+            {
+              "userId": "user_1783438161994010000",
+              "nickname": "Socket玩家r2_mrat18rp",
+              "role": "player",
+              "joinedAt": "2026-07-07T15:29:22.001377Z"
+            }
+          ],
+          "seats": [
+            {
+              "seatNo": 1,
+              "seatStatus": "occupied",
+              "userId": "user_1783438161992154000",
+              "nickname": "Socket房主r2_mrat18rp",
+              "buyInChips": 1000
+            },
+            {
+              "seatNo": 2,
+              "seatStatus": "occupied",
+              "userId": "user_1783438161994010000",
+              "nickname": "Socket玩家r2_mrat18rp",
+              "buyInChips": 1000
+            },
+            {
+              "seatNo": 3,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 4,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 5,
+              "seatStatus": "empty"
+            },
+            {
+              "seatNo": 6,
+              "seatStatus": "empty"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Socket 非成员订阅被拒绝",
+      "ok": true,
+      "detail": {
+        "type": "error",
+        "requestId": "sub-outsider-r2",
+        "roomId": "room_1783438161997094000",
+        "payload": {
+          "code": "forbidden",
+          "message": "room subscription requires membership",
+          "field": "roomId"
+        },
+        "sentAt": "2026-07-07T15:29:22Z"
+      }
+    },
+    {
+      "name": "Socket 空聊天被拒绝",
+      "ok": true,
+      "detail": {
+        "type": "error",
+        "requestId": "chat-empty-r2",
+        "roomId": "room_1783438161997094000",
+        "payload": {
+          "code": "chat_message_empty",
+          "message": "chat message cannot be empty",
+          "field": "text"
+        },
+        "sentAt": "2026-07-07T15:29:22Z"
+      }
+    },
+    {
+      "name": "Socket 文本聊天广播成功",
+      "ok": true,
+      "detail": {
+        "type": "chat.message",
+        "requestId": "chat-good-r2",
+        "roomId": "room_1783438161997094000",
+        "payload": {
+          "message": {
+            "id": "chat_21458000",
+            "kind": "text",
+            "text": "工业验收消息",
+            "userId": "user_1783438161992154000",
+            "nickname": "Socket房主r2_mrat18rp",
+            "createdAt": "2026-07-07T15:29:22.021458Z"
+          }
+        },
+        "sentAt": "2026-07-07T15:29:22Z"
+      }
+    },
+    {
+      "name": "Socket 聊天频率限制生效",
+      "ok": true,
+      "detail": {
+        "type": "error",
+        "requestId": "chat-rate-r2",
+        "roomId": "room_1783438161997094000",
+        "payload": {
+          "code": "chat_rate_limited",
+          "message": "chat messages are too frequent"
+        },
+        "sentAt": "2026-07-07T15:29:22Z"
+      }
+    },
+    {
+      "name": "Socket 表情聊天广播成功",
+      "ok": true,
+      "detail": {
+        "type": "chat.message",
+        "requestId": "chat-emoji-r2",
+        "roomId": "room_1783438161997094000",
+        "payload": {
+          "message": {
+            "id": "chat_380962000",
+            "kind": "emoji",
+            "emojiCode": "nice_hand",
+            "userId": "user_1783438161992154000",
+            "nickname": "Socket房主r2_mrat18rp",
+            "createdAt": "2026-07-07T15:29:22.380957Z"
+          }
+        },
+        "sentAt": "2026-07-07T15:29:22Z"
+      }
+    },
+    {
+      "name": "Socket 房主开局广播 hand.started",
+      "ok": true,
+      "detail": {
+        "hand": {
+          "actingSeatNo": 1,
+          "actionDeadlineAt": "2026-07-07T15:29:52.394513Z",
+          "actionStartedAt": "2026-07-07T15:29:22.394513Z",
+          "actionTimeoutSeconds": 30,
+          "availableActions": [
+            "fold",
+            "all_in",
+            "call",
+            "raise"
+          ],
+          "boardCards": null,
+          "currentBet": 100,
+          "currentSeat": 1,
+          "handId": "game-1783438162394513000",
+          "minRaise": 100,
+          "players": [
+            {
+              "seatNo": 1,
+              "name": "Socket房主r2_mrat18rp",
+              "stack": 950,
+              "holeCards": [
+                "Jd",
+                "8d"
+              ],
+              "status": "active",
+              "streetCommitted": 50,
+              "handCommitted": 50,
+              "hasActed": false,
+              "currentHand": null
+            },
+            {
+              "seatNo": 2,
+              "name": "Socket玩家r2_mrat18rp",
+              "stack": 900,
+              "holeCards": [
+                "Qc",
+                "Ac"
+              ],
+              "status": "active",
+              "streetCommitted": 100,
+              "handCommitted": 100,
+              "hasActed": false,
+              "currentHand": null
+            }
+          ],
+          "pot": 100,
+          "roomId": "room_1783438161997094000",
+          "serverTime": "2026-07-07T15:29:22.405774Z",
+          "status": "preflop"
+        }
+      }
+    },
+    {
+      "name": "Socket 非法动作不广播成功",
+      "ok": true,
+      "detail": {
+        "type": "error",
+        "requestId": "bad-action-r2",
+        "roomId": "room_1783438161997094000",
+        "payload": {
+          "code": "invalid_action",
+          "message": "raise must exceed current bet"
+        },
+        "sentAt": "2026-07-07T15:29:22Z"
+      }
+    },
+    {
+      "name": "Socket 取消订阅确认",
+      "ok": true,
+      "detail": {
+        "type": "ack",
+        "requestId": "unsub-r2",
+        "roomId": "room_1783438161997094000",
+        "payload": {
+          "command": "room.unsubscribe"
+        },
+        "sentAt": "2026-07-07T15:29:22Z"
+      }
+    }
+  ],
+  "roomId": "room_1783438161877142000",
+  "inviteCode": "R143000"
+}

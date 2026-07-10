@@ -38,7 +38,7 @@ function snapshotWithSeats(count: number): GameSnapshot {
 
 describe('App visual contract', () => {
 	it('keeps the app shell with router outlet and bottom tabs', () => {
-		for (const token of ['router-view', 'BottomTabBar', "route.path !== '/login'", "route.path !== '/rules-test'", "!route.path.startsWith('/room/')"]) {
+		for (const token of ['router-view', 'BottomTabBar', 'tablessRoutes', "'/login'", "'/rules-test'", "'/create-match'", "'/shop'", '!tablessRoutes.includes(route.path)', "!route.path.startsWith('/room/')"]) {
 			expect(appSource).toContain(token);
 		}
 	});

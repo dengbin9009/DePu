@@ -1,0 +1,128 @@
+{
+  "generatedAt": "2026-07-07T14:26:26.096Z",
+  "total": 20,
+  "passed": 6,
+  "failed": 14,
+  "results": [
+    {
+      "area": "health",
+      "name": "GET /health returns ok",
+      "pass": true,
+      "detail": "{\"status\":\"ok\"}"
+    },
+    {
+      "area": "auth",
+      "name": "unauthorized profile is rejected",
+      "pass": false,
+      "detail": "Error: body {\"code\":\"unauthorized\",\"message\":\"authentication required\"}\n\n    at qaAssert (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:225:25)\n    at /Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:256:5\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async qaExpect (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:217:20)\n    at async qaRunApiSuite (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:253:3)\n    at async /Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:467:1"
+    },
+    {
+      "area": "auth",
+      "name": "register owner/player/outsider with wallets",
+      "pass": true,
+      "detail": "owner=qa_owner_1783434385979_1571, balance=5000"
+    },
+    {
+      "area": "create-room",
+      "name": "creates short-deck training room with full mockup config",
+      "pass": true,
+      "detail": "room=room_1783434386014772000, invite=R774000"
+    },
+    {
+      "area": "create-room-boundary",
+      "name": "rejects explicit zero and invalid range fields",
+      "pass": false,
+      "detail": "Error: field ante body {\"code\":\"invalid_room_config\",\"message\":\"invalid_room_config\",\"field\":\"ante\"}\n\n    at qaAssert (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:225:25)\n    at /Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:292:7\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async qaExpect (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:217:20)\n    at async qaRunApiSuite (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:280:3)\n    at async /Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:467:1"
+    },
+    {
+      "area": "create-room-boundary",
+      "name": "rejects unsupported sng and omaha options",
+      "pass": false,
+      "detail": "Error: no error code {\"code\":\"unsupported_room_mode\",\"message\":\"unsupported_room_mode\",\"field\":\"mode\"}\n\n    at qaAssert (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:225:25)\n    at /Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:304:7\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async qaExpect (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:217:20)\n    at async qaRunApiSuite (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:296:3)\n    at async /Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:467:1"
+    },
+    {
+      "area": "join",
+      "name": "join invite is trim/case tolerant and invalid invite fails",
+      "pass": false,
+      "detail": "Error: bad invite 400 {\"code\":\"invalid_invite_code\",\"message\":\"invalid invite code\",\"field\":\"inviteCode\"}\n\n    at qaAssert (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:225:25)\n    at /Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:310:5\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async qaExpect (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:217:20)\n    at async qaRunApiSuite (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:308:3)\n    at async /Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:467:1"
+    },
+    {
+      "area": "room-access",
+      "name": "leaderboard requires membership",
+      "pass": false,
+      "detail": "Error: leaderboard 403 {\"code\":\"forbidden\",\"message\":\"room membership required\"}\n\n    at qaAssert (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:225:25)\n    at /Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:317:5\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async qaExpect (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:217:20)\n    at async qaRunApiSuite (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:315:3)\n    at async /Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:467:1"
+    },
+    {
+      "area": "seat-buyin",
+      "name": "buy-in below min and above max are rejected",
+      "pass": false,
+      "detail": "Error: amount 1999 400 {\"code\":\"invalid_buy_in\",\"message\":\"invalid_buy_in\",\"field\":\"buyInChips\"}\n\n    at qaAssert (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:225:25)\n    at /Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:323:7\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async qaExpect (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:217:20)\n    at async qaRunApiSuite (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:320:3)\n    at async /Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:467:1"
+    },
+    {
+      "area": "seat-buyin",
+      "name": "insufficient coins rejects without occupying seat",
+      "pass": false,
+      "detail": "Error: seat 409 {\"code\":\"insufficient_coins\",\"message\":\"insufficient coins\",\"field\":\"buyInChips\"}\n\n    at qaAssert (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:225:25)\n    at /Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:329:5\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async qaExpect (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:217:20)\n    at async qaRunApiSuite (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:327:3)\n    at async /Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:467:1"
+    },
+    {
+      "area": "recharge",
+      "name": "recharge options and invalid recharge boundary",
+      "pass": false,
+      "detail": "Error: invalid 400 {\"code\":\"invalid_recharge\",\"message\":\"invalid recharge request\",\"field\":\"optionCode\"}\n\n    at qaAssert (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:225:25)\n    at /Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:339:5\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async qaExpect (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:217:20)\n    at async qaRunApiSuite (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:335:3)\n    at async /Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:467:1"
+    },
+    {
+      "area": "recharge",
+      "name": "simulated recharge updates wallet transaction",
+      "pass": true,
+      "detail": "5000->15000"
+    },
+    {
+      "area": "seat-buyin",
+      "name": "legal buy-in seats player and duplicate/occupied checks work",
+      "pass": false,
+      "detail": "Error: dup 409 {\"code\":\"already_seated\",\"message\":\"user already seated\",\"field\":\"seatNo\"}\n\n    at qaAssert (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:225:25)\n    at /Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:358:5\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async qaExpect (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:217:20)\n    at async qaRunApiSuite (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:353:3)\n    at async /Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:467:1"
+    },
+    {
+      "area": "seat-buyin",
+      "name": "owner legal buy-in and leave seat keep membership",
+      "pass": true,
+      "detail": "leave/reseat ok"
+    },
+    {
+      "area": "start-hand",
+      "name": "non-owner cannot start room hand",
+      "pass": false,
+      "detail": "Error: non-owner start 403 {\"code\":\"not_room_owner\",\"message\":\"only room owner can start\"}\n\n    at qaAssert (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:225:25)\n    at /Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:375:5\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async qaExpect (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:217:20)\n    at async qaRunApiSuite (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:373:3)\n    at async /Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:467:1"
+    },
+    {
+      "area": "start-hand",
+      "name": "owner can start and current hand is available",
+      "pass": false,
+      "detail": "Error: start 403 {\"code\":\"not_room_owner\",\"message\":\"only room owner can start\"}\n\n    at qaAssert (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:225:25)\n    at /Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:380:5\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async qaExpect (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:217:20)\n    at async qaRunApiSuite (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:378:3)\n    at async /Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:467:1"
+    },
+    {
+      "area": "hands",
+      "name": "recent hands empty before settlement and replay missing returns 404",
+      "pass": false,
+      "detail": "Error: replay 403 {\"code\":\"forbidden\",\"message\":\"room membership required\"}\n\n    at qaAssert (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:225:25)\n    at /Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:389:5\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async qaExpect (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:217:20)\n    at async qaRunApiSuite (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:385:3)\n    at async /Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:467:1"
+    },
+    {
+      "area": "rules-test-compat",
+      "name": "/api/games create/history/replay still isolated from rooms",
+      "pass": true,
+      "detail": "game=game-1783434386085140000"
+    },
+    {
+      "area": "socket",
+      "name": "socket handshake, room.subscribe snapshot, chat and rate limit",
+      "pass": false,
+      "detail": "Error: WebSocket global unavailable\n    at qaAssert (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:225:25)\n    at /Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:402:5\n    at qaExpect (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:217:26)\n    at qaRunApiSuite (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:401:9)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async /Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:467:1"
+    },
+    {
+      "area": "socket",
+      "name": "invalid socket token is rejected/closed",
+      "pass": false,
+      "detail": "ReferenceError: WebSocket is not defined\n    at /Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:451:16\n    at qaExpect (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:217:26)\n    at qaRunApiSuite (/Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:450:9)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async /Users/dengbin/Code/github/DePu/.node_repl_cell_45.mjs:467:1"
+    }
+  ]
+}
