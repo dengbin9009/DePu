@@ -1,0 +1,68 @@
+{
+  "generatedAt": "2026-07-07T15:09:49.158Z",
+  "total": 10,
+  "passed": 10,
+  "failed": 0,
+  "results": [
+    {
+      "area": "auth",
+      "name": "register qa users",
+      "pass": true,
+      "detail": "final_owner2_1783436989057_23757"
+    },
+    {
+      "area": "create-room",
+      "name": "create 8K short-deck room requiring shop flow",
+      "pass": true,
+      "detail": "room_1783436989096234000/R235000"
+    },
+    {
+      "area": "buy-in-boundary",
+      "name": "insufficient coins rejected before recharge",
+      "pass": true,
+      "detail": "insufficient_coins"
+    },
+    {
+      "area": "shop-api",
+      "name": "simulated recharge updates wallet and transaction",
+      "pass": true,
+      "detail": "5000->15000"
+    },
+    {
+      "area": "buy-in",
+      "name": "recharged owner can sit with 8K buy-in",
+      "pass": true,
+      "detail": "seated seat1"
+    },
+    {
+      "area": "membership",
+      "name": "non-member cannot seat or leaderboard",
+      "pass": true,
+      "detail": "forbidden"
+    },
+    {
+      "area": "waiting-stand-up",
+      "name": "waiting room stand-up releases seat but keeps owner membership",
+      "pass": true,
+      "detail": "waiting stand ok"
+    },
+    {
+      "area": "join-seat-start",
+      "name": "players sit; non-owner cannot start; owner can start",
+      "pass": true,
+      "detail": "game-1783436989145575000"
+    },
+    {
+      "area": "playing-stand-up",
+      "name": "playing room stand-up is rejected to protect hand state",
+      "pass": true,
+      "detail": "room_not_waiting"
+    },
+    {
+      "area": "rules-test-compat",
+      "name": "/api/games remains isolated",
+      "pass": true,
+      "detail": "game-1783436989153739000"
+    }
+  ]
+}

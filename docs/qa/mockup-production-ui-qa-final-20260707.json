@@ -1,0 +1,56 @@
+{
+  "generatedAt": "2026-07-07T14:44:50.357Z",
+  "total": 8,
+  "passed": 4,
+  "failed": 4,
+  "results": [
+    {
+      "area": "create-page",
+      "name": "修正按钮文案匹配后成功创建并进入房间",
+      "pass": true,
+      "detail": "/room/room_1783435438952149000"
+    },
+    {
+      "area": "room-waiting",
+      "name": "等待态显示健康提示、网络、房主按钮、中心信息",
+      "pass": true,
+      "detail": "viewport=390x844"
+    },
+    {
+      "area": "room-waiting",
+      "name": "等待态主要交互元素无严重重叠",
+      "pass": false,
+      "detail": "Error: [{\"a\":\"选座位\",\"b\":\"▦↩战绩牌谱▤麦克风关\",\"ratio\":1},{\"a\":\"▦↩战绩牌谱▤麦克风关\",\"b\":\"▦\",\"ratio\":1},{\"a\":\"▦↩战绩牌谱▤麦克风关\",\"b\":\"↩\",\"ratio\":1},{\"a\":\"▦↩战绩牌谱▤麦克风关\",\"b\":\"战绩\",\"ratio\":1},{\"a\":\"▦↩战绩牌谱▤麦克风关\",\"b\":\"牌谱\",\"ratio\":1},{\"a\":\"▦↩战绩牌谱▤麦克风关\",\"b\":\"▤\",\"ratio\":1},{\"a\":\"▦↩战绩牌谱▤麦克风关\",\"b\":\"麦克风关\",\"ratio\":1}]\n    at assert (/Users/dengbin/Code/github/DePu/.node_repl_cell_58.mjs:238:52)\n    at /Users/dengbin/Code/github/DePu/.node_repl_cell_58.mjs:312:5\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async expectStep (/Users/dengbin/Code/github/DePu/.node_repl_cell_58.mjs:237:71)\n    at async /Users/dengbin/Code/github/DePu/.node_repl_cell_58.mjs:293:3"
+    },
+    {
+      "area": "buy-in",
+      "name": "点击空座打开补充记分牌",
+      "pass": false,
+      "detail": "Error: missing 补充记分牌; text=绿色竞技 远离赌博 · 谨防诈骗 健康生活\n网络延时\n43ms\n返回\n离开牌桌\n玩家 0/9\n邀请码 R174000\n房间\n返回大厅\n解散比赛\n邀请好友\n开 始\n训练赛◆短牌 第 1 手\n德扑之星UI工业验收桌\n◎ 20　级别:1\n< 000 >\n邀请码:R174000\n等待公共牌\n底池 0\n#1\n空座\n#2\n空座\n#3\n空座\n#4\n空座\n#5\n空座\n#6\n空座\n#7\n空座\n#8\n空座\n#9\n空座\n当前为旁观视角\n坐下 #1\n选座位\n▦\n↩\n战绩\n牌谱\n▤\n麦克风关\n    at assert (/Users/dengbin/Code/github/DePu/.node_repl_cell_58.mjs:238:52)\n    at /Users/dengbin/Code/github/DePu/.node_repl_cell_58.mjs:322:63\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async expectStep (/Users/dengbin/Code/github/DePu/.node_repl_cell_58.mjs:237:71)\n    at async /Users/dengbin/Code/github/DePu/.node_repl_cell_58.mjs:315:3"
+    },
+    {
+      "area": "shop-flow",
+      "name": "买入弹窗金币不足可去商城并返回牌桌",
+      "pass": false,
+      "detail": "Error: shop missing 绿色竞技 远离赌博 · 谨防诈骗 健康生活\n网络延时\n43ms\n返回\n离开牌桌\n玩家 0/9\n邀请码 R174000\n房间\n返回大厅\n解散比赛\n邀请好友\n开 始\n训练赛◆短牌 第 1 手\n德扑之星UI工业验收桌\n◎ 20　级别:1\n< 000 >\n邀请码:R174000\n等待公共牌\n底池 0\n#1\n空座\n#2\n空座\n#3\n空座\n#4\n空座\n#5\n空座\n#6\n空座\n#7\n空座\n#8\n空座\n#9\n空座\n当前为旁观视角\n坐下 #1\n选座位\n▦\n↩\n战绩\n牌谱\n▤\n麦克风关\n    at assert (/Users/dengbin/Code/github/DePu/.node_repl_cell_58.mjs:238:52)\n    at /Users/dengbin/Code/github/DePu/.node_repl_cell_58.mjs:328:5\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async expectStep (/Users/dengbin/Code/github/DePu/.node_repl_cell_58.mjs:237:71)\n    at async /Users/dengbin/Code/github/DePu/.node_repl_cell_58.mjs:326:3"
+    },
+    {
+      "area": "buy-in",
+      "name": "充值后重新买入坐下并显示玩家信息",
+      "pass": false,
+      "detail": "Error: modal missing 绿色竞技 远离赌博 · 谨防诈骗 健康生活\n网络延时\n43ms\n返回\n离开牌桌\n玩家 0/9\n邀请码 R174000\n房间\n返回大厅\n解散比赛\n邀请好友\n开 始\n训练赛◆短牌 第 1 手\n德扑之星UI工业验收桌\n◎ 20　级别:1\n< 000 >\n邀请码:R174000\n等待公共牌\n底池 0\n#1\n空座\n#2\n空座\n#3\n空座\n#4\n空座\n#5\n空座\n#6\n空座\n#7\n空座\n#8\n空座\n#9\n空座\n当前为旁观视角\n坐下 #1\n选座位\n▦\n↩\n战绩\n牌谱\n▤\n麦克风关\n    at assert (/Users/dengbin/Code/github/DePu/.node_repl_cell_58.mjs:238:52)\n    at /Users/dengbin/Code/github/DePu/.node_repl_cell_58.mjs:355:5\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async expectStep (/Users/dengbin/Code/github/DePu/.node_repl_cell_58.mjs:237:71)\n    at async /Users/dengbin/Code/github/DePu/.node_repl_cell_58.mjs:348:3"
+    },
+    {
+      "area": "panels",
+      "name": "聊天、战绩、牌谱、设置面板可打开关闭",
+      "pass": true,
+      "detail": "4 panels"
+    },
+    {
+      "area": "start-hand",
+      "name": "房主开始按钮触发开局后行动/刷新状态可见",
+      "pass": true,
+      "detail": "state visible"
+    }
+  ]
+}

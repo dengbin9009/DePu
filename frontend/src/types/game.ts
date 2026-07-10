@@ -101,3 +101,233 @@ export interface ActionLog {
   stateSummary: StateSummary;
   createdAt: string;
 }
+
+
+export interface ProfileResponse {
+  id: string;
+  username: string;
+  nickname: string;
+  walletBalance: number;
+  handsPlayed: number;
+  totalProfit: number;
+  lastPlayedAt: string | null;
+}
+
+export interface WalletTransaction {
+  id: string;
+  type: string;
+  amount: number;
+  balanceAfter: number;
+  referenceType?: string | null;
+  referenceId?: string | null;
+  note?: string | null;
+  createdAt: string;
+}
+
+export interface WalletResponse {
+  balance: number;
+  transactions: WalletTransaction[];
+}
+
+export interface RechargeOption {
+  code: string;
+  label: string;
+  amount: number;
+}
+
+export interface RechargeResponse {
+  status: 'simulated_success';
+  walletBalance: number;
+  transaction: WalletTransaction;
+}
+
+export type RoomMode = 'training' | 'sng';
+export type RoomVariant = 'short_holdem' | 'holdem' | 'omaha';
+
+export interface CreateRoomPayload {
+  ruleSetId: string;
+  name?: string;
+  mode?: RoomMode;
+  variant?: RoomVariant;
+  ante?: number;
+  minBuyIn?: number;
+  maxBuyIn?: number;
+  buyInCap?: number;
+  durationMinutes?: number;
+  seatCount: number;
+  minPlayersToStart: number;
+}
+
+export interface RoomMember {
+  userId: string;
+  nickname: string;
+  role: 'owner' | 'player';
+  joinedAt: string;
+}
+
+export interface RoomSeat {
+  seatNo: number;
+  seatStatus: 'empty' | 'occupied' | 'sitting_out';
+  userId?: string | null;
+  nickname?: string | null;
+  buyInChips?: number | null;
+}
+
+export interface RoomResponse {
+  id: string;
+  inviteCode: string;
+  ownerUserId: string;
+  status: 'waiting' | 'playing' | 'closed';
+  ruleSetId?: string;
+  name?: string;
+  mode?: RoomMode;
+  variant?: RoomVariant;
+  ante?: number;
+  minBuyIn?: number;
+  maxBuyIn?: number;
+  buyInCap?: number;
+  durationMinutes?: number;
+  level?: number;
+  seatCount?: number;
+  minPlayersToStart?: number;
+  members: RoomMember[];
+  seats: RoomSeat[];
+}
+
+export interface UserHandRecord {
+  handId: string;
+  roomId: string;
+  handNo: number;
+  completedAt: string;
+  nickname: string;
+  profit: number;
+  winnerSummary: string;
+}
+
+export interface RoomHandHistoryParticipant {
+  userId: string;
+  nickname: string;
+  seatNo: number;
+  profit: number;
+  awardAmount: number;
+  handCommitted: number;
+  resultType: string;
+  holeCards?: string[] | null;
+  bestCards?: string[] | null;
+  handClass?: string;
+}
+
+export interface RoomHandHistoryRecord {
+  handId: string;
+  roomId: string;
+  handNo: number;
+  ruleSetId: string;
+  completedAt: string;
+  winnerSummary: string;
+  potSummary: string;
+  totalPot: number;
+  boardCards: string[];
+  participants: RoomHandHistoryParticipant[];
+}
+
+
+export interface RoomHandPlayer {
+  seatNo: number;
+  name: string;
+  stack: number;
+  holeCards?: string[] | null;
+  status: string;
+  streetCommitted: number;
+  handCommitted: number;
+  hasActed?: boolean;
+}
+
+export interface RoomHandState {
+  roomId: string;
+  handId: string;
+  status: string;
+  currentSeat: number | null;
+  pot: number;
+  currentBet?: number;
+  minRaise?: number;
+  boardCards: string[] | null;
+  players: RoomHandPlayer[];
+  availableActions: string[];
+  actingSeatNo?: number | null;
+  actionStartedAt?: string;
+  actionDeadlineAt?: string;
+  actionTimeoutSeconds?: number;
+  serverTime?: string;
+}
+
+export interface RoomPresence {
+  userId: string;
+  seatNo?: number | null;
+  status: 'online' | 'offline';
+  lastDisconnectedAt?: string | null;
+}
+
+export interface RoomActionLogEntry {
+  handId?: string;
+  seq: number;
+  kind: string;
+  street?: string;
+  seatNo?: number;
+  nickname?: string;
+  action?: string;
+  amount?: number;
+  source: 'player' | 'timeout' | 'system' | string;
+  createdAt: string;
+}
+
+export interface RoomChatMessage {
+  id: string;
+  kind: 'text' | 'emoji';
+  text?: string;
+  emojiCode?: string;
+  userId: string;
+  nickname: string;
+  createdAt: string;
+}
+
+export interface RoomLeaderboardItem {
+  userId: string;
+  nickname: string;
+  handsPlayed: number;
+  handsWon: number;
+  netProfit: number;
+  biggestPotWon: number;
+  lastSettledAt: string;
+}
+
+export interface HandReplayAction {
+  type: string;
+  seatNo: number;
+  amount: number;
+}
+
+export interface HandReplayPlayer {
+  seatNo: number;
+  nickname: string;
+  stack: number;
+  status: string;
+  handCommitted: number;
+  holeCards?: string[] | null;
+}
+
+export interface HandReplayStep {
+  seq: number;
+  stage: string;
+  currentSeat: number;
+  boardCards: string[];
+  pot: number;
+  action?: HandReplayAction | null;
+  players: HandReplayPlayer[];
+}
+
+export interface HandReplayResponse {
+  handId: string;
+  roomId: string;
+  gameId: string;
+  steps: HandReplayStep[];
+}

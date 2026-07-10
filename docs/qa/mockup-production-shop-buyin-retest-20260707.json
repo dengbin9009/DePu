@@ -1,0 +1,26 @@
+{
+  "generatedAt": "2026-07-07T14:53:32.263Z",
+  "total": 3,
+  "passed": 0,
+  "failed": 3,
+  "results": [
+    {
+      "area": "shop-flow",
+      "name": "重新从弹窗进入商城并处理确认充值",
+      "pass": false,
+      "detail": "Error: confirm dialog missing\n    at assert (/Users/dengbin/Code/github/DePu/.node_repl_cell_61.mjs:238:52)\n    at /Users/dengbin/Code/github/DePu/.node_repl_cell_61.mjs:269:5\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async expectStep (/Users/dengbin/Code/github/DePu/.node_repl_cell_61.mjs:237:71)\n    at async /Users/dengbin/Code/github/DePu/.node_repl_cell_61.mjs:257:3"
+    },
+    {
+      "area": "shop-flow",
+      "name": "商城返回原牌桌上下文",
+      "pass": false,
+      "detail": "Error: path=/shop\n    at assert (/Users/dengbin/Code/github/DePu/.node_repl_cell_61.mjs:238:52)\n    at /Users/dengbin/Code/github/DePu/.node_repl_cell_61.mjs:280:5\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async expectStep (/Users/dengbin/Code/github/DePu/.node_repl_cell_61.mjs:237:71)\n    at async /Users/dengbin/Code/github/DePu/.node_repl_cell_61.mjs:276:3"
+    },
+    {
+      "area": "buy-in",
+      "name": "充值后空座确认买入成功",
+      "pass": false,
+      "detail": "Error: Playwright selector deadline exceeded\nwaiting on click for selector internal:testid=[data-testid=\"table-seat-1\"s]\nError: Playwright selector deadline exceeded\n    at ae (/Users/dengbin/.codex/plugins/cache/openai-bundled/browser/26.623.101652/scripts/browser-client.mjs:3196:279)\n    at t.evaluateOnPlaywrightSelectorWithTarget (/Users/dengbin/.codex/plugins/cache/openai-bundled/browser/26.623.101652/scripts/browser-client.mjs:2879:377)\n    at async t.resolvePointerActionTarget (/Users/dengbin/.codex/plugins/cache/openai-bundled/browser/26.623.101652/scripts/browser-client.mjs:2892:2638)\n    at async t.performPointerAction (/Users/dengbin/.codex/plugins/cache/openai-bundled/browser/26.623.101652/scripts/browser-client.mjs:2892:2238)\n    at async t.clickLocator (/Users/dengbin/.codex/plugins/cache/openai-bundled/browser/26.623.101652/scripts/browser-client.mjs:2892:299)\n    at async /Users/dengbin/.codex/plugins/cache/openai-bundled/browser/26.623.101652/scripts/browser-client.mjs:126:61643\n    at async Hf (/Users/dengbin/.codex/plugins/cache/openai-bundled/browser/26.623.101652/scripts/browser-client.mjs:70:13067)\n    at async /Users/dengbin/.codex/plugins/cache/openai-bundled/browser/26.623.101652/scripts/browser-client.mjs:70:13329\n    at async du (/Users/dengbin/.codex/plugins/cache/openai-bundled/browser/26.623.101652/scripts/browser-client.mjs:70:13305)\n    at async n (/Users/dengbin/.codex/plugins/cache/openai-bundled/browser/26.623.101652/scripts/browser-client.mjs:71:463)"
+    }
+  ]
+}

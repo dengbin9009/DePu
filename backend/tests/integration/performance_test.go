@@ -2,10 +2,14 @@ package integration
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -14,10 +18,7 @@ import (
 )
 
 func TestLocalPerformanceBudget(t *testing.T) {
-	store, err := storage.Open(":memory:")
-	if err != nil {
-		t.Fatal(err)
-	}
+	store := openIntegrationTestStore(t)
 	defer store.Close()
 	server := api.NewServerWithStore(store)
 
@@ -82,4 +83,46 @@ func TestLocalPerformanceBudget(t *testing.T) {
 	if time.Since(replayBudgetStart) > time.Second {
 		t.Fatalf("replay budget = %s, want <= 1s", time.Since(replayBudgetStart))
 	}
+}
+
+func openIntegrationTestStore(t *testing.T) *storage.Store {
+	t.Helper()
+	dsn := strings.TrimSpace(os.Getenv("DEPU_TEST_MYSQL_DSN"))
+	if dsn == "" {
+		dsn = createIntegrationMySQLTestDatabase(t)
+	}
+	store, err := storage.OpenWithConfig(storage.Config{Driver: storage.DriverMySQL, DSN: dsn})
+	if err != nil {
+		t.Skipf("mysql integration test store unavailable: %v", err)
+	}
+	return store
+}
+
+func createIntegrationMySQLTestDatabase(t *testing.T) string {
+	t.Helper()
+	adminDSN := strings.TrimSpace(os.Getenv("DEPU_TEST_MYSQL_ADMIN_DSN"))
+	if adminDSN == "" {
+		adminDSN = "root@tcp(127.0.0.1:3306)/?parseTime=true&multiStatements=true"
+	}
+	adminDB, err := sql.Open("mysql", adminDSN)
+	if err != nil {
+		t.Skipf("mysql admin connection unavailable: %v", err)
+		return ""
+	}
+	if err := adminDB.Ping(); err != nil {
+		_ = adminDB.Close()
+		t.Skipf("mysql admin ping failed: %v", err)
+		return ""
+	}
+	dbName := fmt.Sprintf("depu_integration_test_%d", time.Now().UTC().UnixNano())
+	if _, err := adminDB.Exec("create database `" + dbName + "` character set utf8mb4 collate utf8mb4_unicode_ci"); err != nil {
+		_ = adminDB.Close()
+		t.Skipf("create mysql test database failed: %v", err)
+		return ""
+	}
+	t.Cleanup(func() {
+		_, _ = adminDB.Exec("drop database if exists `" + dbName + "`")
+		_ = adminDB.Close()
+	})
+	return "root@tcp(127.0.0.1:3306)/" + dbName + "?parseTime=true&multiStatements=true"
 }

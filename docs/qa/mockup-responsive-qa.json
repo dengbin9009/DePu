@@ -1,0 +1,182 @@
+{
+  "generatedAt": "2026-07-07T14:07:29.225Z",
+  "base": "http://127.0.0.1:5191",
+  "viewports": [
+    {
+      "name": "small-phone",
+      "width": 390,
+      "height": 844,
+      "checks": [
+        {
+          "label": "small-phone-create",
+          "status": "PASS",
+          "state": {
+            "blank": false,
+            "horizontalOverflow": false,
+            "missing": [],
+            "shell": {
+              "height": 1289,
+              "width": 390,
+              "x": 0,
+              "y": 0
+            },
+            "text": "返回\n创建比赛\n训练赛\nSNG\n国际扑克\n短牌\n奥马哈\n比赛牌局名字: \nAnte设置 20\n10\n20\n30\n50\n100\n200\n300\n500\n单次最小带入 2,000\n2K\n4K\n6K\n8K\n带入记分牌上限 60K\n无限制\n16K\n24K\n32K\n40K\n60K\n训练时长 2h\n0.5\n1\n1.5\n2\n3\n4\n5\n6\n单桌最大人数 9人\n2\n3\n4\n5\n6\n7\n8\n9\n确 定 创 建",
+            "url": "http://127.0.0.1:5191/create-match",
+            "viewport": {
+              "height": 844,
+              "scrollHeight": 1379,
+              "scrollWidth": 390,
+              "width": 390
+            }
+          },
+          "overlap": [],
+          "screenshot": "/Users/dengbin/Code/github/DePu/docs/qa/responsive-small-phone-create.png"
+        },
+        {
+          "label": "small-phone-shop",
+          "status": "PASS",
+          "state": {
+            "blank": false,
+            "horizontalOverflow": false,
+            "missing": [],
+            "shell": {
+              "height": 856,
+              "width": 390,
+              "x": 0,
+              "y": 0
+            },
+            "text": "返回\n商城\n金币\n钻石\nVIP卡\n装扮\n道具\n课程\n金币\n3000\n钻石\n0\n积分\n0\n普通卡\n未激活\n♠\n1000金币\n额外赠送28金币\n¥ 6\n♠\n5000金币\n额外赠送218金币\n¥ 30\n♠\n10000金币\n额外赠送618金币\n¥ 68",
+            "url": "http://127.0.0.1:5191/shop",
+            "viewport": {
+              "height": 844,
+              "scrollHeight": 946,
+              "scrollWidth": 390,
+              "width": 390
+            }
+          },
+          "overlap": [],
+          "screenshot": "/Users/dengbin/Code/github/DePu/docs/qa/responsive-small-phone-shop.png"
+        }
+      ]
+    },
+    {
+      "name": "standard-phone",
+      "width": 430,
+      "height": 932,
+      "checks": [
+        {
+          "label": "standard-phone-create",
+          "status": "PASS",
+          "state": {
+            "blank": false,
+            "horizontalOverflow": false,
+            "missing": [],
+            "shell": {
+              "height": 1267,
+              "width": 430,
+              "x": 0,
+              "y": 0
+            },
+            "text": "返回\n创建比赛\n训练赛\nSNG\n国际扑克\n短牌\n奥马哈\n比赛牌局名字: \nAnte设置 20\n10\n20\n30\n50\n100\n200\n300\n500\n单次最小带入 2,000\n2K\n4K\n6K\n8K\n带入记分牌上限 60K\n无限制\n16K\n24K\n32K\n40K\n60K\n训练时长 2h\n0.5\n1\n1.5\n2\n3\n4\n5\n6\n单桌最大人数 9人\n2\n3\n4\n5\n6\n7\n8\n9\n确 定 创 建",
+            "url": "http://127.0.0.1:5191/create-match",
+            "viewport": {
+              "height": 932,
+              "scrollHeight": 1357,
+              "scrollWidth": 430,
+              "width": 430
+            }
+          },
+          "overlap": [],
+          "screenshot": "/Users/dengbin/Code/github/DePu/docs/qa/responsive-standard-phone-create.png"
+        },
+        {
+          "label": "standard-phone-shop",
+          "status": "PASS",
+          "state": {
+            "blank": false,
+            "horizontalOverflow": false,
+            "missing": [],
+            "shell": {
+              "height": 944,
+              "width": 430,
+              "x": 0,
+              "y": 0
+            },
+            "text": "返回\n商城\n金币\n钻石\nVIP卡\n装扮\n道具\n课程\n金币\n3000\n钻石\n0\n积分\n0\n普通卡\n未激活\n♠\n1000金币\n额外赠送28金币\n¥ 6\n♠\n5000金币\n额外赠送218金币\n¥ 30\n♠\n10000金币\n额外赠送618金币\n¥ 68",
+            "url": "http://127.0.0.1:5191/shop",
+            "viewport": {
+              "height": 932,
+              "scrollHeight": 1034,
+              "scrollWidth": 430,
+              "width": 430
+            }
+          },
+          "overlap": [],
+          "screenshot": "/Users/dengbin/Code/github/DePu/docs/qa/responsive-standard-phone-shop.png"
+        }
+      ]
+    },
+    {
+      "name": "desktop-wide",
+      "width": 1280,
+      "height": 720,
+      "checks": [
+        {
+          "label": "desktop-wide-create",
+          "status": "PASS",
+          "state": {
+            "blank": false,
+            "horizontalOverflow": false,
+            "missing": [],
+            "shell": {
+              "height": 1243,
+              "width": 1280,
+              "x": 0,
+              "y": 0
+            },
+            "text": "返回\n创建比赛\n训练赛\nSNG\n国际扑克\n短牌\n奥马哈\n比赛牌局名字: \nAnte设置 20\n10\n20\n30\n50\n100\n200\n300\n500\n单次最小带入 2,000\n2K\n4K\n6K\n8K\n带入记分牌上限 60K\n无限制\n16K\n24K\n32K\n40K\n60K\n训练时长 2h\n0.5\n1\n1.5\n2\n3\n4\n5\n6\n单桌最大人数 9人\n2\n3\n4\n5\n6\n7\n8\n9\n确 定 创 建",
+            "url": "http://127.0.0.1:5191/create-match",
+            "viewport": {
+              "height": 720,
+              "scrollHeight": 1333,
+              "scrollWidth": 1280,
+              "width": 1280
+            }
+          },
+          "overlap": [],
+          "screenshot": "/Users/dengbin/Code/github/DePu/docs/qa/responsive-desktop-wide-create.png"
+        },
+        {
+          "label": "desktop-wide-shop",
+          "status": "PASS",
+          "state": {
+            "blank": false,
+            "horizontalOverflow": false,
+            "missing": [],
+            "shell": {
+              "height": 736,
+              "width": 1280,
+              "x": 0,
+              "y": 0
+            },
+            "text": "返回\n商城\n金币\n钻石\nVIP卡\n装扮\n道具\n课程\n金币\n3000\n钻石\n0\n积分\n0\n普通卡\n未激活\n♠\n1000金币\n额外赠送28金币\n¥ 6\n♠\n5000金币\n额外赠送218金币\n¥ 30\n♠\n10000金币\n额外赠送618金币\n¥ 68",
+            "url": "http://127.0.0.1:5191/shop",
+            "viewport": {
+              "height": 720,
+              "scrollHeight": 826,
+              "scrollWidth": 1280,
+              "width": 1280
+            }
+          },
+          "overlap": [],
+          "screenshot": "/Users/dengbin/Code/github/DePu/docs/qa/responsive-desktop-wide-shop.png"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total": 6,
+    "pass": 6,
+    "fail": 0
+  }
+}

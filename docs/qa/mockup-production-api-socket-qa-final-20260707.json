@@ -1,0 +1,116 @@
+{
+  "generatedAt": "2026-07-07T14:35:03.350Z",
+  "total": 18,
+  "passed": 17,
+  "failed": 1,
+  "results": [
+    {
+      "area": "health",
+      "name": "GET /health",
+      "pass": true,
+      "detail": "ok"
+    },
+    {
+      "area": "auth",
+      "name": "未登录 /api/me 返回 401",
+      "pass": true,
+      "detail": "unauthorized"
+    },
+    {
+      "area": "auth",
+      "name": "注册三名用户并拥有初始钱包",
+      "pass": true,
+      "detail": "user_1783434901760536000, balance=5000"
+    },
+    {
+      "area": "create-room",
+      "name": "短牌训练赛全配置创建并返回展示字段",
+      "pass": true,
+      "detail": "room=room_1783434901793566000, invite=R567000"
+    },
+    {
+      "area": "create-room-boundary",
+      "name": "显式 0 和冲突范围字段被拒绝",
+      "pass": true,
+      "detail": "7 cases"
+    },
+    {
+      "area": "create-room-boundary",
+      "name": "SNG 和 Omaha 暂不创建",
+      "pass": true,
+      "detail": "2 unsupported cases"
+    },
+    {
+      "area": "join",
+      "name": "无效邀请码失败，大小写/空格归一后可加入",
+      "pass": true,
+      "detail": "members=2"
+    },
+    {
+      "area": "room-access",
+      "name": "非成员不可查看战绩榜、不可直接入座",
+      "pass": true,
+      "detail": "forbidden"
+    },
+    {
+      "area": "seat-buyin",
+      "name": "买入低于最小/高于上限被拒绝",
+      "pass": true,
+      "detail": "range rejected"
+    },
+    {
+      "area": "seat-buyin",
+      "name": "金币不足不占座",
+      "pass": true,
+      "detail": "empty seat preserved"
+    },
+    {
+      "area": "recharge",
+      "name": "充值选项、非法充值、未确认充值边界",
+      "pass": true,
+      "detail": "small,medium,large"
+    },
+    {
+      "area": "recharge",
+      "name": "模拟充值写流水并刷新钱包",
+      "pass": true,
+      "detail": "5000->15000"
+    },
+    {
+      "area": "seat-buyin",
+      "name": "合法坐下、重复坐下、占用座位边界",
+      "pass": true,
+      "detail": "seat2 occupied"
+    },
+    {
+      "area": "stand-up",
+      "name": "站起围观释放座位但保留房主/成员身份",
+      "pass": true,
+      "detail": "stand/reseat ok"
+    },
+    {
+      "area": "start-hand",
+      "name": "非房主不能开局，房主可以开局并读取当前手牌",
+      "pass": true,
+      "detail": "hand=game-1783434901859615000"
+    },
+    {
+      "area": "hands",
+      "name": "正式牌谱无数据/错误回放边界",
+      "pass": true,
+      "detail": "recent=0"
+    },
+    {
+      "area": "rules-test-compat",
+      "name": "规则测试页 /api/games 创建、历史、回放仍可用",
+      "pass": true,
+      "detail": "game-1783434901885858000"
+    },
+    {
+      "area": "socket-browser",
+      "name": "浏览器 WebSocket 订阅、聊天、频率限制、非法 token",
+      "pass": false,
+      "detail": "Error: TypeError: WebSocket is not a constructor\n    at <anonymous>:2644:22\n    at new Promise (<anonymous>)\n    at open (<anonymous>:2643:16)\n    at __playwrightEvaluate (<anonymous>:2653:29)\n    at <anonymous>:2685:14\n    at runUserScript (<anonymous>:2686:10)\n    at <anonymous>:2690:10\n    at <anonymous>:2691:3\n    at Oz (/Users/dengbin/.codex/plugins/cache/openai-bundled/browser/26.623.101652/scripts/browser-client.mjs:2837:379)\n    at /Users/dengbin/.codex/plugins/cache/openai-bundled/browser/26.623.101652/scripts/browser-client.mjs:192:37087\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async Hf (/Users/dengbin/.codex/plugins/cache/openai-bundled/browser/26.623.101652/scripts/browser-client.mjs:70:13067)\n    at async /Users/dengbin/.codex/plugins/cache/openai-bundled/browser/26.623.101652/scripts/browser-client.mjs:70:13329\n    at async du (/Users/dengbin/.codex/plugins/cache/openai-bundled/browser/26.623.101652/scripts/browser-client.mjs:70:13305)\n    at async n (/Users/dengbin/.codex/plugins/cache/openai-bundled/browser/26.623.101652/scripts/browser-client.mjs:71:463)\n    at async ai.executeAgentCommand (/Users/dengbin/.codex/plugins/cache/openai-bundled/browser/26.623.101652/scripts/browser-client.mjs:3246:4685)\n    at async ai.send (/Users/dengbin/.codex/plugins/cache/openai-bundled/browser/26.623.101652/scripts/browser-client.mjs:70:519)\n    at async Fo.evaluate (/Users/dengbin/.codex/plugins/cache/openai-bundled/browser/26.623.101652/scripts/browser-client.mjs:65:14085)"
+    }
+  ]
+}

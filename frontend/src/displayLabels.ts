@@ -30,6 +30,13 @@ const statusLabels: Record<string, string> = {
   out: '已出局'
 };
 
+const walletTransactionLabels: Record<string, string> = {
+  buy_in: '买入冻结',
+  leave_refund: '离座返还',
+  hand_result: '牌局结算',
+  recharge: '模拟充值'
+};
+
 const bettingTypeLabels: Record<BettingStructureType, string> = {
   blinds: '小盲/大盲',
   ante: '前注 + 按钮盲注'
@@ -78,4 +85,8 @@ export function potLabel(potId: string): string {
   const match = /^pot-(\d+)$/.exec(potId);
   if (match) return `底池 ${match[1]}`;
   return potId;
+}
+
+export function walletTransactionLabel(type: string): string {
+  return walletTransactionLabels[type] ?? type;
 }

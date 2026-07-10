@@ -1,13 +1,60 @@
 package storage
 
 import (
+	"database/sql"
+	"fmt"
+	"os"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/dengbin9009/DePu/backend/internal/game"
 )
 
+func openStorageTestStore(t *testing.T) (*Store, error) {
+	t.Helper()
+	dsn := strings.TrimSpace(os.Getenv("DEPU_TEST_MYSQL_DSN"))
+	if dsn == "" {
+		dsn = createStorageMySQLTestDatabase(t)
+	}
+	store, err := OpenWithConfig(Config{Driver: DriverMySQL, DSN: dsn})
+	if err != nil {
+		t.Skipf("mysql storage test store unavailable: %v", err)
+	}
+	return store, nil
+}
+
+func createStorageMySQLTestDatabase(t *testing.T) string {
+	t.Helper()
+	adminDSN := strings.TrimSpace(os.Getenv("DEPU_TEST_MYSQL_ADMIN_DSN"))
+	if adminDSN == "" {
+		adminDSN = "root@tcp(127.0.0.1:3306)/?parseTime=true&multiStatements=true"
+	}
+	adminDB, err := sql.Open("mysql", adminDSN)
+	if err != nil {
+		t.Skipf("mysql admin connection unavailable: %v", err)
+		return ""
+	}
+	if err := adminDB.Ping(); err != nil {
+		_ = adminDB.Close()
+		t.Skipf("mysql admin ping failed: %v", err)
+		return ""
+	}
+	dbName := fmt.Sprintf("depu_storage_test_%d", time.Now().UTC().UnixNano())
+	if _, err := adminDB.Exec("create database `" + dbName + "` character set utf8mb4 collate utf8mb4_unicode_ci"); err != nil {
+		_ = adminDB.Close()
+		t.Skipf("create mysql test database failed: %v", err)
+		return ""
+	}
+	t.Cleanup(func() {
+		_, _ = adminDB.Exec("drop database if exists `" + dbName + "`")
+		_ = adminDB.Close()
+	})
+	return "root@tcp(127.0.0.1:3306)/" + dbName + "?parseTime=true&multiStatements=true"
+}
+
 func TestSaveLoadGameAndHistory(t *testing.T) {
-	store, err := Open(":memory:")
+	store, err := openStorageTestStore(t)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,8 +105,60 @@ func TestSaveLoadGameAndHistory(t *testing.T) {
 	}
 }
 
+func TestSaveUsesMySQLUpsertSyntax(t *testing.T) {
+	if got := saveGameUpsertSQL(); !strings.Contains(got, "on duplicate key update") {
+		t.Fatalf("expected mysql upsert syntax, got %s", got)
+	}
+}
+
+func TestTakeSeatConflictReleasesTransaction(t *testing.T) {
+	store, err := openStorageTestStore(t)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+	store.db.SetMaxOpenConns(1)
+
+	owner, _, err := store.CreateUser("txn_owner", "hash", "事务房主", 3000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	player, _, err := store.CreateUser("txn_player", "hash", "事务玩家", 3000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	room, err := store.CreateRoom(owner.ID, "long-holdem", 6, 2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.JoinRoomByInviteCode(player.ID, room.InviteCode); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.TakeSeat(room.ID, owner.ID, 1, 1000); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.TakeSeat(room.ID, player.ID, 1, 1000); err == nil || !strings.Contains(err.Error(), "seat already taken") {
+		t.Fatalf("take occupied seat error = %v, want seat already taken", err)
+	}
+
+	done := make(chan error, 1)
+	go func() {
+		_, err := store.TakeSeat(room.ID, player.ID, 2, 1000)
+		done <- err
+	}()
+
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Fatalf("take open seat after conflict: %v", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("take seat blocked after conflict; transaction was not released")
+	}
+}
+
 func TestSaveReturnsErrorWhenStorageUnavailable(t *testing.T) {
-	store, err := Open(":memory:")
+	store, err := openStorageTestStore(t)
 	if err != nil {
 		t.Fatal(err)
 	}
