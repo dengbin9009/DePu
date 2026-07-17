@@ -57,10 +57,51 @@ const error = ref('');
 let roomPollTimer: number | null = null;
 let roomSocket: ReturnType<typeof createRoomSocketClient> | null = null;
 let socketRoomId = '';
+let acceptedRoomVersion = 0;
+let acceptedHandId = '';
+let acceptedHandVersion = 0;
+let awaitingReconnectSnapshot = false;
+let startRoomHandPromise: Promise<RoomHandState | null> | null = null;
 
 const myRoomSeat = computed(() => room.value?.seats.find((seat) => seat.userId && seat.userId === me.value?.id) ?? null);
 const isMyTurn = computed(() => !!currentRoomHand.value && !!myRoomSeat.value && currentRoomHand.value.currentSeat === myRoomSeat.value.seatNo);
 const myRoomHandPlayer = computed(() => !!currentRoomHand.value && !!myRoomSeat.value ? currentRoomHand.value.players.find((player) => player.seatNo === myRoomSeat.value?.seatNo) ?? null : null);
+
+export function roomStartHandUnavailableReason(currentRoom: RoomResponse | null, userId?: string, hand: RoomHandState | null = null) {
+  if (!currentRoom?.ownerUserId || !userId) return '';
+  if (currentRoom.ownerUserId !== userId) return '只有房主可以开始牌局';
+  if (currentRoom.status === 'closed') return '房间已关闭，无法开始牌局';
+  if (currentRoom.status !== 'waiting' || hand) return '房间状态已变化，当前无法开局';
+  const occupiedSeats = currentRoom.seats.filter((seat) => seat.userId).length;
+  const minimumPlayers = currentRoom.minPlayersToStart ?? 2;
+  if (occupiedSeats < minimumPlayers) return `入座人数不足，至少需要 ${minimumPlayers} 人，当前 ${occupiedSeats} 人`;
+  return '';
+}
+
+export function startHandErrorMessage(startError: unknown) {
+  const message = startError instanceof Error ? startError.message : String(startError || '');
+  const normalized = message.toLowerCase();
+  if (normalized.includes('not_room_owner') || normalized.includes('only room owner')) {
+    return '只有房主可以开始牌局';
+  }
+  if (normalized.includes('insufficient_coins') || normalized.includes('not enough players')) {
+    return '入座人数不足，无法开始牌局';
+  }
+  if (normalized.includes('room_not_waiting') || normalized.includes('room is not waiting')) {
+    return '房间状态已变化，当前无法开局，请刷新后重试';
+  }
+  if (
+    normalized.includes('socket') ||
+    normalized.includes('websocket') ||
+    normalized.includes('network') ||
+    normalized.includes('connection') ||
+    normalized.includes('failed to fetch') ||
+    normalized.includes('reconnected')
+  ) {
+    return '网络或实时连接异常，请等待最新房间状态后重试';
+  }
+  return message ? `开局失败：${message}` : '开局失败，请稍后重试';
+}
 
 async function run<T>(fn: () => Promise<T>) {
   loading.value = true;
@@ -147,13 +188,60 @@ function consumeShopReturnTo() {
   return path;
 }
 
+function positiveVersion(...values: Array<number | undefined>) {
+  return values.find((value) => Number.isInteger(value) && (value ?? 0) > 0) ?? 0;
+}
+
+function resetSocketEventOrder(roomId = '') {
+  acceptedRoomVersion = room.value?.id === roomId ? positiveVersion(room.value.version) : 0;
+  acceptedHandId = currentRoomHand.value?.roomId === roomId ? currentRoomHand.value.handId : '';
+  acceptedHandVersion = currentRoomHand.value?.roomId === roomId ? positiveVersion(currentRoomHand.value.version) : 0;
+}
+
+function acceptRoomVersion(message: SocketEnvelope, payloadRoom?: RoomResponse) {
+  const nextVersion = positiveVersion(message.roomVersion, payloadRoom?.version);
+  if (socketRoomId && message.roomId && message.roomId !== socketRoomId) return false;
+  const currentVersion = Math.max(acceptedRoomVersion, room.value?.id === socketRoomId ? positiveVersion(room.value.version) : 0);
+  if (nextVersion > 0 && nextVersion < currentVersion) return false;
+  if (nextVersion > 0) acceptedRoomVersion = nextVersion;
+  return true;
+}
+
+type RoomSocketPayload = {
+  room?: RoomResponse;
+  hand?: RoomHandState | null;
+  presence?: RoomPresence[];
+  recentActionLog?: RoomActionLogEntry[];
+  recentChatMessages?: RoomChatMessage[];
+  leaderboard?: RoomLeaderboardItem[];
+};
+
+function applyRoomSnapshotPayload(message: SocketEnvelope) {
+  const payload = message.payload as RoomSocketPayload | undefined;
+  if (!acceptRoomVersion(message, payload?.room)) return;
+  if (payload?.room) {
+    room.value = payload.room;
+  }
+  currentRoomHand.value = payload?.hand ?? null;
+  acceptedHandId = message.handId || payload?.hand?.handId || '';
+  acceptedHandVersion = positiveVersion(message.handVersion, payload?.hand?.version);
+  roomPresence.value = payload?.presence ?? [];
+  actionLog.value = payload?.recentActionLog ?? [];
+  chatMessages.value = payload?.recentChatMessages ?? [];
+  roomLeaderboard.value = payload?.leaderboard ?? [];
+  awaitingReconnectSnapshot = false;
+}
+
 function applyRoomSocketPayload(message: SocketEnvelope) {
-  const payload = message.payload as { room?: RoomResponse; hand?: RoomHandState | null; presence?: RoomPresence[]; recentActionLog?: RoomActionLogEntry[]; recentChatMessages?: RoomChatMessage[]; leaderboard?: RoomLeaderboardItem[] } | undefined;
+  const payload = message.payload as RoomSocketPayload | undefined;
+  if (!acceptRoomVersion(message, payload?.room)) return;
   if (payload?.room) {
     room.value = payload.room;
   }
   if ('hand' in (payload ?? {})) {
     currentRoomHand.value = payload?.hand ?? null;
+    acceptedHandId = message.handId || payload?.hand?.handId || '';
+    acceptedHandVersion = positiveVersion(message.handVersion, payload?.hand?.version);
   }
   if (payload?.presence) roomPresence.value = payload.presence;
   if (payload?.recentActionLog) actionLog.value = payload.recentActionLog;
@@ -165,6 +253,17 @@ function applyHandSocketPayload(message: SocketEnvelope) {
   const payload = message.payload as { hand?: RoomHandState | RoomHandHistoryRecord } | undefined;
   const hand = payload?.hand;
   if (!hand) return;
+  if (!acceptRoomVersion(message)) return;
+  const handId = message.handId || hand.handId;
+  const handVersion = positiveVersion(message.handVersion, 'version' in hand ? hand.version : undefined);
+  const currentHandId = currentRoomHand.value?.handId || acceptedHandId;
+  const currentHandVersion = currentRoomHand.value?.handId === handId
+    ? Math.max(acceptedHandVersion, positiveVersion(currentRoomHand.value.version))
+    : acceptedHandVersion;
+  if (currentHandId && handId && handId !== currentHandId && message.type !== 'hand.started') return;
+  if (currentHandId === handId && handVersion > 0 && handVersion <= currentHandVersion) return;
+  if (handId) acceptedHandId = handId;
+  if (handVersion > 0) acceptedHandVersion = handVersion;
   if ('availableActions' in hand) {
     currentRoomHand.value = hand;
   } else {
@@ -203,11 +302,13 @@ function applyLeaderboardSocketPayload(message: SocketEnvelope) {
 
 async function connectRoomSocket(roomId: string) {
   if (!token.value) return;
-  if (roomSocket && socketRoomId === roomId) return;
+  if (roomSocket && socketRoomId === roomId && roomSocket.isConnected()) return false;
+  const reconnectingRoom = !!roomSocket && socketRoomId === roomId;
   disconnectRoomSocket();
   socketRoomId = roomId;
+  resetSocketEventOrder(roomId);
   roomSocket = createRoomSocketClient(token.value);
-  roomSocket.on('room.snapshot', applyRoomSocketPayload);
+  roomSocket.on('room.snapshot', applyRoomSnapshotPayload);
   roomSocket.on('room.updated', applyRoomSocketPayload);
   roomSocket.on('hand.started', applyHandSocketPayload);
   roomSocket.on('hand.updated', applyHandSocketPayload);
@@ -221,7 +322,9 @@ async function connectRoomSocket(roomId: string) {
     void refreshHistoryDetails();
   });
   await roomSocket.connect();
+  awaitingReconnectSnapshot = reconnectingRoom;
   await roomSocket.send('room.subscribe', roomId, {});
+  return reconnectingRoom;
 }
 
 async function connectRoomSocketBestEffort(roomId: string) {
@@ -234,12 +337,14 @@ async function connectRoomSocketBestEffort(roomId: string) {
 }
 
 function disconnectRoomSocket() {
-  if (roomSocket && socketRoomId) {
+  if (roomSocket?.isConnected() && socketRoomId) {
     void roomSocket.send('room.unsubscribe', socketRoomId, {}).catch(() => {});
   }
   roomSocket?.close();
   roomSocket = null;
   socketRoomId = '';
+  awaitingReconnectSnapshot = false;
+  resetSocketEventOrder();
 }
 
 async function saveNickname(nickname: string) {
@@ -353,15 +458,28 @@ async function doLeaveRoom() {
   });
 }
 
-async function doStartRoomHand() {
-  if (!token.value || !room.value) return;
-  await run(async () => {
-    await connectRoomSocket(room.value!.id);
-    await roomSocket?.send('room.start_hand', room.value!.id, {});
-    room.value = await fetchRoom(token.value, room.value!.id);
-    currentRoomHand.value = await fetchCurrentRoomHand(token.value, room.value!.id);
-    recentRoomHands.value = (await fetchRoomHands(token.value, room.value!.id)).items;
+function doStartRoomHand() {
+  if (!token.value || !room.value) return Promise.resolve(null);
+  if (startRoomHandPromise) return startRoomHandPromise;
+  const roomId = room.value.id;
+  startRoomHandPromise = run(async () => {
+    try {
+      const reconnected = await connectRoomSocket(roomId);
+      if (reconnected || awaitingReconnectSnapshot) {
+        throw new Error('socket reconnected; retry after the latest room snapshot');
+      }
+      await roomSocket?.send('room.start_hand', roomId, {});
+      room.value = await fetchRoom(token.value, roomId);
+      currentRoomHand.value = await fetchCurrentRoomHand(token.value, roomId);
+      recentRoomHands.value = (await fetchRoomHands(token.value, roomId)).items;
+      return currentRoomHand.value;
+    } catch (startError) {
+      throw new Error(startHandErrorMessage(startError));
+    }
+  }).finally(() => {
+    startRoomHandPromise = null;
   });
+  return startRoomHandPromise;
 }
 
 async function refreshCurrentRoomHand() {
@@ -387,7 +505,10 @@ async function safeRefreshCurrentRoomHand() {
 async function doRoomAction(action: string, amount = 0) {
   if (!token.value || !room.value) return;
   await run(async () => {
-    await connectRoomSocket(room.value!.id);
+    const reconnected = await connectRoomSocket(room.value!.id);
+    if (reconnected || awaitingReconnectSnapshot) {
+      throw new Error('socket reconnected; retry after the latest room snapshot');
+    }
     await roomSocket?.send('room.action', room.value!.id, { action, amount });
   });
 }

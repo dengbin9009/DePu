@@ -175,6 +175,7 @@ export interface RoomSeat {
 
 export interface RoomResponse {
   id: string;
+  version?: number;
   inviteCode: string;
   ownerUserId: string;
   status: 'waiting' | 'playing' | 'closed';
@@ -245,6 +246,7 @@ export interface RoomHandPlayer {
 export interface RoomHandState {
   roomId: string;
   handId: string;
+  version?: number;
   status: string;
   currentSeat: number | null;
   pot: number;

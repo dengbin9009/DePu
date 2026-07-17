@@ -210,6 +210,137 @@ func TestSocketSubscribeSnapshotIncludesCurrentHand(t *testing.T) {
 	}
 }
 
+func TestSocketCoreEventsIncludeMonotonicRoomAndHandVersions(t *testing.T) {
+	server := testServer(t)
+	server.actionTimeout = 5 * time.Second
+	server.autoNextDelay = time.Second
+	roomID, ownerToken, playerToken := setupRoomWithSeats(t, server)
+	ts := httptest.NewServer(server.Routes())
+	defer ts.Close()
+
+	ownerClient := dialSocket(t, ts.URL, "/api/socket?token="+ownerToken)
+	defer ownerClient.Close()
+	playerClient := dialSocket(t, ts.URL, "/api/socket?token="+playerToken)
+	defer playerClient.Close()
+
+	waitingSnapshot := subscribeVersionedSocket(t, ownerClient, roomID, "req_version_owner_sub")
+	if waitingSnapshot.RoomVersion <= 0 {
+		t.Fatalf("waiting snapshot roomVersion=%d, want positive", waitingSnapshot.RoomVersion)
+	}
+	if waitingSnapshot.HandID != "" || waitingSnapshot.HandVersion != 0 {
+		t.Fatalf("waiting snapshot hand metadata=(%s,%d), want empty", waitingSnapshot.HandID, waitingSnapshot.HandVersion)
+	}
+	subscribeVersionedSocket(t, playerClient, roomID, "req_version_player_sub")
+
+	if err := writeClientTextFrame(ownerClient, []byte(`{"type":"room.start_hand","requestId":"req_version_start","roomId":"`+roomID+`","payload":{}}`)); err != nil {
+		t.Fatal(err)
+	}
+	readVersionedSocketMessageSkipping(t, ownerClient, "ack", map[string]bool{"player.presence.updated": true})
+	started := readVersionedSocketMessageSkipping(t, ownerClient, "hand.started", nil)
+	readVersionedSocketMessageSkipping(t, playerClient, "hand.started", map[string]bool{"player.presence.updated": true})
+	if started.RoomVersion <= waitingSnapshot.RoomVersion {
+		t.Fatalf("hand.started roomVersion=%d, want greater than snapshot %d", started.RoomVersion, waitingSnapshot.RoomVersion)
+	}
+	if started.HandID == "" || started.HandVersion <= 0 {
+		t.Fatalf("hand.started hand metadata=(%s,%d), want populated", started.HandID, started.HandVersion)
+	}
+
+	reconnected := dialSocket(t, ts.URL, "/api/socket?token="+ownerToken)
+	defer reconnected.Close()
+	playingSnapshot := subscribeVersionedSocket(t, reconnected, roomID, "req_version_reconnect")
+	if playingSnapshot.RoomVersion != started.RoomVersion || playingSnapshot.HandID != started.HandID || playingSnapshot.HandVersion != started.HandVersion {
+		t.Fatalf("playing snapshot versions=(%d,%s,%d), want hand.started (%d,%s,%d)", playingSnapshot.RoomVersion, playingSnapshot.HandID, playingSnapshot.HandVersion, started.RoomVersion, started.HandID, started.HandVersion)
+	}
+
+	current := currentHandViaHTTP(t, server, roomID, ownerToken)
+	actor, observer := ownerClient, playerClient
+	if current.CurrentSeat == 2 {
+		actor, observer = playerClient, ownerClient
+	}
+	if err := writeClientTextFrame(actor, []byte(`{"type":"room.action","requestId":"req_version_update","roomId":"`+roomID+`","payload":{"action":"`+preferredAction(current.AvailableActions)+`","amount":0}}`)); err != nil {
+		t.Fatal(err)
+	}
+	readVersionedSocketMessageSkipping(t, actor, "ack", map[string]bool{"hand.log.appended": true, "player.presence.updated": true})
+	updated := readVersionedSocketMessageSkipping(t, actor, "hand.updated", map[string]bool{"hand.log.appended": true})
+	readVersionedSocketMessageSkipping(t, observer, "hand.updated", map[string]bool{"hand.log.appended": true, "player.presence.updated": true})
+	if updated.RoomVersion != started.RoomVersion || updated.HandID != started.HandID || updated.HandVersion <= started.HandVersion {
+		t.Fatalf("hand.updated versions=(%d,%s,%d), want room=%d hand=%s version>%d", updated.RoomVersion, updated.HandID, updated.HandVersion, started.RoomVersion, started.HandID, started.HandVersion)
+	}
+
+	current = currentHandViaHTTP(t, server, roomID, ownerToken)
+	actor, observer = ownerClient, playerClient
+	if current.CurrentSeat == 2 {
+		actor, observer = playerClient, ownerClient
+	}
+	if err := writeClientTextFrame(actor, []byte(`{"type":"room.action","requestId":"req_version_settle","roomId":"`+roomID+`","payload":{"action":"fold","amount":0}}`)); err != nil {
+		t.Fatal(err)
+	}
+	readVersionedSocketMessageSkipping(t, actor, "ack", map[string]bool{"hand.log.appended": true, "player.presence.updated": true})
+	settled := readVersionedSocketMessageSkipping(t, actor, "hand.settled", map[string]bool{"hand.log.appended": true})
+	readVersionedSocketMessageSkipping(t, observer, "hand.settled", map[string]bool{"hand.log.appended": true, "player.presence.updated": true})
+	if settled.RoomVersion <= updated.RoomVersion || settled.HandID != started.HandID || settled.HandVersion <= updated.HandVersion {
+		t.Fatalf("hand.settled versions=(%d,%s,%d), want room>%d hand=%s version>%d", settled.RoomVersion, settled.HandID, settled.HandVersion, updated.RoomVersion, started.HandID, updated.HandVersion)
+	}
+
+	roomUpdated := readVersionedSocketMessageSkipping(t, actor, "room.updated", map[string]bool{
+		"wallet.updated":           true,
+		"room.leaderboard.updated": true,
+		"player.presence.updated":  true,
+	})
+	if roomUpdated.RoomVersion != settled.RoomVersion {
+		t.Fatalf("room.updated roomVersion=%d, want settled version %d", roomUpdated.RoomVersion, settled.RoomVersion)
+	}
+}
+
+func TestSocketHandStartedUsesPerUserHoleCardViews(t *testing.T) {
+	server := testServer(t)
+	roomID, ownerToken, playerToken := setupRoomWithSeats(t, server)
+	ts := httptest.NewServer(server.Routes())
+	defer ts.Close()
+
+	ownerClient := dialSocket(t, ts.URL, "/api/socket?token="+ownerToken)
+	defer ownerClient.Close()
+	playerClient := dialSocket(t, ts.URL, "/api/socket?token="+playerToken)
+	defer playerClient.Close()
+	subscribeSocket(t, ownerClient, roomID, "req_private_owner_sub")
+	subscribeSocket(t, playerClient, roomID, "req_private_player_sub")
+
+	if err := writeClientTextFrame(ownerClient, []byte(`{"type":"room.start_hand","requestId":"req_private_start","roomId":"`+roomID+`","payload":{}}`)); err != nil {
+		t.Fatal(err)
+	}
+	readSocketMessageSkipping(t, ownerClient, "ack", map[string]bool{"player.presence.updated": true})
+	ownerStarted := readSocketMessageSkipping(t, ownerClient, "hand.started", nil)
+	playerStarted := readSocketMessageSkipping(t, playerClient, "hand.started", map[string]bool{"player.presence.updated": true})
+	assertSocketHandHoleCardView(t, ownerStarted, 1)
+	assertSocketHandHoleCardView(t, playerStarted, 2)
+}
+
+func assertSocketHandHoleCardView(t *testing.T, message socketEnvelope, visibleSeatNo int) {
+	t.Helper()
+	var payload struct {
+		Hand struct {
+			Players []struct {
+				SeatNo    int      `json:"seatNo"`
+				HoleCards []string `json:"holeCards"`
+			} `json:"players"`
+		} `json:"hand"`
+	}
+	if err := json.Unmarshal(message.Payload, &payload); err != nil {
+		t.Fatal(err)
+	}
+	for _, player := range payload.Hand.Players {
+		if player.SeatNo == visibleSeatNo {
+			if len(player.HoleCards) != 2 {
+				t.Fatalf("seat %d hole cards=%v, want own cards", player.SeatNo, player.HoleCards)
+			}
+			continue
+		}
+		if len(player.HoleCards) != 0 {
+			t.Fatalf("seat %d leaked hole cards=%v to seat %d", player.SeatNo, player.HoleCards, visibleSeatNo)
+		}
+	}
+}
+
 func TestSocketV11SnapshotIncludesTimerPresenceLogChatAndLeaderboard(t *testing.T) {
 	server := testServer(t)
 	roomID, ownerToken, _ := setupRoomWithSeats(t, server)
@@ -397,6 +528,37 @@ func TestSocketBroadcastsPresenceWhenMemberFirstSubscribes(t *testing.T) {
 	}
 }
 
+func TestSocketSameUserConnectionsKeepPresenceOnlineUntilLastConnectionCloses(t *testing.T) {
+	server := testServer(t)
+	roomID, ownerToken, observerToken := setupRoomWithSeats(t, server)
+	ts := httptest.NewServer(server.Routes())
+	defer ts.Close()
+
+	observerClient := dialSocket(t, ts.URL, "/api/socket?token="+observerToken)
+	defer observerClient.Close()
+	subscribeSocket(t, observerClient, roomID, "req_presence_observer")
+
+	firstClient := dialSocket(t, ts.URL, "/api/socket?token="+ownerToken)
+	subscribeSocket(t, firstClient, roomID, "req_presence_first")
+	readPresenceUpdate(t, observerClient, func(item socketPresencePayload) bool {
+		return item.Status == "online"
+	})
+
+	secondClient := dialSocket(t, ts.URL, "/api/socket?token="+ownerToken)
+	subscribeSocket(t, secondClient, roomID, "req_presence_second")
+
+	if err := writeClientTextFrame(secondClient, []byte(`{"type":"room.subscribe","requestId":"req_presence_duplicate","roomId":"`+roomID+`","payload":{}}`)); err != nil {
+		t.Fatal(err)
+	}
+	readSocketMessage(t, secondClient, "ack")
+	readSocketMessage(t, secondClient, "room.snapshot")
+
+	firstClient.Close()
+	assertNoPresenceStatus(t, observerClient, "offline", 100*time.Millisecond)
+	secondClient.Close()
+	readPresenceStatusWithin(t, observerClient, "offline", 200*time.Millisecond)
+}
+
 func TestSocketOwnerCanStartHandAndSubscribersReceiveStarted(t *testing.T) {
 	server := testServer(t)
 	roomID, ownerToken, playerToken := setupRoomWithSeats(t, server)
@@ -457,6 +619,30 @@ func TestSocketNonOwnerCannotStartHand(t *testing.T) {
 	}
 	if payload.Code != "not_room_owner" {
 		t.Fatalf("error code = %s, want not_room_owner", payload.Code)
+	}
+}
+
+func TestSocketLeaveRejectsNonMember(t *testing.T) {
+	server := testServer(t)
+	roomID, _, _ := setupRoomWithSeats(t, server)
+	outsiderToken := registerUser(t, server, "socket_leave_outsider", "Socket退出旁观者")
+	ts := httptest.NewServer(server.Routes())
+	defer ts.Close()
+
+	client := dialSocket(t, ts.URL, "/api/socket?token="+outsiderToken)
+	defer client.Close()
+	readUpgradeResponse(t, client)
+	readSocketMessage(t, client, "connection.ready")
+	if err := writeClientTextFrame(client, []byte(`{"type":"room.leave","requestId":"req_outsider_leave","roomId":"`+roomID+`","payload":{}}`)); err != nil {
+		t.Fatal(err)
+	}
+	message := readSocketMessage(t, client, "error")
+	var apiErr ErrorResponse
+	if err := json.Unmarshal(message.Payload, &apiErr); err != nil {
+		t.Fatal(err)
+	}
+	if apiErr.Code != "forbidden" {
+		t.Fatalf("outsider socket leave code=%s, want forbidden", apiErr.Code)
 	}
 }
 
@@ -1301,6 +1487,17 @@ type socketTestHandState struct {
 	AvailableActions []string `json:"availableActions"`
 }
 
+type versionedSocketEnvelope struct {
+	Type        string          `json:"type"`
+	RequestID   string          `json:"requestId,omitempty"`
+	RoomID      string          `json:"roomId,omitempty"`
+	Payload     json.RawMessage `json:"payload,omitempty"`
+	SentAt      string          `json:"sentAt,omitempty"`
+	RoomVersion int64           `json:"roomVersion,omitempty"`
+	HandID      string          `json:"handId,omitempty"`
+	HandVersion int             `json:"handVersion,omitempty"`
+}
+
 type socketPresencePayload struct {
 	Status string `json:"status"`
 	UserID string `json:"userId"`
@@ -1343,6 +1540,17 @@ func subscribeSocket(t *testing.T, client *socketTestConn, roomID, requestID str
 	}
 	readSocketMessage(t, client, "ack")
 	readSocketMessage(t, client, "room.snapshot")
+}
+
+func subscribeVersionedSocket(t *testing.T, client *socketTestConn, roomID, requestID string) versionedSocketEnvelope {
+	t.Helper()
+	readUpgradeResponse(t, client)
+	readVersionedSocketMessageSkipping(t, client, "connection.ready", nil)
+	if err := writeClientTextFrame(client, []byte(`{"type":"room.subscribe","requestId":"`+requestID+`","roomId":"`+roomID+`","payload":{}}`)); err != nil {
+		t.Fatal(err)
+	}
+	readVersionedSocketMessageSkipping(t, client, "ack", nil)
+	return readVersionedSocketMessageSkipping(t, client, "room.snapshot", nil)
 }
 
 func startHandViaSocket(t *testing.T, ownerClient, playerClient *socketTestConn, roomID string) {
@@ -1417,6 +1625,32 @@ func readSocketMessageAny(t *testing.T, client *socketTestConn) socketEnvelope {
 	return msg
 }
 
+func readVersionedSocketMessageAny(t *testing.T, client *socketTestConn) versionedSocketEnvelope {
+	t.Helper()
+	_, payload := readServerTextFrame(t, client)
+	var msg versionedSocketEnvelope
+	if err := json.Unmarshal(payload, &msg); err != nil {
+		t.Fatal(err)
+	}
+	return msg
+}
+
+func readVersionedSocketMessageSkipping(t *testing.T, client *socketTestConn, wantType string, skip map[string]bool) versionedSocketEnvelope {
+	t.Helper()
+	for i := 0; i < 15; i++ {
+		msg := readVersionedSocketMessageAny(t, client)
+		if msg.Type == wantType {
+			return msg
+		}
+		if skip[msg.Type] {
+			continue
+		}
+		t.Fatalf("message type = %s, want %s; envelope=%#v", msg.Type, wantType, msg)
+	}
+	t.Fatalf("did not receive %s after skipped messages", wantType)
+	return versionedSocketEnvelope{}
+}
+
 func readSocketMessageSkipping(t *testing.T, client *socketTestConn, wantType string, skip map[string]bool) socketEnvelope {
 	t.Helper()
 	for i := 0; i < 10; i++ {
@@ -1489,6 +1723,50 @@ func tryReadSocketMessage(client *socketTestConn, timeout time.Duration) (socket
 		return socketEnvelope{}, false
 	}
 	return msg, true
+}
+
+func assertNoPresenceStatus(t *testing.T, client *socketTestConn, status string, timeout time.Duration) {
+	t.Helper()
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		message, ok := tryReadSocketMessage(client, time.Until(deadline))
+		if !ok {
+			return
+		}
+		if message.Type != "player.presence.updated" {
+			continue
+		}
+		var payload socketPresencePayload
+		if err := json.Unmarshal(message.Payload, &payload); err != nil {
+			t.Fatal(err)
+		}
+		if payload.Status == status {
+			t.Fatalf("unexpected presence status %q: %#v", status, payload)
+		}
+	}
+}
+
+func readPresenceStatusWithin(t *testing.T, client *socketTestConn, status string, timeout time.Duration) socketPresencePayload {
+	t.Helper()
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		message, ok := tryReadSocketMessage(client, time.Until(deadline))
+		if !ok {
+			break
+		}
+		if message.Type != "player.presence.updated" {
+			continue
+		}
+		var payload socketPresencePayload
+		if err := json.Unmarshal(message.Payload, &payload); err != nil {
+			t.Fatal(err)
+		}
+		if payload.Status == status {
+			return payload
+		}
+	}
+	t.Fatalf("presence status %q not received within %s", status, timeout)
+	return socketPresencePayload{}
 }
 
 func eventually(t *testing.T, ok func() bool) {

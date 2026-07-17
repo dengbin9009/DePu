@@ -156,15 +156,23 @@ cd backend
 go test ./... -count=1
 ```
 
-如果需要固定使用某个测试 database，可设置：
+如果管理连接必须经过指定 database，可设置兼容 DSN；测试仍会基于该连接创建并删除独立临时 database，不会复用其中的业务表：
 
 ```bash
-export DEPU_TEST_MYSQL_DSN='root@tcp(127.0.0.1:3306)/depu_multiplayer?parseTime=true&multiStatements=true'
+export DEPU_TEST_MYSQL_DSN='root@tcp(127.0.0.1:3306)/mysql?parseTime=true&multiStatements=true'
 cd backend
 go test ./internal/api ./internal/storage ./internal/game -count=1
 ```
 
 如果 MySQL 不可用，依赖数据库的后端测试会跳过，不会回退到其他存储引擎。
+
+多账号浏览器或手动验收必须使用独立临时 database：
+
+```bash
+scripts/with-test-mysql.sh scripts/start-local.sh foreground
+```
+
+包装器会设置 `DEPU_TEST_RUN_ID`、`DEPU_TEST_DATABASE` 和临时 `DEPU_DSN`，并在命令退出后删除整个 database，避免多轮 Loop 数据相互污染。
 
 ## 002 手动验收提要
 

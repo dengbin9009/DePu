@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { emptyRoom, useAppState } from '../composables/useAppState';
+import { emptyRoom, roomStartHandUnavailableReason, useAppState } from '../composables/useAppState';
 
 const route = useRoute();
 const router = useRouter();
-const { room, myRoomSeat, loading, error, token, refreshProfile, refreshRoom, refreshCurrentRoomHand, doStartRoomHand, connectRoomSocket } = useAppState();
+const { room, currentRoomHand, myRoomSeat, loading, error, token, me, refreshProfile, refreshRoom, doStartRoomHand, connectRoomSocket } = useAppState();
 
 const ownerNickname = computed(() => {
   if (!room.value) return '';
   return room.value.members.find((member) => member.userId === room.value?.ownerUserId)?.nickname || room.value.ownerUserId;
 });
+const startHandUnavailableReason = computed(() => roomStartHandUnavailableReason(room.value, me.value?.id, currentRoomHand.value));
 
 async function ensureRouteRoom() {
   if (typeof route.params.roomId === 'string' && token.value) {
@@ -25,9 +26,11 @@ async function ensureRouteRoom() {
 
 async function startRoomFromInfo() {
   if (!room.value) return;
-  await doStartRoomHand();
-  await refreshCurrentRoomHand();
-  router.push(`/room/${room.value.id}`);
+  try {
+    await doStartRoomHand();
+    router.push(`/room/${room.value.id}`);
+  } catch {
+  }
 }
 
 onMounted(async () => {
@@ -50,10 +53,11 @@ onMounted(async () => {
 
       <div class="action-grid two-col">
         <button type="button" :disabled="loading" @click="refreshRoom">刷新房间</button>
-        <button type="button" :disabled="loading" @click="startRoomFromInfo">房主开局</button>
+        <button type="button" :disabled="loading || !!startHandUnavailableReason" @click="startRoomFromInfo">房主开局</button>
         <button type="button" class="ghost" @click="router.push(`/room/${room.id}`)">返回牌桌</button>
         <button type="button" class="ghost" @click="router.push(`/room/${room.id}/players`)">查看玩家</button>
       </div>
+      <p v-if="startHandUnavailableReason" class="inline-error">{{ startHandUnavailableReason }}</p>
       <p v-if="error" class="inline-error">{{ error }}</p>
     </section>
   </main>

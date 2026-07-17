@@ -93,21 +93,23 @@ describe('multiplayer table contract', () => {
     ].forEach((token) => expect(roomSource).toContain(token));
 
     expect(styleSource).toContain('pointer-events: none;');
-    expect(styleSource).toContain('.seat-ring-casino {\n  inset: var(--table-top-safe) 14px calc(var(--table-bottom-safe) + 178px);');
+    expect(styleSource).toContain('calc(var(--table-top-safe) + var(--table-seat-ring-y))');
+    expect(styleSource).toContain('var(--table-seat-ring-x)');
+    expect(styleSource).toContain('var(--table-seat-bottom-safe);');
   });
 
   it('keeps waiting table owner controls clickable above the seat ring', () => {
     expect(roomSource).toContain('owner-action-row owner-action-row-dock');
     expect(styleSource).toContain('pointer-events: none;');
-    expect(styleSource).toContain('.seat-ring-casino .casino-seat-node {\n  pointer-events: auto;');
-    expect(styleSource).toContain('.owner-action-row-dock {\n  z-index: 8;');
+    expect(styleSource).toContain('transform: translate(-50%, -50%);\n  pointer-events: auto;');
+    expect(styleSource).toContain('.owner-action-row-dock {\n  z-index: var(--table-layer-actions);');
   });
 
   it('wires table invite and start controls to visible state changes', () => {
     [
       'tableNotice',
       'async function inviteFriendFromTable',
-      'navigator.clipboard.writeText',
+      'copyTableInvite(inviteCode, navigator.clipboard)',
       '@click="inviteFriendFromTable"',
       'await refreshCurrentRoomHand();',
       'table-feedback',
@@ -118,15 +120,20 @@ describe('multiplayer table contract', () => {
       'startRoomFromInfo',
       'await refreshProfile();',
       'await connectRoomSocket(room.value.id);',
-      'await refreshCurrentRoomHand();',
+      'await doStartRoomHand();',
       'router.push(`/room/${room.value.id}`)'
     ].forEach((token) => expect(roomInfoSource).toContain(token));
+
+    expect(roomInfoSource).not.toContain('await refreshCurrentRoomHand();');
   });
 
   it('renders large custom poker cards on the multiplayer table', () => {
     [
-      'cardRankLabel',
-      'cardSuitSymbol',
+      "import { cardFaceVisual, holeCardVisuals } from '../pokerVisuals';",
+      'cardFaceVisual(card).rankLabel',
+      'cardFaceVisual(card).suitSymbol',
+      'cardFaceVisual(card).colorClass',
+      'cardFaceVisual(card).ariaLabel',
       'class="board-card table-card-face"',
       'class="card-rank"',
       'class="card-suit"',
@@ -141,7 +148,7 @@ describe('multiplayer table contract', () => {
       '.card-suit {',
       'font-size: 34px;',
       '.hero-card-face {',
-      'width: 58px;',
+      'width: max(var(--table-hero-card-min-width), 58px);',
       '.hero-card-face .card-suit'
     ].forEach((token) => expect(styleSource).toContain(token));
   });
@@ -159,9 +166,9 @@ describe('multiplayer table contract', () => {
       '--table-top-safe',
       '--table-bottom-safe',
       '.hero-actions-safe',
-      'bottom: calc(var(--table-bottom-safe) + 92px);',
+      'bottom: var(--table-actions-bottom-safe);',
       '.table-center-stack-compact',
-      'top: 35%;',
+      'top: var(--table-center-top);',
       '.casino-seat-node .seat-name',
       'text-overflow: ellipsis;',
       '.mock-bottom-toolbar-safe'
@@ -199,8 +206,8 @@ describe('multiplayer table contract', () => {
   it('provides in-table chat score replay and settings panels', () => {
     ['常用语', '聊天记录', '请输入聊天内容，上限40个汉字', '发送', 'sendRoomChat'].forEach((token) => expect(tableChatPanelSource).toContain(token));
     ['当前战绩', '剩余时间', '昵称', '带入', '手数', '战绩', '观众'].forEach((token) => expect(tableScorePanelSource).toContain(token));
-    ['牌谱回顾', '回放', '暂无任何数据', '收藏', '投诉', 'fetchRoomHandReplay'].forEach((token) => expect(tableReplayPanelSource).toContain(token));
-    ['桌面设置', '站起围观', '带入记分牌', '比赛设置', '短牌规则', '保位离座', '降落伞说明', '退出比赛'].forEach((token) => expect(tableSettingsPanelSource).toContain(token));
+    ['牌谱回顾', '回放', '暂无已结算牌谱', '重试加载历史', '收藏（暂未开放）', '投诉（暂未开放）', 'fetchRoomHands', 'fetchRoomHandReplay'].forEach((token) => expect(tableReplayPanelSource).toContain(token));
+    ['桌面设置（暂未开放）', '站起围观', '带入记分牌', '比赛设置（暂未开放）', '短牌规则', '保位离座（暂未开放）', '降落伞（暂未开放）', '退出比赛'].forEach((token) => expect(tableSettingsPanelSource).toContain(token));
   });
 
   it('shows concrete replay steps inside the table replay drawer', () => {
@@ -210,7 +217,7 @@ describe('multiplayer table contract', () => {
       'stepActionText',
       '公共牌',
       '玩家明细',
-      '步骤 {{ stepIndex + 1 }}/{{ replay.steps.length }}',
+      '步骤 #{{ replayStep.seq }} · {{ stepIndex + 1 }}/{{ replay.steps.length }}',
       '上一动作',
       '下一动作',
       'replayStep.players'
@@ -393,10 +400,20 @@ describe('multiplayer table contract', () => {
     expect(appStateSource).not.toContain("roomSocket?.send('room.action', room.value!.id, { action, amount: 0 })");
   });
 
+  it('handles a disconnected action command without an unhandled page rejection', () => {
+    [
+      'async function submitRoomAction(action: string)',
+      'try {',
+      'await doRoomAction(action, amount);',
+      'catch {',
+      "tableNotice.value = '操作未确认，请根据最新牌局状态重试';"
+    ].forEach((token) => expect(roomSource).toContain(token));
+  });
+
   it('provides table exits and room-specific history from the table surface', () => {
     [
       "router.push('/lobby')",
-      'finally',
+      "tableNotice.value = '退出比赛失败，请重试'",
       'data-testid="table-leave-button"',
       'data-testid="table-lobby-button"',
       '离开牌桌',

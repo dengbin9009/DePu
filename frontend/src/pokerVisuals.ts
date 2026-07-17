@@ -22,16 +22,97 @@ export interface TableVisualState {
   reducedMotion: boolean;
 }
 
+export type CardSuit = 'spades' | 'hearts' | 'diamonds' | 'clubs' | 'unknown';
+export type CardColor = 'red' | 'black' | 'neutral';
+
+export interface CardFaceVisual {
+  valid: boolean;
+  rankLabel: string;
+  suit: CardSuit;
+  suitSymbol: string;
+  color: CardColor;
+  colorClass: 'red' | 'black' | 'invalid';
+  ariaLabel: string;
+}
+
+export type HoleCardVisual =
+  | (CardFaceVisual & { kind: 'face'; card: string })
+  | { kind: 'back'; ariaLabel: '牌背' };
+
+const rankLabels: Record<string, string> = {
+  '2': '2',
+  '3': '3',
+  '4': '4',
+  '5': '5',
+  '6': '6',
+  '7': '7',
+  '8': '8',
+  '9': '9',
+  T: '10',
+  J: 'J',
+  Q: 'Q',
+  K: 'K',
+  A: 'A'
+};
+
+const suitVisuals: Record<string, Pick<CardFaceVisual, 'suit' | 'suitSymbol' | 'color' | 'colorClass'> & { label: string }> = {
+  s: { suit: 'spades', suitSymbol: '♠', color: 'black', colorClass: 'black', label: '黑桃' },
+  h: { suit: 'hearts', suitSymbol: '♥', color: 'red', colorClass: 'red', label: '红桃' },
+  d: { suit: 'diamonds', suitSymbol: '♦', color: 'red', colorClass: 'red', label: '方块' },
+  c: { suit: 'clubs', suitSymbol: '♣', color: 'black', colorClass: 'black', label: '梅花' }
+};
+
+const invalidCardVisual: CardFaceVisual = {
+  valid: false,
+  rankLabel: '?',
+  suit: 'unknown',
+  suitSymbol: '•',
+  color: 'neutral',
+  colorClass: 'invalid',
+  ariaLabel: '无效牌'
+};
+
+export function cardFaceVisual(card: string): CardFaceVisual {
+  const normalized = card.trim().replace(/^10/i, 'T');
+  const rank = normalized.slice(0, -1).toUpperCase();
+  const suit = normalized.slice(-1).toLowerCase();
+  const rankLabel = rankLabels[rank];
+  const suitVisual = suitVisuals[suit];
+  if (!rankLabel || !suitVisual) return invalidCardVisual;
+
+  return {
+    valid: true,
+    rankLabel,
+    suit: suitVisual.suit,
+    suitSymbol: suitVisual.suitSymbol,
+    color: suitVisual.color,
+    colorClass: suitVisual.colorClass,
+    ariaLabel: `${suitVisual.label} ${rankLabel}`
+  };
+}
+
+export function holeCardVisuals(cards?: string[] | null): HoleCardVisual[] {
+  return Array.from({ length: 2 }, (_, index) => {
+    const card = cards?.[index];
+    const face = card ? cardFaceVisual(card) : invalidCardVisual;
+    if (!card || !face.valid) return { kind: 'back', ariaLabel: '牌背' };
+    return { ...face, kind: 'face', card };
+  });
+}
+
 export function cardSuit(card: string): string {
-  return card.slice(-1).toLowerCase();
+  const visual = cardFaceVisual(card);
+  if (!visual.valid) return '';
+  return card.trim().slice(-1).toLowerCase();
 }
 
 export function cardRank(card: string): string {
-  return card.slice(0, -1).toUpperCase();
+  const visual = cardFaceVisual(card);
+  return visual.valid ? visual.rankLabel : '';
 }
 
 export function isRedCard(card: string): boolean {
-  return ['h', 'd'].includes(cardSuit(card));
+  return cardFaceVisual(card).color === 'red';
 }
 
 export function seatPositions(seats: SeatState[], activeSeat?: number, dealerButtonSeat = 1): SeatVisual[] {

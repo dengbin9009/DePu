@@ -7,7 +7,12 @@
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "typecheck": "vue-tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:browser:table-hardening": "node scripts/table-hardening-browser-acceptance.mjs",
+    "test:browser:table-responsive": "node scripts/table-responsive-browser-acceptance.mjs",
+    "test:browser:table-multiplayer": "node scripts/table-multiplayer-browser-acceptance.mjs",
+    "test:browser:table-reconnect": "node scripts/table-reconnect-browser-acceptance.mjs",
+    "test:browser:table-replay": "node scripts/table-replay-browser-acceptance.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-vue": "^5.2.4",
@@ -18,6 +23,7 @@
   "devDependencies": {
     "@types/node": "^26.0.1",
     "jsdom": "^29.1.1",
+    "playwright": "^1.54.2",
     "typescript": "^5.9.3",
     "vitest": "^2.1.9",
     "vue-tsc": "^2.2.12"

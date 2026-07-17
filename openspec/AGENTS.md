@@ -4,23 +4,22 @@
 
 ## 当前变更
 
-当前开发变更：`migrate-http-to-socket`
+当前开发变更：`table-playability-hardening`
 
-目标：将正式多人对战从 HTTP 轮询和 HTTP 动作提交升级为 socket 驱动的房间实时同步与玩家操作，同时保留账号、钱包、建房、邀请码加入、历史查询和独立规则测试页的 HTTP 能力。
+目标：在既有 socket 多人能力上加固牌桌响应式安全区、关键操作反馈、连续手牌、房主移交、事件顺序、牌面可读性、牌谱明细和生产级质量门。
 
 ## 必读文档
 
 - 项目上下文：`openspec/project.md`
 - 当前多人基线：`openspec/specs/multiplayer-poker/spec.md`
-- 变更提案：`openspec/changes/migrate-http-to-socket/proposal.md`
-- 技术设计：`openspec/changes/migrate-http-to-socket/design.md`
-- 实施任务：`openspec/changes/migrate-http-to-socket/tasks.md`
-- 增量规格：`openspec/changes/migrate-http-to-socket/specs/multiplayer-poker/spec.md`
-- socket 事件契约草案：`openspec/changes/migrate-http-to-socket/contracts/socket-events.md`
+- 变更提案：`openspec/changes/table-playability-hardening/proposal.md`
+- 技术设计：`openspec/changes/table-playability-hardening/design.md`
+- 实施任务：`openspec/changes/table-playability-hardening/tasks.md`
+- 增量规格：`openspec/changes/table-playability-hardening/specs/multiplayer-poker/spec.md`
 
 ## 边界
 
-- 不把真实支付、聊天、大厅匹配、机器人、倒计时托管、排行榜或反作弊系统纳入本次变更。
+- 不把真实支付、好友关系、语音、大厅匹配、机器人、新赛事系统或反作弊系统纳入本次变更。
 - 不移除规则测试页。
 - 不让前端自行计算会影响牌局结果的规则。
-- 不用 socket 替代所有 HTTP 接口；本次只迁移正式多人房间实时同步和正式手牌操作通道。
+- 不恢复固定 HTTP 轮询掩盖 socket 问题；HTTP 只保留资源查询和显式一致性兜底。

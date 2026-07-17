@@ -11,6 +11,7 @@ dist/
 .vite/
 frontend/node_modules/
 frontend/dist/
+frontend/.artifacts/
 
 # Local runtime data
 data/*.db
@@ -26,6 +27,7 @@ backend/internal/data/
 # Local dev runtime
 .bin/
 .logs/
+.loop/logs/
 backend/data/
 __pycache__/
 frontend/__pycache__/

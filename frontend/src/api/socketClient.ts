@@ -4,6 +4,9 @@ export interface SocketEnvelope<T = unknown> {
   roomId?: string;
   payload?: T;
   sentAt?: string;
+  roomVersion?: number;
+  handId?: string;
+  handVersion?: number;
 }
 
 type SocketHandler = (message: SocketEnvelope) => void;
@@ -28,6 +31,13 @@ export function createRoomSocketClient(token: string) {
   let requestSeq = 0;
   const pending = new Map<string, PendingCommand>();
   const handlers = new Map<string, Set<SocketHandler>>();
+
+  function rejectPending(error: Error) {
+    for (const command of pending.values()) {
+      command.reject(error);
+    }
+    pending.clear();
+  }
 
   function emit(message: SocketEnvelope) {
     const group = handlers.get(message.type);
@@ -66,6 +76,10 @@ export function createRoomSocketClient(token: string) {
     }
     socket = new WebSocket(socketUrl(token));
     socket.onmessage = handleMessage;
+    socket.onclose = () => {
+      socket = null;
+      rejectPending(new Error('socket disconnected before acknowledgement'));
+    };
     return new Promise((resolve, reject) => {
       if (!socket) return reject(new Error('socket unavailable'));
       socket.onopen = () => resolve();
@@ -86,6 +100,10 @@ export function createRoomSocketClient(token: string) {
     return result;
   }
 
+  function isConnected() {
+    return socket?.readyState === WebSocket.OPEN;
+  }
+
   function on(type: string, handler: SocketHandler): () => void {
     let group = handlers.get(type);
     if (!group) {
@@ -99,8 +117,8 @@ export function createRoomSocketClient(token: string) {
   function close() {
     socket?.close();
     socket = null;
-    pending.clear();
+    rejectPending(new Error('socket closed before acknowledgement'));
   }
 
-  return { connect, send, on, close };
+  return { connect, isConnected, send, on, close };
 }
