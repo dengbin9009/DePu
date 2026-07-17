@@ -30,7 +30,7 @@ watch(() => props.open, (open) => {
 </script>
 
 <template>
-  <div v-if="open" class="modal-backdrop">
+  <div v-if="open" class="modal-backdrop" @click.self="emit('close')">
     <section class="buy-in-modal" role="dialog" aria-modal="true" aria-label="补充记分牌">
       <h2>补充记分牌</h2>
       <p>在下一手开始前，为您补充记分牌</p>

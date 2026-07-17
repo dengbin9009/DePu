@@ -26,6 +26,11 @@ class FakeWebSocket {
     this.onclose?.();
   }
 
+  disconnect() {
+    this.readyState = 3;
+    this.onclose?.();
+  }
+
   open() {
     this.onopen?.();
   }
@@ -100,5 +105,59 @@ describe('socketClient', () => {
     socket.receive({ type: 'hand.updated', roomId: 'room_1', payload: { hand: { handId: 'hand_1' } } });
 
     expect(events).toEqual(['snapshot', 'updated']);
+  });
+
+  it.each([
+    ['room.start_hand', {}],
+    ['room.action', { action: 'call', amount: 0 }]
+  ])('does not replay an unacknowledged %s command after reconnect', async (type, payload) => {
+    vi.stubGlobal('WebSocket', FakeWebSocket);
+    FakeWebSocket.instances = [];
+    const client = createRoomSocketClient('tok_reconnect');
+    const snapshots: unknown[] = [];
+    client.on('room.snapshot', (message) => snapshots.push(message.payload));
+    const connected = client.connect();
+    const firstSocket = FakeWebSocket.instances[0];
+    firstSocket.open();
+    await connected;
+
+    const unacknowledged = client.send(type, 'room_1', payload);
+    const firstCommand = JSON.parse(firstSocket.sent[0]);
+    firstSocket.disconnect();
+
+    await expect(unacknowledged).rejects.toThrow('socket disconnected before acknowledgement');
+
+    const reconnected = client.connect();
+    const secondSocket = FakeWebSocket.instances[1];
+    secondSocket.open();
+    await reconnected;
+    expect(secondSocket.sent).toEqual([]);
+
+    const subscribed = client.send('room.subscribe', 'room_1', {});
+    const subscribeCommand = JSON.parse(secondSocket.sent[0]);
+    secondSocket.receive({
+      type: 'ack',
+      requestId: subscribeCommand.requestId,
+      roomId: 'room_1',
+      payload: { command: 'room.subscribe' }
+    });
+    await expect(subscribed).resolves.toEqual({ command: 'room.subscribe' });
+    secondSocket.receive({
+      type: 'room.snapshot',
+      roomId: 'room_1',
+      payload: { room: { id: 'room_1', status: 'waiting' }, hand: null }
+    });
+    expect(snapshots).toEqual([{ room: { id: 'room_1', status: 'waiting' }, hand: null }]);
+
+    const retried = client.send(type, 'room_1', payload);
+    const retryCommand = JSON.parse(secondSocket.sent[1]);
+    expect(retryCommand.requestId).not.toBe(firstCommand.requestId);
+    secondSocket.receive({
+      type: 'ack',
+      requestId: retryCommand.requestId,
+      roomId: 'room_1',
+      payload: { command: type }
+    });
+    await expect(retried).resolves.toEqual({ command: type });
   });
 });

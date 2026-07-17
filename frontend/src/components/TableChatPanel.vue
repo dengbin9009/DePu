@@ -16,7 +16,7 @@ function sendRoomChat() {
 
 <template>
   <section class="table-chat-panel">
-    <button type="button" class="quick-chat-tab">常用语</button>
+    <button type="button" class="quick-chat-tab" disabled title="常用语功能暂未开放">常用语（暂未开放）</button>
     <h2>聊天记录</h2>
     <ol>
       <li v-for="message in messages" :key="message.id">{{ message.nickname }}：{{ message.kind === 'emoji' ? message.emojiCode : message.text }}</li>

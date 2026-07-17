@@ -81,6 +81,46 @@ func TestStandUpRejectsPlayingRoom(t *testing.T) {
 	}
 }
 
+func TestTakeSeatRejectsPlayingRoom(t *testing.T) {
+	server := testServer(t)
+	roomID, ownerToken, _ := setupRoomWithSeats(t, server)
+	observerToken := registerUser(t, server, "playing_seat_observer", "进行中旁观者")
+	room, err := server.store.RoomByID(roomID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	joinReq := httptest.NewRequest(http.MethodPost, "/api/rooms/join", strings.NewReader(`{"inviteCode":"`+room.InviteCode+`"}`))
+	joinReq.Header.Set("Authorization", "Bearer "+observerToken)
+	joinRes := httptest.NewRecorder()
+	server.Routes().ServeHTTP(joinRes, joinReq)
+	if joinRes.Code != http.StatusOK {
+		t.Fatalf("join room status=%d body=%s", joinRes.Code, joinRes.Body.String())
+	}
+
+	startReq := httptest.NewRequest(http.MethodPost, "/api/rooms/"+roomID+"/start", nil)
+	startReq.Header.Set("Authorization", "Bearer "+ownerToken)
+	startRes := httptest.NewRecorder()
+	server.Routes().ServeHTTP(startRes, startReq)
+	if startRes.Code != http.StatusOK {
+		t.Fatalf("start room status=%d body=%s", startRes.Code, startRes.Body.String())
+	}
+
+	takeReq := httptest.NewRequest(http.MethodPost, "/api/rooms/"+roomID+"/seats/3", strings.NewReader(`{"buyInChips":1000}`))
+	takeReq.Header.Set("Authorization", "Bearer "+observerToken)
+	takeRes := httptest.NewRecorder()
+	server.Routes().ServeHTTP(takeRes, takeReq)
+	if takeRes.Code != http.StatusConflict {
+		t.Fatalf("take seat during playing status=%d body=%s", takeRes.Code, takeRes.Body.String())
+	}
+	var errBody ErrorResponse
+	if err := json.Unmarshal(takeRes.Body.Bytes(), &errBody); err != nil {
+		t.Fatal(err)
+	}
+	if errBody.Code != "room_not_waiting" {
+		t.Fatalf("take seat during playing code=%s, want room_not_waiting", errBody.Code)
+	}
+}
+
 func TestRoomOwnerLeaveTransfersOwnershipToNextSeatedPlayer(t *testing.T) {
 	server := testServer(t)
 	roomID, ownerToken, playerToken := setupRoomWithSeats(t, server)
@@ -164,6 +204,38 @@ func TestRoomPlayerLeaveDoesNotChangeOwner(t *testing.T) {
 	members, _ := room["members"].([]any)
 	if len(members) != 1 {
 		t.Fatalf("members after player leave = %d, want 1", len(members))
+	}
+}
+
+func TestRoomLeaveRejectsNonMemberWithoutMutatingVersion(t *testing.T) {
+	server := testServer(t)
+	roomID, _, _ := setupRoomWithSeats(t, server)
+	outsiderToken := registerUser(t, server, "leave_outsider", "退出旁观者")
+	before, err := server.store.RoomByID(roomID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	request := httptest.NewRequest(http.MethodDelete, "/api/rooms/"+roomID+"/members/me", nil)
+	request.Header.Set("Authorization", "Bearer "+outsiderToken)
+	response := httptest.NewRecorder()
+	server.Routes().ServeHTTP(response, request)
+	if response.Code != http.StatusForbidden {
+		t.Fatalf("outsider leave status=%d body=%s", response.Code, response.Body.String())
+	}
+	var apiErr ErrorResponse
+	if err := json.Unmarshal(response.Body.Bytes(), &apiErr); err != nil {
+		t.Fatal(err)
+	}
+	if apiErr.Code != "forbidden" {
+		t.Fatalf("outsider leave code=%s, want forbidden", apiErr.Code)
+	}
+	after, err := server.store.RoomByID(roomID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if after.Version != before.Version {
+		t.Fatalf("room version changed after outsider leave: %d -> %d", before.Version, after.Version)
 	}
 }
 
